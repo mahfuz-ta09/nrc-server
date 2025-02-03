@@ -88,7 +88,10 @@ const logIn = async(req: Request, res: Response) => {
             statusCode: 200,
             success: true,
             message: "Login successful!!!",
-            meta: accessToken,
+            meta: {
+                a_token:refreshToken,
+                r_token:refreshToken
+            }
         })
     }catch(err){
         console.log(err)
@@ -102,7 +105,7 @@ const signUp = async(req: Request, res: Response) => {
 
         const { name , email , password } = req.body
         
-        if(!email || !password){
+        if(!email || !password || !name){
             return sendResponse( res, {
                 statusCode: 500,
                 success: false,
@@ -156,13 +159,13 @@ const signUp = async(req: Request, res: Response) => {
         const accessToken = jwt.sign(
             userData, 
             process.env.ACCESSTOKEN, { 
-            expiresIn: "1d" 
+            expiresIn: "5m" 
         })
 
         const refreshToken = jwt.sign(
             userData, 
             process.env.REFRESHTOKEN,{ 
-            expiresIn: "1d" 
+            expiresIn: "30d" 
         })
 
         res.cookie(
@@ -179,7 +182,10 @@ const signUp = async(req: Request, res: Response) => {
             success: true,
             message: "Signup successful!!!",
             data: result,
-            meta: accessToken,
+            meta: {
+                a_token:refreshToken,
+                r_token:refreshToken
+            },
         })
     }catch(err){
         console.log(err)
