@@ -8,8 +8,8 @@ type IApiReponse<T> = {
     page?: number
     limit?: number
     total?: number
-    a_token?: string
-    r_token?: string
+    accessToken?: string
+    refreshToken?: string
   };
   data?: T | null
 }

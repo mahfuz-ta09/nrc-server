@@ -1,13 +1,13 @@
 require('dotenv').config()
 import express, { Express, Request, Response } from "express"
-const app: Express = express()
 const corsOption = require('./config/corsOption')
-const cors =  require('cors')
 const cookieParser = require('cookie-parser')
 const { connectDb } = require('./config/connectDB')
 const routes = require('./routes/app')
-const port = process.env.PORT || 7373
 
+const app: Express = express()
+const cors =  require('cors')
+const port = process.env.PORT || 7373
 
 
 connectDb()

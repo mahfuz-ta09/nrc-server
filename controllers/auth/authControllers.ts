@@ -89,8 +89,7 @@ const logIn = async(req: Request, res: Response) => {
             success: true,
             message: "Login successful!!!",
             meta: {
-                a_token:refreshToken,
-                r_token:refreshToken
+                accessToken:accessToken,
             }
         })
     }catch(err){
@@ -104,7 +103,7 @@ const signUp = async(req: Request, res: Response) => {
         const collection = db.collection('users')
 
         const { name , email , password } = req.body
-        
+        console.log(name,email,password)
         if(!email || !password || !name){
             return sendResponse( res, {
                 statusCode: 500,
@@ -136,7 +135,7 @@ const signUp = async(req: Request, res: Response) => {
             return sendResponse( res, {
                 statusCode: 500,
                 success: false,
-                message: 'User already exist!!!',
+                message: 'User already exist!!!, Please login.',
             })
         }
 
@@ -183,8 +182,7 @@ const signUp = async(req: Request, res: Response) => {
             message: "Signup successful!!!",
             data: result,
             meta: {
-                a_token:refreshToken,
-                r_token:refreshToken
+                accessToken:accessToken,
             },
         })
     }catch(err){
