@@ -43,7 +43,7 @@ const logIn = async(req: Request, res: Response) => {
         
         const user = await collection.findOne(query)
         // console.log(user._id)
-        
+
         if(!user){
             return sendResponse( res, {
                 statusCode: 500,
@@ -192,7 +192,31 @@ const signUp = async(req: Request, res: Response) => {
     }
 }
 
+
+
+const logOut = async(req: Request, res: Response) => {
+    try{
+        
+        res.clearCookie(
+            "refreshToken",{ 
+                path: "/", 
+                httpOnly: true, 
+                secure: true, 
+                sameSite: "strict" 
+        })
+
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: "Logout successful!!!",
+        })
+    }catch(err){
+        console.log(err)
+    }
+}
+
 module.exports  = {
     logIn,
-    signUp
+    signUp,
+    logOut
 } 

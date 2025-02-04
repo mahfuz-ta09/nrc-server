@@ -1,14 +1,11 @@
-import { SourceOrigin } from "module"
-
 const allowedOrigins = [
     'https://nrc-london.vercel.app',
     'http://localhost:3000',
 ]
 
-const corsOption = {
-    
+const corsOption = {    
     origin: (origin: string | undefined, callback: any) => {
-        console.log(origin)
+        // console.log(origin)
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
