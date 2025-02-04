@@ -42,7 +42,8 @@ const logIn = async(req: Request, res: Response) => {
         const query = { email: email }
         
         const user = await collection.findOne(query)
-        console.log(user._id)
+        // console.log(user._id)
+        
         if(!user){
             return sendResponse( res, {
                 statusCode: 500,
@@ -103,7 +104,8 @@ const signUp = async(req: Request, res: Response) => {
         const collection = db.collection('users')
 
         const { name , email , password } = req.body
-        console.log(name,email,password)
+        // console.log(name,email,password)
+
         if(!email || !password || !name){
             return sendResponse( res, {
                 statusCode: 500,
