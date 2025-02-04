@@ -1,12 +1,16 @@
 import { SourceOrigin } from "module"
-const allowedOrigin = require('./allowedOrigin')
+
+const allowedOrigins = [
+    'https://nrc-london.vercel.app',
+    'http://localhost:3000',
+]
 
 const corsOption = {
-    origin: (origin: SourceOrigin, callback:any) => {
-        if(allowedOrigin.indexOf(origin) !== -1 || !origin){
-            callback(null, true)
-        }else{
-            callback(new Error("Not Allowed by CORS"))
+    origin: (origin: string | undefined, callback: any) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not Allowed by CORS"));
         }
     },
     credentials: true,
