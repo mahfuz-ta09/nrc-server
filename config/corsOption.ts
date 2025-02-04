@@ -6,15 +6,16 @@ const allowedOrigins = [
 ]
 
 const corsOption = {
-    
-    origin: (origin: string | undefined, callback: any) => {
-        console.log(origin)
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error("Not Allowed by CORS"));
-        }
-    },
+
+    // origin: (origin: string | undefined, callback: any) => {
+    //     console.log(origin)
+    //     if (!origin || allowedOrigins.includes(origin)) {
+    //         callback(null, true);
+    //     } else {
+    //         callback(new Error("Not Allowed by CORS"));
+    //     }
+    // },
+    origin:"*",
     credentials: true,
     methods: 'GET,POST,PUT,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Authorization',
