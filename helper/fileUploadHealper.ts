@@ -22,19 +22,21 @@ const storage = multer.diskStorage({
 })
 
 const upload = multer({ storage: storage })
+
 const uploadToCloud = async(file:any)  =>{
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload(file.path,
-        (error: Error, result: any) => {
-            fs.unlinkSync(file.path);
-            if (error) {
-                reject(error)
-            }
-            else {
-                resolve(result)
-            }
-        })
-  })
+  console.log("tyet=================================sddddddddddddd",file)
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.upload(file?.path,
+          (error: Error, result: any) => {
+              fs.unlinkSync(file.path);
+              if (error) {
+                  reject(error)
+              }
+              else {
+                  resolve(result)
+              }
+          })
+    })
 }
 
 

@@ -5,16 +5,17 @@ import { fileUploadHelper } from "../../helper/fileUploadHealper"
 const { getDb } = require('../../config/connectDB')
 
 
-
 const createUniversity = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
 
-        const { name , total_classes , explain_classes, total_assignment, explain_assignment, total_exams, explain_exams, course_fee , duration, explain_durations, class_starts, class_ends, enroled_start, enroled_end, description } = req.body
+        const { name, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
         const file = req?.file
 
-        if(!name || !file ||  !total_classes ||  !explain_classes || !total_assignment || !explain_assignment || !total_exams || !explain_exams || !course_fee || !duration || !explain_durations || !class_starts || !class_ends || !enroled_start || !enroled_end || !description){
+        console.log("asd",req.body)
+        
+        if(!name  || !ranking || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || !entryRequirements || !applicationDeadlines){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
@@ -22,7 +23,9 @@ const createUniversity = async( req: Request , res: Response) =>{
             })
         }
 
+
         const uploaded:any = await fileUploadHelper.uploadToCloud(file)
+        console.log("sdf=============",uploaded)
 
         if(!uploaded.url){
             return sendResponse( res, {
@@ -32,28 +35,17 @@ const createUniversity = async( req: Request , res: Response) =>{
                 data: uploaded,
             })
         }
-
         const insertedObject = {
-            name : name,
-            image : uploaded.url ,
-            total_classes : total_classes ,
-            explain_classes : explain_classes,
-            total_assignment : total_assignment,
-            explain_assignment : explain_assignment,
-            total_exams : total_exams,
-            explain_exams : explain_exams,
-            course_fee : course_fee,
-            total_enroled : 0,
-            duration : duration,
-            explain_durations : explain_durations,
-            class_starts : class_starts,
-            class_ends : class_ends,
-            enroled_start : enroled_start,
-            enroled_end : enroled_end,
-            description : description,
-            studentData : [],
-            courseContent:[],
-            courseSchedule: []
+            name:name,
+            url:uploaded?.url,
+            ranking:ranking,
+            tuitionFee:tuitionFee,
+            requiredDocs:requiredDocs,
+            applicationFee:applicationFee,
+            duration:duration,
+            intakes:intakes,
+            entryRequirements:entryRequirements,
+            applicationDeadlines:applicationDeadlines,
         }
 
         const result = await collection.insertOne(insertedObject)
