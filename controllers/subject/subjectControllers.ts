@@ -1,20 +1,15 @@
 import { Request , Response } from "express"
 import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
-import { fileUploadHelper } from "../../helper/fileUploadHealper"
 const { getDb } = require('../../config/connectDB')
 
-
-const createUniversity = async( req: Request , res: Response) =>{
+const createSubject = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('university')
-        const navCollection = db.collection('nav')
+        const collection = db.collection('subjects')
 
-        const { name, url, country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
-
-        
-        if(!name  || !country || !url || !ranking || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || !entryRequirements || !applicationDeadlines){
+        const {name,destination,tuitionFee,requiredDocs,applicationFee,duration,intakes,entryRequirements,applicationDeadlines } = req.body
+        if(!name || !destination || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || !entryRequirements || !applicationDeadlines){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
@@ -24,9 +19,7 @@ const createUniversity = async( req: Request , res: Response) =>{
 
         const insertedObject = {
             name:name,
-            country:country,
-            url:url,
-            ranking:ranking,
+            destination:destination,
             tuitionFee:tuitionFee,
             requiredDocs:requiredDocs,
             applicationFee:applicationFee,
@@ -47,16 +40,6 @@ const createUniversity = async( req: Request , res: Response) =>{
             })
         }
 
-        const insertedData = { id: result.insertedId, country }
-
-        await navCollection.updateOne({}, { $setOnInsert: { "university": [], "test-prep": [] } }, { upsert: true })
-        const update = {
-            $push: { ["university"]: insertedData }
-        }
-
-        const options = { returnDocument: "after" }
-        await navCollection.findOneAndUpdate({}, update, options)
-
         sendResponse(res,{
             statusCode: 200,
             success: true,
@@ -75,10 +58,10 @@ const createUniversity = async( req: Request , res: Response) =>{
 }
 
 
-const deleteUniversity = async( req: Request , res: Response) =>{
+const deleteSubject = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('university')
+        const collection = db.collection('subjects')
 
         const id  = req.params.id
         
@@ -122,18 +105,19 @@ const deleteUniversity = async( req: Request , res: Response) =>{
     }
 }
 
-const editUniversity = async( req: Request , res: Response) =>{
+
+const editSubject = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('university')
+        const collection = db.collection('subjects')
 
         const id = req.params.id
-        const { name, url, country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
+        const { name, destination, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
 
         const query = { _id : new ObjectId(id) }
 
-        const university = await collection.findOne(query)
-        if(!university){
+        const subject = await collection.findOne(query)
+        if(!subject){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
@@ -142,17 +126,15 @@ const editUniversity = async( req: Request , res: Response) =>{
         }
         
         const field = {
-            name:name?name:university?.name,
-            country:country?country:university?.country,
-            url:url?url:university?.url,
-            ranking:ranking?ranking:university?.ranking,
-            tuitionFee:tuitionFee?tuitionFee:university?.tuitionFee,
-            requiredDocs:requiredDocs?requiredDocs:university?.requiredDocs,
-            applicationFee:applicationFee?applicationFee:university?.applicationFee,
-            duration:duration?duration:university?.duration,
-            intakes:intakes?intakes:university?.intakes,
-            entryRequirements:entryRequirements?entryRequirements:university?.entryRequirements,
-            applicationDeadlines:applicationDeadlines?applicationDeadlines:university?.applicationDeadlines,
+            name:name? name : subject?.name, 
+            destination:destination? destination : subject?.destination,
+            tuitionFee:tuitionFee? tuitionFee : subject?.tuitionFee, 
+            requiredDocs:requiredDocs? requiredDocs : subject?.requiredDocs, 
+            applicationFee:applicationFee? applicationFee : subject?.applicationFee, 
+            duration:duration? duration : subject?.duration, 
+            intakes:intakes? intakes : subject?.intakes, 
+            entryRequirements:entryRequirements? entryRequirements : subject?.entryRequirements, 
+            applicationDeadlines:applicationDeadlines? applicationDeadlines : subject?.applicationDeadlines, 
         }
 
         const updateDoc = {
@@ -185,10 +167,10 @@ const editUniversity = async( req: Request , res: Response) =>{
     }
 }
 
-const getAllUniversity = async( req: Request , res: Response) =>{
+const getAllSubject = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('university')
+        const collection = db.collection('subjects')
 
         const courses = await collection.find({}, { 
                 projection: { courseContent: 0, studentData: 0 , courseSchedule: 0}
@@ -219,11 +201,10 @@ const getAllUniversity = async( req: Request , res: Response) =>{
     }
 }
 
-
-const getSingleUniversity = async( req: Request , res: Response) =>{
+const getSingleSubject = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('university')
+        const collection = db.collection('subjects')
 
         const id = req.params.id 
         const query = { _id : new ObjectId(id)}
@@ -258,9 +239,9 @@ const getSingleUniversity = async( req: Request , res: Response) =>{
 
 
 module.exports = {
-    createUniversity,
-    editUniversity,
-    deleteUniversity,
-    getAllUniversity,
-    getSingleUniversity
+    createSubject,
+    editSubject,
+    deleteSubject,
+    getAllSubject,
+    getSingleSubject
 }
