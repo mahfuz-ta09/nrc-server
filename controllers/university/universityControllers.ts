@@ -9,7 +9,6 @@ const createUniversity = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
-        const navCollection = db.collection('nav')
 
         const { name, url, country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
 
@@ -24,7 +23,7 @@ const createUniversity = async( req: Request , res: Response) =>{
 
         const insertedObject = {
             name:name,
-            country:country,
+            country:country.toUpperCase(),
             url:url,
             ranking:ranking,
             tuitionFee:tuitionFee,
@@ -46,16 +45,6 @@ const createUniversity = async( req: Request , res: Response) =>{
                 data: result,
             })
         }
-
-        const insertedData = { id: result.insertedId, country }
-
-        await navCollection.updateOne({}, { $setOnInsert: { "university": [], "test-prep": [] } }, { upsert: true })
-        const update = {
-            $push: { ["university"]: insertedData }
-        }
-
-        const options = { returnDocument: "after" }
-        await navCollection.findOneAndUpdate({}, update, options)
 
         sendResponse(res,{
             statusCode: 200,
@@ -143,7 +132,7 @@ const editUniversity = async( req: Request , res: Response) =>{
         
         const field = {
             name:name?name:university?.name,
-            country:country?country:university?.country,
+            country:country?country.toUpperCase():university?.country,
             url:url?url:university?.url,
             ranking:ranking?ranking:university?.ranking,
             tuitionFee:tuitionFee?tuitionFee:university?.tuitionFee,
@@ -190,9 +179,7 @@ const getAllUniversity = async( req: Request , res: Response) =>{
         const db = getDb()
         const collection = db.collection('university')
 
-        const courses = await collection.find({}, { 
-                projection: { courseContent: 0, studentData: 0 , courseSchedule: 0}
-            }).sort({"_id": -1}).toArray()
+        const university = await collection.find({}).sort({"_id": -1}).toArray()
         const countCourse     = await collection.countDocuments()
 
         const metaData = {
@@ -206,7 +193,7 @@ const getAllUniversity = async( req: Request , res: Response) =>{
             success: true,
             message: 'Course retrieval successful!!!',
             meta: metaData,
-            data: courses,
+            data: university,
         })
     } catch (err) {
         console.log(err)
@@ -227,9 +214,9 @@ const getSingleUniversity = async( req: Request , res: Response) =>{
 
         const id = req.params.id 
         const query = { _id : new ObjectId(id)}
-        const course = await collection.findOne(query,{projection: { courseContent: 0, studentData: 0 }})
+        const university = await collection.findOne(query,{projection: { courseContent: 0, studentData: 0 }})
 
-        if(!course){
+        if(!university){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
@@ -242,7 +229,36 @@ const getSingleUniversity = async( req: Request , res: Response) =>{
             statusCode: 200,
             success: false,
             message: "Showing university details",
-            data: course,
+            data: university,
+        })
+    } catch (err) {
+        console.log(err)
+        sendResponse(res,{
+            statusCode: 500,
+            success: false,
+            message: 'Internel server error',
+            data: err
+        })
+    }
+}
+
+
+const getUniOriginName = async( req: Request , res: Response) =>{
+    try {
+        const db = getDb()
+        const collection = db.collection('university')
+
+        const country = await collection.distinct('country')
+        const total = await collection.countDocuments()
+
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: 'Course retrieval successful!!!',
+            data: country,
+            meta:{
+                total: total
+            }
         })
     } catch (err) {
         console.log(err)
@@ -257,10 +273,44 @@ const getSingleUniversity = async( req: Request , res: Response) =>{
 
 
 
+const getUniversityByCountry = async( req: Request , res: Response) =>{
+    try {
+        const db = getDb();
+        const collection = db.collection("university");
+
+        const country = req.params.country;
+        
+        const universities = await collection.find({ country: country }).toArray();
+        
+        if (universities.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No universities found for this country",
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Universities retrieved successfully",
+            data: universities,
+        });
+    } catch (error) {
+        console.error("Error fetching universities:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error,
+        });
+    }
+}
+
+
 module.exports = {
     createUniversity,
     editUniversity,
     deleteUniversity,
     getAllUniversity,
-    getSingleUniversity
+    getSingleUniversity,
+    getUniOriginName,
+    getUniversityByCountry
 }
