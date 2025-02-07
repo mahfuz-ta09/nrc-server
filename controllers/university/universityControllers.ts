@@ -248,7 +248,21 @@ const getUniOriginName = async( req: Request , res: Response) =>{
         const db = getDb()
         const collection = db.collection('university')
 
-        const country = await collection.distinct('country')
+        const country = await await collection.aggregate([
+            {
+                $group: {
+                    _id: "$country",
+                    image: { $first: "$url" }
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    country: "$_id",
+                    image: 1
+                }
+            }
+        ]).toArray()
         const total = await collection.countDocuments()
 
         sendResponse(res,{
@@ -286,21 +300,21 @@ const getUniversityByCountry = async( req: Request , res: Response) =>{
             return res.status(404).json({
                 success: false,
                 message: "No universities found for this country",
-            });
+            })
         }
 
         res.status(200).json({
             success: true,
             message: "Universities retrieved successfully",
             data: universities,
-        });
+        })
     } catch (error) {
-        console.error("Error fetching universities:", error);
+        console.error("Error fetching universities:", error)
         res.status(500).json({
             success: false,
             message: "Internal Server Error",
             error,
-        });
+        })
     }
 }
 
