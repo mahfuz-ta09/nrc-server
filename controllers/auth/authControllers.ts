@@ -78,13 +78,17 @@ const logIn = async(req: Request, res: Response) => {
             expiresIn: "1d" 
         })
 
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true, 
-            secure: true, 
-            sameSite: 'none', 
-            maxAge: 7 * 24 * 60 * 60 * 1000 
-        })
-    
+        res.cookie(
+            "refreshToken",
+            refreshToken,{
+                maxAge: 7 * 24 * 60 * 60 * 1000 ,
+                httpOnly: true,
+                signed: true,
+                path: "/", 
+                secure: true, 
+                sameSite: "none"
+            }
+        )
         sendResponse(res,{
             statusCode: 200,
             success: true,
@@ -172,9 +176,12 @@ const signUp = async(req: Request, res: Response) => {
         res.cookie(
             "refreshToken",
             refreshToken,{
-                maxAge: 1000 * 60 * 15,
+                maxAge: 7 * 24 * 60 * 60 * 1000 ,
                 httpOnly: true,
-                signed: true 
+                signed: true,
+                path: "/", 
+                secure: true, 
+                sameSite: "none"
             }
         )
 
@@ -199,10 +206,11 @@ const logOut = async(req: Request, res: Response) => {
         
         res.clearCookie(
             "refreshToken",{ 
+                httpOnly: true,
+                signed: true,
                 path: "/", 
-                httpOnly: true, 
                 secure: true, 
-                sameSite: "strict" 
+                sameSite: "none"
         })
 
         sendResponse(res,{
