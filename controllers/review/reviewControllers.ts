@@ -3,29 +3,40 @@ import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
 const { getDb } = require('../../config/connectDB')
 
-const createSubject = async( req: Request , res: Response) =>{
+
+const createReview = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('subjects')
-        const {name,destination,tuitionFee,requiredDocs,applicationFee,duration,intakes,entryRequirements,applicationDeadlines } = req.body
-        if(!name || !destination || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || !entryRequirements || !applicationDeadlines){
+        const collection = db.collection('review')
+        const { name, url , comment , email} = req.body
+
+        const query = { email : email }
+        if( !comment || !email ){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
-                message: "No empty field allowed"
+                message: "You must log in to comment"
             })
         }
 
+
+        const exist = await collection.findOne(query)
+
+        if(exist){
+            return sendResponse(res,{
+                statusCode: 500,
+                success: false,
+                message: 'You have already commented. Update or delete to comment again',
+                data: exist,
+            })
+        }
+       
+
         const insertedObject = {
             name:name,
-            destination:destination,
-            tuitionFee:tuitionFee,
-            requiredDocs:requiredDocs,
-            applicationFee:applicationFee,
-            duration:duration,
-            intakes:intakes,
-            entryRequirements:entryRequirements,
-            applicationDeadlines:applicationDeadlines,
+            email:email,
+            url:url,
+            comment:comment
         }
 
         const result = await collection.insertOne(insertedObject)
@@ -34,7 +45,7 @@ const createSubject = async( req: Request , res: Response) =>{
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
-                message: "Insertion failed!!!",
+                message: "Failed to comment!!!",
                 data: result,
             })
         }
@@ -42,7 +53,7 @@ const createSubject = async( req: Request , res: Response) =>{
         sendResponse(res,{
             statusCode: 200,
             success: true,
-            message: "Inserted successfully!!!",
+            message: "Commented successfully!!!",
             data: result,
         })
     } catch (err) {
@@ -57,21 +68,21 @@ const createSubject = async( req: Request , res: Response) =>{
 }
 
 
-const deleteSubject = async( req: Request , res: Response) =>{
+const deleteReview = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('subjects')
+        const collection = db.collection('review')
 
-        const id  = req.params.id
+        const email  = req.params.email
         
-        const query = { _id : new ObjectId(id) }
+        const query = { email : email }
         const exist = await collection.findOne(query)
 
         if(!exist){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
-                message: 'No data exist',
+                message: 'User not logged in or never commented!',
                 data: exist,
             })
         }
@@ -90,7 +101,7 @@ const deleteSubject = async( req: Request , res: Response) =>{
         sendResponse(res,{
             statusCode: 200,
             success: true,
-            message: "Successfully deleted!!!",
+            message: "You have deleted your comment!!!",
             data: result,
         })
     } catch (err) {
@@ -104,36 +115,30 @@ const deleteSubject = async( req: Request , res: Response) =>{
     }
 }
 
-
-const editSubject = async( req: Request , res: Response) =>{
+const editReview = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('subjects')
+        const collection = db.collection('review')
 
         const id = req.params.id
-        const { name, destination, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
+        const { name , email , url , comment} = req.body
 
         const query = { _id : new ObjectId(id) }
 
-        const subject = await collection.findOne(query)
-        if(!subject){
+        const userComment = await collection.findOne(query)
+        if(!userComment){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
-                message: "No university exist with the id!!!",
+                message: "User not logged in!!!",
             })
         }
         
         const field = {
-            name:name? name : subject?.name, 
-            destination:destination? destination : subject?.destination,
-            tuitionFee:tuitionFee? tuitionFee : subject?.tuitionFee, 
-            requiredDocs:requiredDocs? requiredDocs : subject?.requiredDocs, 
-            applicationFee:applicationFee? applicationFee : subject?.applicationFee, 
-            duration:duration? duration : subject?.duration, 
-            intakes:intakes? intakes : subject?.intakes, 
-            entryRequirements:entryRequirements? entryRequirements : subject?.entryRequirements, 
-            applicationDeadlines:applicationDeadlines? applicationDeadlines : subject?.applicationDeadlines, 
+            name: name? name : userComment.name,
+            email: email? email : userComment.email,
+            url: url? url : userComment.url,
+            comment: comment? comment : userComment.comment
         }
 
         const updateDoc = {
@@ -166,14 +171,12 @@ const editSubject = async( req: Request , res: Response) =>{
     }
 }
 
-const getAllSubject = async( req: Request , res: Response) =>{
+const getAllReview = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('subjects')
+        const collection = db.collection('review')
 
-        const courses = await collection.find({}, { 
-                projection: { courseContent: 0, studentData: 0 , courseSchedule: 0}
-            }).sort({"_id": -1}).toArray()
+        const review = await collection.find({}).sort({"_id": -1}).toArray()
         const countCourse     = await collection.countDocuments()
 
         const metaData = {
@@ -185,9 +188,9 @@ const getAllSubject = async( req: Request , res: Response) =>{
         sendResponse(res,{
             statusCode: 200,
             success: true,
-            message: 'Course retrieval successful!!!',
+            message: 'Review retrieval successful!!!',
             meta: metaData,
-            data: courses,
+            data: review,
         })
     } catch (err) {
         console.log(err)
@@ -200,16 +203,17 @@ const getAllSubject = async( req: Request , res: Response) =>{
     }
 }
 
-const getSingleSubject = async( req: Request , res: Response) =>{
+
+const getSingleReview = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('subjects')
+        const collection = db.collection('review')
 
         const id = req.params.id 
         const query = { _id : new ObjectId(id)}
-        const course = await collection.findOne(query,{projection: { courseContent: 0, studentData: 0 }})
+        const review = await collection.findOne(query)
 
-        if(!course){
+        if(!review){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
@@ -221,8 +225,8 @@ const getSingleSubject = async( req: Request , res: Response) =>{
         sendResponse(res,{
             statusCode: 200,
             success: false,
-            message: "Showing university details",
-            data: course,
+            message: "Your comment",
+            data: review,
         })
     } catch (err) {
         console.log(err)
@@ -237,10 +241,51 @@ const getSingleSubject = async( req: Request , res: Response) =>{
 
 
 
+
+const getReviewBypage = async( req: Request , res: Response) =>{
+    try {
+        const db = getDb()
+        const collection = db.collection('review')
+        const { page, item } = req.params;
+        const pageNumber = parseInt(page, 10) || 1;
+        const itemsPerPage = parseInt(item, 10) || 5;
+    
+        const totalReviews = await collection.countDocuments();
+        const reviews = await collection.find()
+          .skip((pageNumber - 1) * itemsPerPage)
+          .limit(itemsPerPage)
+          .sort({ createdAt: -1 });
+    
+
+        const meta = {
+            total: totalReviews,
+            page:pageNumber,
+            limit:Math.ceil(totalReviews / itemsPerPage),
+        }
+
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: 'Review retrieval successful!!!',
+            meta: meta,
+            data: reviews,
+        })
+    } catch (error) {
+        console.error("Error fetching universities:", error)
+        res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+            error,
+        })
+    }
+}
+
+
 module.exports = {
-    createSubject,
-    editSubject,
-    deleteSubject,
-    getAllSubject,
-    getSingleSubject
+    getReviewBypage,
+    getSingleReview,
+    getAllReview,
+    editReview,
+    deleteReview,
+    createReview
 }
