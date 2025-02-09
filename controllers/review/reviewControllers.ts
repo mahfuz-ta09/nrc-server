@@ -82,14 +82,14 @@ const deleteReview = async( req: Request , res: Response) =>{
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
-                message: 'User not logged in or never commented!',
+                message: 'You are not logged in or never commented!',
                 data: exist,
             })
         }
        
         const result = await collection.deleteOne(query)
-
-        if(!result.acknowledged){
+        if(result?.deletedCount===0){
+            console.log(result)
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
@@ -238,7 +238,6 @@ const getSingleReview = async( req: Request , res: Response) =>{
         })
     }
 }
-
 
 
 
