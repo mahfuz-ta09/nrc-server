@@ -247,12 +247,12 @@ const getReviewBypage = async( req: Request , res: Response) =>{
         const db = getDb()
         const collection = db.collection('review')
 
-        console.log(typeof(req.params.page))
-        console.log(req.params)
+        
         const { page, item } = req.params
         const pageNumber = parseInt(page, 10) || 1
         const itemsPerPage = parseInt(item, 10) || 3
-    
+
+
         const totalReviews = await collection.countDocuments();
         const reviews = await collection.find()
           .skip((pageNumber - 1) * itemsPerPage)
@@ -262,8 +262,9 @@ const getReviewBypage = async( req: Request , res: Response) =>{
 
         const meta = {
             total: totalReviews,
-            page:pageNumber,
-            limit:Math.ceil(totalReviews / itemsPerPage),
+            page: pageNumber,
+            limit: Math.ceil(totalReviews / itemsPerPage),
+            totalPages: Math.ceil(totalReviews / itemsPerPage)
         }
 
         sendResponse(res,{
