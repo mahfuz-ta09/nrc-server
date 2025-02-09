@@ -246,15 +246,18 @@ const getReviewBypage = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('review')
-        const { page, item } = req.params;
-        const pageNumber = parseInt(page, 10) || 1;
-        const itemsPerPage = parseInt(item, 10) || 5;
+
+        console.log(typeof(req.params.page))
+        console.log(req.params)
+        const { page, item } = req.params
+        const pageNumber = parseInt(page, 10) || 1
+        const itemsPerPage = parseInt(item, 10) || 3
     
         const totalReviews = await collection.countDocuments();
         const reviews = await collection.find()
           .skip((pageNumber - 1) * itemsPerPage)
           .limit(itemsPerPage)
-          .sort({ createdAt: -1 });
+          .sort({ createdAt: -1 }).toArray()
     
 
         const meta = {

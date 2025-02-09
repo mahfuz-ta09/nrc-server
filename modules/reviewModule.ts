@@ -18,7 +18,7 @@ router.patch('/update/:id',
 router.delete('/delete/:id', 
     deleteReview)
 
-router.get('/review/:page/:item', 
+router.get('/partial/:page/:item', 
     getReviewBypage)
 
 
