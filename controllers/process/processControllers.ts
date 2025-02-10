@@ -9,11 +9,25 @@ const createProceed = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('application')
-        const { name,mobile_number,emergency_number,email,dob,ssc_institution,ssc_group,ssc_result,hsc_institution,
+        const { name,mobile_number,emergency_number,email,role,dob,ssc_institution,ssc_group,ssc_result,hsc_institution,
             hsc_group,hsc_result,other_deg,other_institution,other_group,other_result,master_institution,master_group,
             master_result,en_proficiency,listening,reading,writing,speaking,exam_taken_time,prefered_country,referral,refused,country_name} = req.body
         
-
+        if(!email){
+            return sendResponse(res,{
+                statusCode: 500,
+                success: false,
+                message: "You must login to proceed"
+            })
+        }
+        
+        if(role==='admin' || role==='super_admin'){
+            return sendResponse(res,{
+                statusCode: 500,
+                success: false,
+                message: "Admin can't access."
+            })
+        }
 
         const query = { email:email }
         const exist = await collection.findOne(query)
@@ -62,6 +76,8 @@ const createProceed = async( req: Request , res: Response) =>{
             last_updated:"initial",
             data_added: format(new Date(), "MM/dd/yyyy"),
         }
+
+        console.log(insertedObject)
 
 
         const result = await collection.insertOne(insertedObject)

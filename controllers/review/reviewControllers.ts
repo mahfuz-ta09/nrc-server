@@ -15,7 +15,7 @@ const createReview = async( req: Request , res: Response) =>{
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
-                message: "You must log in to comment"
+                message: "You must login to comment"
             })
         }
 
