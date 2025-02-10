@@ -1,22 +1,22 @@
 const express = require('express')
 const router = express.Router()
-const { createProceed } = require('../controllers/process/processControllers')
+const { getAllData , createProceed , editProcessData , deleteProcessData , getSingleData } = require('../controllers/process/processControllers')
 
 // course editorials 
-// router.get('/all', 
-//     getAllReview)
+router.get('/all', 
+    getAllData)
 
-// router.get('/single/:id', 
-//     getSingleReview)
+router.get('/single/:id', 
+    getSingleData)
 
 router.post('/create',  
     createProceed)
 
-// router.patch('/update/:id',  
-//     editReview)
+router.patch('/update/:id',  
+    editProcessData)
 
-// router.delete('/delete/:email', 
-//     deleteReview)
+router.delete('/delete/:email', 
+    deleteProcessData)
 
 // router.get('/partial/:page/:item', 
 //     getReviewBypage)
