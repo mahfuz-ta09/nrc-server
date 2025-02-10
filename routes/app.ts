@@ -2,6 +2,7 @@ import { authModule } from "../modules/authModule"
 import { universityModules } from "../modules/universityModules"
 import { subjectModule } from "../modules/subjectModule"
 import { reviewModules } from "../modules/reviewModule"
+import { precessModule } from "../modules/processModule"
 
 
 
@@ -25,6 +26,10 @@ const allRoutes = [
     {
         path: '/review',
         route: reviewModules
+    },
+    {
+        path: '/process',
+        route: precessModule
     },
 ]
 
