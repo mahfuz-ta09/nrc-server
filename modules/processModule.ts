@@ -15,8 +15,9 @@ router.post('/create',
 router.patch('/update/:id',  
     editProcessData)
 
-router.delete('/delete/:email', 
+router.delete('/delete/:id', 
     deleteProcessData)
+
 
 // router.get('/partial/:page/:item', 
 //     getReviewBypage)

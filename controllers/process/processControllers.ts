@@ -11,7 +11,8 @@ const createProceed = async( req: Request , res: Response) =>{
         const collection = db.collection('application')
         const { name,mobile_number,emergency_number,email,role,dob,ssc_institution,ssc_group,ssc_result,hsc_institution,
             hsc_group,hsc_result,other_deg,other_institution,other_group,other_result,master_institution,master_group,
-            master_result,en_proficiency,listening,reading,writing,speaking,exam_taken_time,prefered_country,referral,refused,country_name} = req.body
+            master_result,en_proficiency,listening,reading,writing,speaking,exam_taken_time,prefered_country,referral,refused,
+            country_name,overall,ssc_year,hsc_year,Bachelor_year,master_year,other_year} = req.body
         
         if(!email){
             return sendResponse(res,{
@@ -48,6 +49,12 @@ const createProceed = async( req: Request , res: Response) =>{
             emergency_number:emergency_number,
             email:email,
             dob:dob,
+            overall:overall,
+            ssc_year:ssc_year,
+            hsc_year:hsc_year,
+            Bachelor_year:Bachelor_year,
+            master_year:master_year,
+            other_year:other_year,
             ssc_institution:ssc_institution,
             ssc_group:ssc_group,
             ssc_result:ssc_result,
@@ -111,16 +118,17 @@ const deleteProcessData = async( req: Request , res: Response) =>{
         const db = getDb()
         const collection = db.collection('application')
 
-        const email  = req.params.email
-        if(!email){
+        const id  = req.params.id
+        
+        if(!id){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
-                message: "Error finding email!!!"
+                message: "Error finding id!!!"
             })
         }
 
-        const query = { email : email }
+        const query = { _id : new ObjectId(id) }
         const exist = await collection.findOne(query)
 
         if(!exist){
@@ -168,7 +176,8 @@ const editProcessData = async( req: Request , res: Response) =>{
         const id = req.params.email
         const { name,mobile_number,emergency_number,email,role,condition,dob,ssc_institution,ssc_group,ssc_result,hsc_institution,
             hsc_group,hsc_result,other_deg,other_institution,other_group,other_result,master_institution,master_group,
-            master_result,en_proficiency,listening,reading,writing,speaking,exam_taken_time,prefered_country,referral,refused,country_name} = req.body
+            master_result,en_proficiency,listening,reading,writing,speaking,exam_taken_time,prefered_country,referral,
+            refused,country_name,overall,ssc_year,hsc_year,Bachelor_year,master_year,other_year} = req.body
         
 
         const query = { _id : new ObjectId(id) }
@@ -184,6 +193,12 @@ const editProcessData = async( req: Request , res: Response) =>{
         
         const insertedObject = {
             name:name ? name : data?.name,
+            overall:overall ? overall : data?.overall,
+            ssc_year:ssc_year ? ssc_year : data?.ssc_year,
+            hsc_year:hsc_year ? hsc_year : data?.hsc_year,
+            Bachelor_year:Bachelor_year ? Bachelor_year : data?.Bachelor_year,
+            master_year:master_year ? master_year : data?.master_year,
+            other_year:other_year ? other_year : data?.other_year,
             mobile_number:mobile_number ? mobile_number : data?.mobile_number,
             emergency_number:emergency_number ? emergency_number : data?.emergency_number,
             email:email ? email : data?.email,
@@ -251,7 +266,7 @@ const getAllData = async( req: Request , res: Response) =>{
         const db = getDb()
         const collection = db.collection('application')
 
-        const review = await collection.find({}).sort({"_id": -1}).toArray()
+        const data = await collection.find({}).sort({"_id": -1}).toArray()
         const countCourse     = await collection.countDocuments()
 
         const metaData = {
@@ -265,7 +280,7 @@ const getAllData = async( req: Request , res: Response) =>{
             success: true,
             message: 'Review retrieval successful!!!',
             meta: metaData,
-            data: review,
+            data: data,
         })
     } catch (err) {
         console.log(err)
