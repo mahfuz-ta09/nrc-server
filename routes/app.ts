@@ -3,6 +3,7 @@ import { universityModules } from "../modules/universityModules"
 import { subjectModule } from "../modules/subjectModule"
 import { reviewModules } from "../modules/reviewModule"
 import { precessModule } from "../modules/processModule"
+import { superAdminModule } from "../modules/superAdminModule"
 
 
 
@@ -30,6 +31,10 @@ const allRoutes = [
     {
         path: '/process',
         route: precessModule
+    },
+    {
+        path: '/super_admin',
+        route: superAdminModule
     },
 ]
 
