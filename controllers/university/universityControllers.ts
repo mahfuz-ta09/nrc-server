@@ -254,7 +254,8 @@ const getUniOriginName = async( req: Request , res: Response) =>{
             {
                 $group: {
                     _id: "$country",
-                    image: { $first: "$url" }
+                    image: { $first: "$url" },
+                    flag: { $first: "$flag" }
                 }
             },
             {
