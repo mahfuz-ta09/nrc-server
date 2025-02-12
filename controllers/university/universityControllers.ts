@@ -10,10 +10,10 @@ const createUniversity = async( req: Request , res: Response) =>{
         const db = getDb()
         const collection = db.collection('university')
 
-        const { name, url, country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
+        const { name, url , flag , country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
 
         
-        if(!name  || !country || !url || !ranking || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || !entryRequirements || !applicationDeadlines){
+        if(!name  || !country || !url || !flag || !ranking || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || !entryRequirements || !applicationDeadlines){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
@@ -25,6 +25,7 @@ const createUniversity = async( req: Request , res: Response) =>{
             name:name,
             country:country.toUpperCase(),
             url:url,
+            flag:flag,
             ranking:ranking,
             tuitionFee:tuitionFee,
             requiredDocs:requiredDocs,
@@ -117,7 +118,7 @@ const editUniversity = async( req: Request , res: Response) =>{
         const collection = db.collection('university')
 
         const id = req.params.id
-        const { name, url, country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
+        const { name, url , flag , country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
 
         const query = { _id : new ObjectId(id) }
 
@@ -134,6 +135,7 @@ const editUniversity = async( req: Request , res: Response) =>{
             name:name?name:university?.name,
             country:country?country.toUpperCase():university?.country,
             url:url?url:university?.url,
+            flag:flag?flag:university?.flag,
             ranking:ranking?ranking:university?.ranking,
             tuitionFee:tuitionFee?tuitionFee:university?.tuitionFee,
             requiredDocs:requiredDocs?requiredDocs:university?.requiredDocs,
@@ -259,7 +261,8 @@ const getUniOriginName = async( req: Request , res: Response) =>{
                 $project: {
                     _id: 1,
                     country: "$_id",
-                    image: 1
+                    image: 1,
+                    flag: 1,
                 }
             }
         ]).toArray()
