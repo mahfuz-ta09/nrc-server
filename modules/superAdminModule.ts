@@ -1,9 +1,11 @@
 const express = require('express')
 const router = express.Router()
-const { createAdmin } = require('../controllers/sAdmin/superAdminControllers')
+const { createAdmin , getAllAdmin , getAllUsers , updateAdminStatus } = require('../controllers/sAdmin/superAdminControllers')
 
 
-router.post('/signup',createAdmin)
-
+router.post('/create',createAdmin)
+router.get('/admin/all',getAllAdmin)
+router.get('/users/all',getAllUsers)
+router.patch('/update/:id/:status',updateAdminStatus)
 
 export const superAdminModule = router

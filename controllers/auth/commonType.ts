@@ -3,4 +3,10 @@ export type UserObject = {
     email:string
     password:string
     role:string
+    status:string
+    image:string
+    phone: number | null
+    country: string
+    dob: string
+    createdAt: string 
 }
