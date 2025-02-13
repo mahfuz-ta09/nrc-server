@@ -28,7 +28,15 @@ const createAgentRequest = async(req: Request, res: Response) => {
                 ,tax_id
                 ,criminal_record
                 ,background_check
-                ,referral } = req.body
+                ,referral, role } = req.body
+
+        if(role==='admin' || role==='super_admin'){
+            return sendResponse(res, {
+                statusCode: 500,
+                success: false,
+                message: 'admin/super admin not allowed!!!',
+            })
+        }
 
         if(    !name
             || !email
@@ -137,59 +145,70 @@ const getAllAgents = async(req: Request , res: Response) =>{
 }
 
 
-const updateAgentStatus = async(req: Request , res: Response) =>{
+const updateAgentStatus = async (req: Request, res: Response) => {
     try {
         const db = getDb()
         const collection = db.collection('agents')
+        const userCollection = db.collection('users')
 
-        const id = req.params.id
-        const status = req.params.status
-        
-        
-        if(!id){
-            return sendResponse(res,{
+        const id = req.params.id;
+        const status = req.params.status;
+
+        if (!id) {
+            return sendResponse(res, {
                 statusCode: 500,
                 success: false,
                 message: 'Id required',
-            })
+            });
         }
 
-        const query = { _id : new ObjectId(id) }
-        const exist = await collection.findOne(query)
+        const query = { _id: new ObjectId(id) };
+        const exist = await collection.findOne(query);
 
-        if(!exist){
-            return sendResponse(res,{
+        if (!exist) {
+            return sendResponse(res, {
                 statusCode: 500,
                 success: false,
-                message: 'No data found!'
-            })
+                message: 'No data found!',
+            });
         }
 
-        const options = { upsert: true }
-        const doc = {
-            $set: {
-                status:status,
-            }
+
+        const agentUpdate = await collection.updateOne(query, { $set: { status } })
+
+        if (agentUpdate.modifiedCount === 1) {
+            const userQuery = { email: exist.email }
+            await userCollection.updateOne(
+                userQuery,
+                {
+                    $set: {
+                        role: 'agent',
+                        phone: exist.mobile_number,
+                        country: exist.nationality,
+                        status: 'accepted'
+                    }
+                },
+                { upsert: false }
+            )
         }
 
-        const agent = await collection.updateOne(query, doc, options)
-
-        sendResponse(res,{
+        sendResponse(res, {
             statusCode: 200,
             success: true,
-            message: 'successful!!!',
-            data: agent,
-        })
+            message: 'Successful!',
+            data: agentUpdate,
+        });
     } catch (err) {
-        console.log(err)
-        sendResponse(res,{
+        console.log(err);
+        sendResponse(res, {
             statusCode: 500,
             success: false,
-            message: 'Internel server error',
-            data: err
-        })
+            message: 'Internal server error',
+            data: err,
+        });
     }
-}
+};
+
 
 
 module.exports = {
