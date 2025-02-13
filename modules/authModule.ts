@@ -7,7 +7,7 @@ const upload = multer()
 
 router.post('/login', upload.none(),logIn)
 router.post('/signup',upload.none(),signUp)
-router.get('/logout',upload.none(),logOut)
+router.post('/logout',upload.none(),logOut)
 
 
 export const authModule = router

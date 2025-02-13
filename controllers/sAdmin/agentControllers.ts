@@ -38,21 +38,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
             })
         }
 
-        if(    !name
-            || !email
-            || !mobile_number
-            || !dob
-            || !address
-            || !nationality
-            || !agency_name
-            || !agency_address
-            || !experience
-            || !services
-            || !license_number
-            || !license_document
-            || !tax_id
-            || !criminal_record
-            || !background_check){
+        if(    !name||!email||!mobile_number||!dob||!address||!nationality||!agency_name||!agency_address||!experience||!services||!license_number||!license_document||!tax_id||!criminal_record||!background_check){
             return sendResponse(res, {
                 statusCode: 500,
                 success: false,
@@ -207,7 +193,7 @@ const updateAgentStatus = async (req: Request, res: Response) => {
             data: err,
         });
     }
-};
+}
 
 
 
