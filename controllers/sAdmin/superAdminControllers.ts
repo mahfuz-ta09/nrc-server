@@ -149,7 +149,7 @@ const updateAdminStatus = async(req: Request , res: Response) =>{
 
         const query = { _id : new ObjectId(id) }
         const exist = await collection.findOne(query)
-
+        console.log(exist)
         if(!exist){
             return sendResponse(res,{
                 statusCode: 500,
@@ -161,12 +161,12 @@ const updateAdminStatus = async(req: Request , res: Response) =>{
         const options = { upsert: true }
         const doc = {
             $set: {
-                state:status,
+                status:status,
             }
         }
 
         const admins = await collection.updateOne(query, doc, options)
-
+        console.log(admins)
         sendResponse(res,{
             statusCode: 200,
             success: true,

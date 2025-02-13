@@ -66,7 +66,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
         const userObject = {
             ...req.body,
             role:"agent",
-            state:"initial",
+            status:"initial",
             createdAt:format(new Date(), "MM/dd/yyyy"),
         }
 
@@ -90,7 +90,7 @@ const getAllAgentReq = async(req: Request , res: Response) =>{
         const collection = db.collection('agents')
         
         const agents = await collection.find(
-            { role: "agent", state: "initial" }).sort({ _id: -1 }).toArray()
+            { role: "agent", status: "initial" }).sort({ _id: -1 }).toArray()
         
         sendResponse(res,{
             statusCode: 200,
@@ -116,7 +116,7 @@ const getAllAgents = async(req: Request , res: Response) =>{
         const collection = db.collection('agents')
         
         const users = await collection.find(
-            { state : "accepted" }
+            { status : "accepted" }
         ).sort({ _id: -1 }).toArray()
 
         sendResponse(res,{
@@ -168,7 +168,7 @@ const updateAgentStatus = async(req: Request , res: Response) =>{
         const options = { upsert: true }
         const doc = {
             $set: {
-                state:status,
+                status:status,
             }
         }
 
