@@ -166,7 +166,7 @@ const updateAdminStatus = async(req: Request , res: Response) =>{
         }
 
         const admins = await collection.updateOne(query, doc, options)
-        console.log(admins)
+        
         sendResponse(res,{
             statusCode: 200,
             success: true,

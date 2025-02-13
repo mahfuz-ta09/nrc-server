@@ -83,6 +83,7 @@ const logIn = async(req: Request, res: Response) => {
         res.cookie(
             "refreshToken",
             refreshToken,{
+                domain: "https://nrc-london.vercel.app",
                 maxAge: 7 * 24 * 60 * 60 * 1000 ,
                 httpOnly: true,
                 signed: true,
@@ -182,6 +183,7 @@ const signUp = async(req: Request, res: Response) => {
         res.cookie(
             "refreshToken",
             refreshToken,{
+                domain: "https://nrc-london.vercel.app",
                 maxAge: 7 * 24 * 60 * 60 * 1000 ,
                 httpOnly: true,
                 signed: true,
@@ -211,6 +213,7 @@ const logOut = async(req: Request, res: Response) => {
     try{
         res.clearCookie(
             "refreshToken",{ 
+                domain: "https://nrc-london.vercel.app",
                 httpOnly: true,
                 signed: true,
                 path: "/", 
