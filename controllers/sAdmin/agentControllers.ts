@@ -5,62 +5,69 @@ import { format } from "date-fns"
 const bcrypt = require("bcrypt")
 const { getDb } = require('../../config/connectDB')
 
-
-const emaiReg = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-
-const createAdmin = async(req: Request, res: Response) => {
+const createAgentRequest = async(req: Request, res: Response) => {
     try{
         const db = await getDb()
-        const collection = db.collection('users')
-        const { email , password } = req.body
-        
-        if(!email || !password ){
-            return sendResponse( res, {
+        const collection = db.collection('agents')
+        const { name
+                ,email
+                ,mobile_number
+                ,alternate_mobile
+                ,dob
+                ,address
+                ,nationality
+                ,passport_number
+                ,agency_name
+                ,agency_address
+                ,agency_website
+                ,experience
+                ,services
+                ,partner_universities
+                ,license_number
+                ,license_document
+                ,tax_id
+                ,criminal_record
+                ,background_check
+                ,referral } = req.body
+
+        if(    !name
+            || !email
+            || !mobile_number
+            || !dob
+            || !address
+            || !nationality
+            || !agency_name
+            || !agency_address
+            || !experience
+            || !services
+            || !license_number
+            || !license_document
+            || !tax_id
+            || !criminal_record
+            || !background_check){
+            return sendResponse(res, {
                 statusCode: 500,
                 success: false,
-                message: 'No empty field allowed!!!',
+                message: 'Not Logged in/ some required field missing!!!',
             })
         }
 
-        if(emaiReg.test(email) === false){
-            return sendResponse( res, {
-                statusCode: 500,
-                success: false,
-                message: 'Invalid email format!!!',
-            })
-        }
-
-        if(password.length < 6){
-            return sendResponse( res, {
-                statusCode: 500,
-                success: false,
-                message: 'Password is to short!!!',
-            })
-        }
         const query = { email: email }
         
-        const user = await collection.findOne(query)
-        if(user){
+        const application = await collection.findOne(query)
+        if(application){
             return sendResponse( res, {
                 statusCode: 500,
                 success: false,
-                message: 'User already exist!!!, Please login.',
+                message: 'Already applied, delete or edit from your profile',
             })
         }
 
-        const hashedPassword = await bcrypt.hash(password,10)
         const userObject = {
-            email:email,
-            password:hashedPassword,
-            role: 'admin',
-            status: 'active',
-            image:'',
-            name:'',
-            phone:'',
-            dob:'',
-            country:'',
+            ...req.body,
+            role:"agent",
+            state:"initial",
             createdAt:format(new Date(), "MM/dd/yyyy"),
-            requiredPassChange:  true
         }
 
         const result = await collection.insertOne(userObject)
@@ -68,7 +75,7 @@ const createAdmin = async(req: Request, res: Response) => {
         sendResponse(res,{
             statusCode: 200,
             success: true,
-            message: "New Admin created!!!",
+            message: "Request successful!!!",
             data: result
         })
     }catch(err){
@@ -77,19 +84,19 @@ const createAdmin = async(req: Request, res: Response) => {
 }
 
 
-const getAllAdmin = async(req: Request , res: Response) =>{
+const getAllAgentReq = async(req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('users')
-
-        const admins = await collection.find({role: "admin"},{
-            projection: {password:0}
-        }).sort({"_id": -1}).toArray()
+        const collection = db.collection('agents')
+        
+        const agents = await collection.find(
+            { role: "agent", state: "initial" }).sort({ _id: -1 }).toArray()
+        
         sendResponse(res,{
             statusCode: 200,
             success: true,
             message: 'successful!!!',
-            data: admins,
+            data: agents,
         })
     } catch (err) {
         console.log(err)
@@ -103,14 +110,13 @@ const getAllAdmin = async(req: Request , res: Response) =>{
 }
 
 
-const getAllUsers = async(req: Request , res: Response) =>{
+const getAllAgents = async(req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('users')
+        const collection = db.collection('agents')
         
         const users = await collection.find(
-            { role: { $nin: ["admin", "super_admin","agent"]}},
-            { projection: { password: 0 } }
+            { state : "accepted" }
         ).sort({ _id: -1 }).toArray()
 
         sendResponse(res,{
@@ -131,13 +137,14 @@ const getAllUsers = async(req: Request , res: Response) =>{
 }
 
 
-const updateAdminStatus = async(req: Request , res: Response) =>{
+const updateAgentStatus = async(req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('users')
+        const collection = db.collection('agents')
 
         const id = req.params.id
         const status = req.params.status
+        
         
         if(!id){
             return sendResponse(res,{
@@ -165,13 +172,13 @@ const updateAdminStatus = async(req: Request , res: Response) =>{
             }
         }
 
-        const admins = await collection.updateOne(query, doc, options)
+        const agent = await collection.updateOne(query, doc, options)
 
         sendResponse(res,{
             statusCode: 200,
             success: true,
             message: 'successful!!!',
-            data: admins,
+            data: agent,
         })
     } catch (err) {
         console.log(err)
@@ -186,8 +193,8 @@ const updateAdminStatus = async(req: Request , res: Response) =>{
 
 
 module.exports = {
-    createAdmin,
-    getAllAdmin,
-    getAllUsers,
-    updateAdminStatus
+    createAgentRequest,
+    getAllAgentReq,
+    getAllAgents,
+    updateAgentStatus
 }

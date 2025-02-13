@@ -4,6 +4,7 @@ import { subjectModule } from "../modules/subjectModule"
 import { reviewModules } from "../modules/reviewModule"
 import { precessModule } from "../modules/processModule"
 import { superAdminModule } from "../modules/superAdminModule"
+import { agentModule } from "../modules/agentModule"
 
 
 
@@ -35,6 +36,10 @@ const allRoutes = [
     {
         path: '/super_admin',
         route: superAdminModule
+    },
+    {
+        path: '/agent',
+        route: agentModule
     },
 ]
 
