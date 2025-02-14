@@ -1,25 +1,19 @@
 const express = require('express')
 const router = express.Router()
-const { getAllReview , getSingleReview , createReview , editReview , deleteReview , getReviewBypage } = require('../controllers/review/reviewControllers')
+const { getAllReview  , createReview , deleteReview , getReviewByPage } = require('../controllers/review/reviewControllers')
 
-// course editorials 
+
 router.get('/all', 
     getAllReview)
 
-router.get('/single/:id', 
-    getSingleReview)
-
-router.post('/create',  
+router.patch('/create',  
     createReview)
 
-router.patch('/update/:id',  
-    editReview)
-
-router.delete('/delete/:email', 
+router.patch('/delete/:id', 
     deleteReview)
 
 router.get('/partial/:page/:item', 
-    getReviewBypage)
+    getReviewByPage)
 
 
 export const reviewModules = router

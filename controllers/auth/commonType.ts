@@ -9,4 +9,5 @@ export type UserObject = {
     country: string
     dob: string
     createdAt: string 
+    review: string
 }

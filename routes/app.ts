@@ -5,6 +5,7 @@ import { reviewModules } from "../modules/reviewModule"
 import { precessModule } from "../modules/processModule"
 import { superAdminModule } from "../modules/superAdminModule"
 import { agentModule } from "../modules/agentModule"
+import { profileModule } from "../modules/profileModule"
 
 
 
@@ -40,6 +41,10 @@ const allRoutes = [
     {
         path: '/agent',
         route: agentModule
+    },
+    {
+        path: '/profile',
+        route: profileModule
     },
 ]
 

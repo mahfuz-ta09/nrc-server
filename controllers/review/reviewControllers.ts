@@ -7,10 +7,12 @@ const { getDb } = require('../../config/connectDB')
 const createReview = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('review')
-        const { name, url , comment , email} = req.body
+        const collection = db.collection('users')
 
+        const { comment , email} = req.body
         const query = { email : email }
+        
+
         if( !comment || !email ){
             return sendResponse(res,{
                 statusCode: 500,
@@ -19,9 +21,7 @@ const createReview = async( req: Request , res: Response) =>{
             })
         }
 
-
-        const exist = await collection.findOne(query)
-
+        const exist = await collection.findOne({ review: { $exists: true, $ne: "" } })
         if(exist){
             return sendResponse(res,{
                 statusCode: 500,
@@ -33,13 +33,11 @@ const createReview = async( req: Request , res: Response) =>{
        
 
         const insertedObject = {
-            name:name,
-            email:email,
-            url:url,
-            comment:comment
+            $set:{
+                review:comment
+            }
         }
-
-        const result = await collection.insertOne(insertedObject)
+        const result = await collection.updateOne(query,insertedObject)
 
         if(!result.acknowledged){
             return sendResponse(res,{
@@ -71,24 +69,26 @@ const createReview = async( req: Request , res: Response) =>{
 const deleteReview = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
-        const collection = db.collection('review')
+        const collection = db.collection('users')
 
-        const email  = req.params.email
+        const id  = req.params.id
+        const query = { _id : new ObjectId(id) }
         
-        const query = { email : email }
         const exist = await collection.findOne(query)
-
-        if(!exist){
+        if(!exist?.review){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
                 message: 'You are not logged in or never commented!',
-                data: exist,
             })
         }
-       
-        const result = await collection.deleteOne(query)
-        if(result?.deletedCount===0){
+
+        const insertedObject = {
+            $unset: { review: "" }
+        }
+        
+        const result = await collection.updateOne(query,insertedObject)
+        if(result?.modifiedCount === 0){
             console.log(result)
             return sendResponse(res,{
                 statusCode: 500,
@@ -115,166 +115,114 @@ const deleteReview = async( req: Request , res: Response) =>{
     }
 }
 
-const editReview = async( req: Request , res: Response) =>{
+const getAllReview = async (req: Request, res: Response) => {
     try {
-        const db = getDb()
-        const collection = db.collection('review')
+        const db = getDb();
+        const collection = db.collection("users")
 
-        const id = req.params.id
-        const { name , email , url , comment} = req.body
+        const review = await collection.find({ review: { $exists: true } })
+            .sort({ "_id": -1 })
+            .toArray();
 
-        const query = { _id : new ObjectId(id) }
-
-        const userComment = await collection.findOne(query)
-        if(!userComment){
-            return sendResponse(res,{
-                statusCode: 500,
-                success: false,
-                message: "User not logged in!!!",
-            })
-        }
-        
-        const field = {
-            name: name? name : userComment.name,
-            email: email? email : userComment.email,
-            url: url? url : userComment.url,
-            comment: comment? comment : userComment.comment
-        }
-
-        const updateDoc = {
-            $set: field,
-        }
-
-        const result = await collection.updateOne(query, updateDoc)
-
-        if(!result.acknowledged){
-            return sendResponse(res,{
-                statusCode: 500,
-                success: false,
-                message: "Failed to update!!!",
-            })
-        }
-        sendResponse(res,{
-            statusCode: 200,
-            success: true,
-            message: "Successfully updated!!!",
-            data: result,
-        })
-    } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 500,
-            success: false,
-            message: 'Internel server error',
-            data: err
-        })
-    }
-}
-
-const getAllReview = async( req: Request , res: Response) =>{
-    try {
-        const db = getDb()
-        const collection = db.collection('review')
-
-        const review = await collection.find({}).sort({"_id": -1}).toArray()
-        const countCourse     = await collection.countDocuments()
+        const countReviews = await collection.countDocuments({ review: { $exists: true } })
 
         const metaData = {
-            page: 0,
-            limit: 0,
-            total: countCourse,
+            total: countReviews,
         }
 
-        sendResponse(res,{
+        sendResponse(res, {
             statusCode: 200,
             success: true,
-            message: 'Review retrieval successful!!!',
+            message: "Review retrieval successful!!!",
             meta: metaData,
             data: review,
         })
-    } catch (err) {
-        console.log(err)
-        sendResponse(res,{
+    }catch(err){
+        console.error(err);
+        sendResponse(res, {
             statusCode: 500,
             success: false,
-            message: 'Internel server error',
-            data: err
+            message: "Internal server error",
+            data: err,
         })
     }
-}
+};
 
 
-const getSingleReview = async( req: Request , res: Response) =>{
+// const getSingleReview = async( req: Request , res: Response) =>{
+//     try {
+//         const db = getDb()
+//         const collection = db.collection('users')
+
+//         const id = req.params.id 
+//         const query = { _id : new ObjectId(id)}
+//         const review = await collection.findOne(query)
+
+//         if(!review){
+//             return sendResponse(res,{
+//                 statusCode: 500,
+//                 success: false,
+//                 message: "No data exist!!!",
+//               }
+//           )
+//         }
+
+//         sendResponse(res,{
+//             statusCode: 200,
+//             success: false,
+//             message: "Your comment",
+//             data: review,
+//         })
+//     } catch (err) {
+//         console.log(err)
+//         sendResponse(res,{
+//             statusCode: 500,
+//             success: false,
+//             message: 'Internel server error',
+//             data: err
+//         })
+//     }
+// }
+
+
+
+const getReviewByPage = async (req: Request, res: Response) => {
     try {
-        const db = getDb()
-        const collection = db.collection('review')
-
-        const id = req.params.id 
-        const query = { _id : new ObjectId(id)}
-        const review = await collection.findOne(query)
-
-        if(!review){
-            return sendResponse(res,{
-                statusCode: 500,
-                success: false,
-                message: "No data exist!!!",
-              }
-          )
-        }
-
-        sendResponse(res,{
-            statusCode: 200,
-            success: false,
-            message: "Your comment",
-            data: review,
-        })
-    } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 500,
-            success: false,
-            message: 'Internel server error',
-            data: err
-        })
-    }
-}
+        const db = getDb();
+        const collection = db.collection("users");
 
 
-
-const getReviewBypage = async( req: Request , res: Response) =>{
-    try {
-        const db = getDb()
-        const collection = db.collection('review')
-
-        
-        const { page, item } = req.params
-        const pageNumber = parseInt(page, 10) || 1
-        const itemsPerPage = parseInt(item, 10) || 3
+        const pageNumber = parseInt(req.query.page as string, 10) || 1
+        const itemsPerPage = parseInt(req.query.item as string, 10) || 3
 
 
-        const totalReviews = await collection.countDocuments();
-        const reviews = await collection.find()
-          .skip((pageNumber - 1) * itemsPerPage)
-          .limit(itemsPerPage)
-          .sort({ createdAt: -1 }).toArray()
-    
+        const filter = { review: { $exists: true } }
+        const totalReviews = await collection.countDocuments(filter)
+
+        const reviews = await collection
+            .find(filter, { projection: { image: 1, email:1 ,name:1 ,review: 1, createdAt: 1 } })
+            .sort({ createdAt: -1 })
+            .skip((pageNumber - 1) * itemsPerPage)
+            .limit(itemsPerPage)
+            .toArray()
+            
 
         const meta = {
             total: totalReviews,
             page: pageNumber,
-            limit: Math.ceil(totalReviews / itemsPerPage),
-            totalPages: Math.ceil(totalReviews / itemsPerPage)
-        }
+            limit: itemsPerPage,
+            totalPages: Math.ceil(totalReviews / itemsPerPage),
+        };
 
-        sendResponse(res,{
+        sendResponse(res, {
             statusCode: 200,
             success: true,
-            message: 'Review retrieval successful!!!',
+            message: "Review retrieval successful!",
             meta: meta,
             data: reviews,
-        })
+        });
     } catch (error) {
-        console.error("Error fetching universities:", error)
+        console.error("Error fetching reviews:", error);
         res.status(500).json({
             success: false,
             message: "Internal Server Error",
@@ -284,11 +232,10 @@ const getReviewBypage = async( req: Request , res: Response) =>{
 }
 
 
+
 module.exports = {
-    getReviewBypage,
-    getSingleReview,
+    getReviewByPage,
     getAllReview,
-    editReview,
     deleteReview,
     createReview
 }

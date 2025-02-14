@@ -156,6 +156,7 @@ const signUp = async(req: Request, res: Response) => {
             phone: null,
             dob:'',
             country:'',
+            review: '',
             createdAt:format(new Date(), "MM/dd/yyyy")
         }
 
