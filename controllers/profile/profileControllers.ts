@@ -55,7 +55,7 @@ const updateSingleUser = async(req: Request, res: Response) => {
             })
         }
 
-        if(password.length < 6){
+        if(password && password?.length < 6){
             return sendResponse( res, {
                 statusCode: 500,
                 success: false,
