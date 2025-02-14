@@ -48,13 +48,20 @@ const updateSingleUser = async(req: Request, res: Response) => {
         const user = await collection.findOne(query)
         if(!user){
             return sendResponse( res, {
-                statusCode: 200,
-                success: true,
+                statusCode: 500,
+                success: false,
                 message: 'User not found!!!',
                 data: user,
             })
         }
 
+        if(password.length < 6){
+            return sendResponse( res, {
+                statusCode: 500,
+                success: false,
+                message: 'Password is to short!!!',
+            })
+        }
         const hashedPassword = await bcrypt.hash(password,10)
         const doc = {
             $set: {
