@@ -127,7 +127,7 @@ const getAllReview = async (req: Request, res: Response) => {
 
         const review = await collection.find({ review: { $exists: true } })
             .sort({ "_id": -1 })
-            .toArray();
+            .toArray()
 
         const countReviews = await collection.countDocuments({ review: { $exists: true } })
 
@@ -194,12 +194,11 @@ const getAllReview = async (req: Request, res: Response) => {
 const getReviewByPage = async (req: Request, res: Response) => {
     try {
         const db = getDb();
-        const collection = db.collection("users");
+        const collection = db.collection("users")
+        const { page, item } = req.params
 
-
-        const pageNumber = parseInt(req.query.page as string, 10) || 1
-        const itemsPerPage = parseInt(req.query.item as string, 10) || 3
-
+        const pageNumber = parseInt(page as string, 10) || 1
+        const itemsPerPage = parseInt(item as string, 10) || 3
 
         const filter = { review: { $exists: true } }
         const totalReviews = await collection.countDocuments(filter)
@@ -212,6 +211,7 @@ const getReviewByPage = async (req: Request, res: Response) => {
             .toArray()
             
 
+            
         const meta = {
             total: totalReviews,
             page: pageNumber,
