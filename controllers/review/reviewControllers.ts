@@ -1,69 +1,74 @@
-import { Request , Response } from "express"
+import e, { Request , Response } from "express"
 import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
 const { getDb } = require('../../config/connectDB')
 
-
-const createReview = async( req: Request , res: Response) =>{
+const createReview = async (req: Request, res: Response) => {
     try {
         const db = getDb()
-        const collection = db.collection('users')
+        const collection = db.collection("users")
 
-        const { comment , email} = req.body
-        const query = { email : email }
-        
+        const { comment, email } = req.body
+        if (!comment || !email) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "You must login to comment.",
+            });
+        }
 
-        if( !comment || !email ){
-            return sendResponse(res,{
+
+        const user = await collection.findOne({ email })
+
+
+        if (!user) {
+            return sendResponse(res, {
+                statusCode: 404,
+                success: false,
+                message: "User not found.",
+            });
+        }
+
+
+        if (user.review && user.review.trim() !== "") {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "You have already commented. Update or delete to comment again.",
+            });
+        }
+
+
+        const result = await collection.updateOne(
+            { email },
+            { $set: { review: comment } }
+        );
+
+        if (!result.modifiedCount) {
+            return sendResponse(res, {
                 statusCode: 500,
                 success: false,
-                message: "You must login to comment"
-            })
+                message: "Failed to add comment.",
+            });
         }
 
-        const exist = await collection.findOne({ review: { $exists: true, $ne: "" } })
-        if(exist){
-            return sendResponse(res,{
-                statusCode: 500,
-                success: false,
-                message: 'You have already commented. Update or delete to comment again',
-                data: exist,
-            })
-        }
-       
-
-        const insertedObject = {
-            $set:{
-                review:comment
-            }
-        }
-        const result = await collection.updateOne(query,insertedObject)
-
-        if(!result.acknowledged){
-            return sendResponse(res,{
-                statusCode: 500,
-                success: false,
-                message: "Failed to comment!!!",
-                data: result,
-            })
-        }
-
-        sendResponse(res,{
+        sendResponse(res, {
             statusCode: 200,
             success: true,
-            message: "Commented successfully!!!",
+            message: "Comment added successfully!",
             data: result,
-        })
+        });
     } catch (err) {
-        console.log(err)
-        sendResponse(res,{
+        console.error(err);
+        sendResponse(res, {
             statusCode: 500,
             success: false,
-            message: 'Internel server error',
-            data: err
-        })
+            message: "Internal server error.",
+            data: err,
+        });
     }
-}
+};
+
 
 
 const deleteReview = async( req: Request , res: Response) =>{

@@ -62,16 +62,17 @@ const updateSingleUser = async(req: Request, res: Response) => {
                 message: 'Password is to short!!!',
             })
         }
+
         const hashedPassword = await bcrypt.hash(password,10)
         const doc = {
             $set: {
-                name: name? name : user.name,
-                image: image? image : user.image,
-                phone: phone? phone : user.phone,
-                country: country? country : user.country,
-                review: review? review : user.review,
-                dob: dob? dob : user.dob,
-                password: password? hashedPassword : user.password,
+                name: name || user.name,
+                image: (typeof image === "string" && image) ? image : user.image,
+                phone: phone || user.phone,
+                country: country || user.country,
+                review: review || user.review,
+                dob: dob || user.dob,
+                password: password ? hashedPassword : user.password,
             }
         }
 
