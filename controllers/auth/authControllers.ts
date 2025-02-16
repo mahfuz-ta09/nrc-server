@@ -44,7 +44,7 @@ const logIn = async(req: Request, res: Response) => {
         
         const user = await collection.findOne(query)
 
-        if(!user){
+        if(!user || user.status !== 'active'){
             return sendResponse( res, {
                 statusCode: 500,
                 success: false,
@@ -71,26 +71,24 @@ const logIn = async(req: Request, res: Response) => {
         const accessToken = jwt.sign(
             userData, 
             process.env.ACCESSTOKEN, { 
-            expiresIn: "1d" 
+            expiresIn: "5m" 
         })
 
         const refreshToken = jwt.sign(
             userData, 
-            process.env.REFRESHTOKEN,{ 
-            expiresIn: "1d" 
+            process.env.PARSERSECRET,{ 
+            expiresIn: "30d" 
         })
 
-        res.cookie(
-            "refreshToken",
-            refreshToken,{
-                maxAge: 7 * 24 * 60 * 60 * 1000 ,
-                httpOnly: true,
-                signed: true,
-                path: "/", 
-                secure: true, 
-                sameSite: "none"
-            }
-        )
+        res.cookie("refreshToken", 
+            refreshToken, {
+            httpOnly: true,
+            signed: true,
+            path: "/",
+            secure: true,
+            sameSite: "none",
+        })
+
         sendResponse(res,{
             statusCode: 200,
             success: true,
@@ -176,21 +174,19 @@ const signUp = async(req: Request, res: Response) => {
 
         const refreshToken = jwt.sign(
             userData, 
-            process.env.REFRESHTOKEN,{ 
+            process.env.PARSERSECRET,{ 
             expiresIn: "30d" 
         })
 
-        res.cookie(
-            "refreshToken",
-            refreshToken,{
-                maxAge: 7 * 24 * 60 * 60 * 1000 ,
-                httpOnly: true,
-                signed: true,
-                path: "/", 
-                secure: true, 
-                sameSite: "none"
-            }
-        )
+        res.cookie("refreshToken", 
+            refreshToken, {
+            httpOnly: true,
+            signed: true,
+            secure: true,
+            path: "/",
+            sameSite: "none",
+        })
+        
 
         sendResponse(res,{
             statusCode: 200,
@@ -229,8 +225,55 @@ const logOut = async(req: Request, res: Response) => {
     }
 }
 
+
+const getAccessToken = async(req: Request, res: Response) => {
+    try{
+        const token = req.signedCookies?.refreshToken
+        if(token){
+            const db = await getDb()
+            const collection = db.collection('users')
+            const decoded = await jwt.verify(token, process.env.PARSERSECRET)
+            
+            
+            const query = { email: decoded?.email }
+            const user = await collection.findOne(query)
+
+            if(user.status === "active" && user.role === decoded.role){
+                const userData = {
+                    id: user._id,
+                    email: user.email,
+                    role: user.role,
+                    status:user.status
+                }
+        
+                const accessToken = jwt.sign(
+                    userData, 
+                    process.env.ACCESSTOKEN, { 
+                    expiresIn: "5m" 
+                })
+                sendResponse(res,{
+                    statusCode: 200,
+                    success: true,
+                    message: "Logout successful!!!",
+                    meta: {
+                        accessToken:accessToken,
+                    }
+                })
+
+            }
+        }
+        
+    }catch(err){
+        console.log(err)
+    }
+}
+
+
+
+
 module.exports  = {
     logIn,
     signUp,
-    logOut
+    logOut,
+    getAccessToken
 } 

@@ -3,10 +3,18 @@ import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
 const { getDb } = require('../../config/connectDB')
 
-const createSubject = async( req: Request , res: Response) =>{
+
+interface AuthenticatedRequest extends Request {
+    user?: any
+}
+
+const createSubject = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('subjects')
+        const usersCollection = db.collection('users')
+
+
         const {name,destination,tuitionFee,requiredDocs,applicationFee,duration,intakes,entryRequirements,applicationDeadlines } = req.body
         if(!name || !destination || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || !entryRequirements || !applicationDeadlines){
             return sendResponse(res,{
@@ -15,6 +23,19 @@ const createSubject = async( req: Request , res: Response) =>{
                 message: "No empty field allowed"
             })
         }
+    
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
 
         const insertedObject = {
             name:name,
@@ -57,15 +78,28 @@ const createSubject = async( req: Request , res: Response) =>{
 }
 
 
-const deleteSubject = async( req: Request , res: Response) =>{
+const deleteSubject = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('subjects')
+        const usersCollection = db.collection('users')
 
         const id  = req.params.id
         
         const query = { _id : new ObjectId(id) }
         const exist = await collection.findOne(query)
+            
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
 
         if(!exist){
             return sendResponse(res,{
@@ -105,10 +139,11 @@ const deleteSubject = async( req: Request , res: Response) =>{
 }
 
 
-const editSubject = async( req: Request , res: Response) =>{
+const editSubject = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('subjects')
+        const usersCollection = db.collection('users')
 
         const id = req.params.id
         const { name, destination, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
@@ -123,9 +158,24 @@ const editSubject = async( req: Request , res: Response) =>{
                 message: "No university exist with the id!!!",
             })
         }
+         
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
         
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
+
         const field = {
             name:name? name : subject?.name, 
+            ranking:ranking? ranking : subject?.ranking, 
             destination:destination? destination : subject?.destination,
             tuitionFee:tuitionFee? tuitionFee : subject?.tuitionFee, 
             requiredDocs:requiredDocs? requiredDocs : subject?.requiredDocs, 

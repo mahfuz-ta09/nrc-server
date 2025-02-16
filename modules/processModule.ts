@@ -1,21 +1,27 @@
 const express = require('express')
 const router = express.Router()
 const { getAllData , createProceed , editProcessData , deleteProcessData , getSingleData } = require('../controllers/process/processControllers')
+const verifyUser = require('../middleware/verifyUser')
 
 // course editorials 
-router.get('/all', 
+router.get('/all',
+    verifyUser,
     getAllData)
 
-router.get('/single/:id', 
+router.get('/single/:id',
+    verifyUser,
     getSingleData)
 
 router.post('/create',  
+    verifyUser,
     createProceed)
 
-router.patch('/update/:id',  
+router.patch('/update/:id',
+    verifyUser, 
     editProcessData)
 
 router.delete('/delete/:id', 
+    verifyUser,
     deleteProcessData)
 
 

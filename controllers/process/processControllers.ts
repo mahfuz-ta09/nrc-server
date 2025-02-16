@@ -5,10 +5,15 @@ import { format } from "date-fns"
 const { getDb } = require('../../config/connectDB')
 
 
-const createProceed = async( req: Request , res: Response) =>{
+interface AuthenticatedRequest extends Request {
+    user?: any
+}
+
+const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('application')
+        const usersCollection = db.collection('users')
         const { name,mobile_number,emergency_number,email,role,dob,ssc_institution,ssc_group,ssc_result,hsc_institution,
             hsc_group,hsc_result,other_deg,other_institution,other_group,other_result,master_institution,master_group,
             master_result,en_proficiency,listening,reading,writing,speaking,exam_taken_time,prefered_country,referral,refused,
@@ -30,8 +35,26 @@ const createProceed = async( req: Request , res: Response) =>{
             })
         }
 
+
+
         const query = { email:email }
         const exist = await collection.findOne(query)
+
+
+        const tEmail = req.user?.email || null;
+        const tRole = req.user?.role || null;
+        const tStatus = req.user?.status || null;
+
+        const user = await usersCollection.findOne({ email: tEmail , status: tStatus })
+
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
 
         if(exist){
             return sendResponse(res,{
@@ -113,10 +136,11 @@ const createProceed = async( req: Request , res: Response) =>{
 }
 
 
-const deleteProcessData = async( req: Request , res: Response) =>{
+const deleteProcessData = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('application')
+        const usersCollection = db.collection('users')
 
         const id  = req.params.id
         
@@ -130,6 +154,20 @@ const deleteProcessData = async( req: Request , res: Response) =>{
 
         const query = { _id : new ObjectId(id) }
         const exist = await collection.findOne(query)
+
+        
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
 
         if(!exist){
             return sendResponse(res,{
@@ -168,11 +206,11 @@ const deleteProcessData = async( req: Request , res: Response) =>{
     }
 }
 
-const editProcessData = async( req: Request , res: Response) =>{
+const editProcessData = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('application')
-
+        const usersCollection = db.collection('users')
         const id = req.params.email
         const { name,mobile_number,emergency_number,email,role,condition,dob,ssc_institution,ssc_group,ssc_result,hsc_institution,
             hsc_group,hsc_result,other_deg,other_institution,other_group,other_result,master_institution,master_group,
@@ -190,7 +228,21 @@ const editProcessData = async( req: Request , res: Response) =>{
                 message: "User not logged in!!!",
             })
         }
+    
         
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
         const insertedObject = {
             name:name ? name : data?.name,
             overall:overall ? overall : data?.overall,
@@ -261,13 +313,28 @@ const editProcessData = async( req: Request , res: Response) =>{
     }
 }
 
-const getAllData = async( req: Request , res: Response) =>{
+const getAllData = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('application')
+        const usersCollection = db.collection('users')
 
         const data = await collection.find({}).sort({"_id": -1}).toArray()
         const countCourse     = await collection.countDocuments()
+        
+
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
 
         const metaData = {
             page: 0,
@@ -294,10 +361,11 @@ const getAllData = async( req: Request , res: Response) =>{
 }
 
 
-const getSingleData = async( req: Request , res: Response) =>{
+const getSingleData = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('application')
+        const usersCollection = db.collection('users')
 
         const email = req.params.email 
         const query = { email : email }
@@ -310,6 +378,19 @@ const getSingleData = async( req: Request , res: Response) =>{
                 message: "No data exist!!!",
               }
           )
+        }
+        
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
         }
 
         sendResponse(res,{

@@ -5,6 +5,11 @@ import { format } from "date-fns"
 const bcrypt = require("bcrypt")
 const { getDb } = require('../../config/connectDB')
 
+
+interface AuthenticatedRequest extends Request {
+    user?: any
+}
+
 const createAgentRequest = async(req: Request, res: Response) => {
     try{
         const db = await getDb()
@@ -78,10 +83,25 @@ const createAgentRequest = async(req: Request, res: Response) => {
 }
 
 
-const getAllAgentReq = async(req: Request , res: Response) =>{
+const getAllAgentReq = async(req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('agents')
+        const usersCollection = db.collection('users')
+
+                        
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
         
         const agents = await collection.find(
             { role: "agent", status: "initial" }).sort({ _id: -1 }).toArray()
@@ -104,11 +124,25 @@ const getAllAgentReq = async(req: Request , res: Response) =>{
 }
 
 
-const getAllAgents = async(req: Request , res: Response) =>{
+const getAllAgents = async(req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('agents')
+        const usersCollection = db.collection('users')
         
+
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
         const users = await collection.find(
             { status : "accepted" }
         ).sort({ _id: -1 }).toArray()
@@ -131,7 +165,7 @@ const getAllAgents = async(req: Request , res: Response) =>{
 }
 
 
-const updateAgentStatus = async (req: Request, res: Response) => {
+const updateAgentStatus = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const db = getDb()
         const collection = db.collection('agents')
@@ -145,9 +179,21 @@ const updateAgentStatus = async (req: Request, res: Response) => {
                 statusCode: 500,
                 success: false,
                 message: 'Id required',
-            });
+            })
         }
 
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await userCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+        
         const query = { _id: new ObjectId(id) };
         const exist = await collection.findOne(query);
 

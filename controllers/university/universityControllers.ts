@@ -5,14 +5,29 @@ import { fileUploadHelper } from "../../helper/fileUploadHealper"
 const { getDb } = require('../../config/connectDB')
 
 
-const createUniversity = async( req: Request , res: Response) =>{
+interface AuthenticatedRequest extends Request {
+    user?: any
+}
+
+const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
+        const usersCollection = db.collection('users')
 
-        const { name, url , flag , country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user1){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
 
-        
+        const { name, url , flag , country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body        
         if(!name  || !country || !url || !flag || !ranking || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || !entryRequirements || !applicationDeadlines){
             return sendResponse(res,{
                 statusCode: 500,
@@ -65,10 +80,24 @@ const createUniversity = async( req: Request , res: Response) =>{
 }
 
 
-const deleteUniversity = async( req: Request , res: Response) =>{
+const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
+        const usersCollection = db.collection('users')
+
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user1){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
 
         const id  = req.params.id
         
@@ -112,10 +141,24 @@ const deleteUniversity = async( req: Request , res: Response) =>{
     }
 }
 
-const editUniversity = async( req: Request , res: Response) =>{
+const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
+        const usersCollection = db.collection('users')
+
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user1){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
 
         const id = req.params.id
         const { name, url , flag , country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
@@ -176,10 +219,23 @@ const editUniversity = async( req: Request , res: Response) =>{
     }
 }
 
-const getAllUniversity = async( req: Request , res: Response) =>{
+const getAllUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
+        const usersCollection = db.collection('users')
+
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user1){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
 
         const university = await collection.find({}).sort({"_id": -1}).toArray()
         const countCourse     = await collection.countDocuments()

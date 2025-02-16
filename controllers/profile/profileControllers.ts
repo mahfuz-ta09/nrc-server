@@ -6,16 +6,20 @@ import { ObjectId } from "mongodb"
 const { getDb } = require('../../config/connectDB')
 
 
-const getSingleUserById = async(req: Request, res: Response) => {
+interface AuthenticatedRequest extends Request {
+    user?: any
+}
+
+const getSingleUserById = async(req: AuthenticatedRequest, res: Response) => {
     try{
         const db = await getDb()
         const collection = db.collection('users')
 
         const id  = req.params.id
         const query = { _id: new ObjectId(id) }
-        
+    
         const user = await collection.findOne(query, { projection: { password: 0 } })
-
+        
         if(!user){
             return sendResponse( res, {
                 statusCode: 500,
@@ -24,6 +28,17 @@ const getSingleUserById = async(req: Request, res: Response) => {
                 data: user,
             })
         }
+
+        const { email , role , status } = req?.user
+
+        if(user.email !== email || role !== user?.role || status !== 'active'){
+            return sendResponse( res, {
+                statusCode: 400,
+                success: false,
+                message: 'Forbidden access!!!',
+            })
+        }
+
 
         sendResponse(res,{
             statusCode: 200,
@@ -36,7 +51,7 @@ const getSingleUserById = async(req: Request, res: Response) => {
     }
 }
 
-const updateSingleUser = async(req: Request, res: Response) => {
+const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
     try{
         const db = await getDb()
         const collection = db.collection('users')
@@ -60,6 +75,16 @@ const updateSingleUser = async(req: Request, res: Response) => {
                 statusCode: 500,
                 success: false,
                 message: 'Password is to short!!!',
+            })
+        }
+
+        const { email , role , status } = req?.user
+
+        if(user.email !== email || role !== user?.role || status !== 'active'){
+            return sendResponse( res, {
+                statusCode: 400,
+                success: false,
+                message: 'Forbidden access!!!',
             })
         }
 

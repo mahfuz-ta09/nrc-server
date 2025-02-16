@@ -11,3 +11,9 @@ export type UserObject = {
     createdAt: string 
     review: string
 }
+
+
+
+export interface AuthenticatedRequest extends Request {
+    user?: any
+}

@@ -3,6 +3,13 @@ import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
 const { getDb } = require('../../config/connectDB')
 
+
+interface AuthenticatedRequest extends Request {
+    user?: any
+}
+
+
+
 const createReview = async (req: Request, res: Response) => {
     try {
         const db = getDb()
@@ -67,18 +74,17 @@ const createReview = async (req: Request, res: Response) => {
             data: err,
         });
     }
-};
+}
 
 
-
-const deleteReview = async( req: Request , res: Response) =>{
+const deleteReview = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('users')
 
         const id  = req.params.id
-        const query = { _id : new ObjectId(id) }
-        
+        const query = { _id : new ObjectId(id)}
+
         const exist = await collection.findOne(query)
         if(!exist?.review){
             return sendResponse(res,{
@@ -88,13 +94,27 @@ const deleteReview = async( req: Request , res: Response) =>{
             })
         }
 
+                
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await collection.findOne({ email: tEmail , status: tStatus , role: tRole })
+
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
+
         const insertedObject = {
             $unset: { review: "" }
         }
         
         const result = await collection.updateOne(query,insertedObject)
         if(result?.modifiedCount === 0){
-            console.log(result)
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
@@ -125,7 +145,7 @@ const getAllReview = async (req: Request, res: Response) => {
         const db = getDb();
         const collection = db.collection("users")
 
-        const review = await collection.find({ review: { $exists: true } })
+        const review = await collection.find({ review: { $exists: true , $ne: ""} })
             .sort({ "_id": -1 })
             .toArray()
 

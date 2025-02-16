@@ -6,9 +6,13 @@ const bcrypt = require("bcrypt")
 const { getDb } = require('../../config/connectDB')
 
 
+interface AuthenticatedRequest extends Request {
+    user?: any
+}
+
 const emaiReg = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 
-const createAdmin = async(req: Request, res: Response) => {
+const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
     try{
         const db = await getDb()
         const collection = db.collection('users')
@@ -37,6 +41,19 @@ const createAdmin = async(req: Request, res: Response) => {
                 message: 'Password is to short!!!',
             })
         }
+        
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user1 = await collection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user1){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+        
         const query = { email: email }
         
         const user = await collection.findOne(query)
@@ -78,11 +95,23 @@ const createAdmin = async(req: Request, res: Response) => {
 }
 
 
-const getAllAdmin = async(req: Request , res: Response) =>{
+const getAllAdmin = async(req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('users')
 
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await collection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+        
         const admins = await collection.find({role: "admin"},{
             projection: {password:0}
         }).sort({"_id": -1}).toArray()
@@ -104,10 +133,22 @@ const getAllAdmin = async(req: Request , res: Response) =>{
 }
 
 
-const getAllUsers = async(req: Request , res: Response) =>{
+const getAllUsers = async(req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('users')
+        
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await collection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
         
         const users = await collection.find(
             { role: { $nin: ["admin", "super_admin","agent"]}},
@@ -132,7 +173,7 @@ const getAllUsers = async(req: Request , res: Response) =>{
 }
 
 
-const updateAdminStatus = async(req: Request , res: Response) =>{
+const updateAdminStatus = async(req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('users')
@@ -148,6 +189,18 @@ const updateAdminStatus = async(req: Request , res: Response) =>{
             })
         }
 
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user = await collection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+        
         const query = { _id : new ObjectId(id) }
         const exist = await collection.findOne(query)
         console.log(exist)
