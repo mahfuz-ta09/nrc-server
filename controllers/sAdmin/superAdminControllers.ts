@@ -59,6 +59,7 @@ const createAdmin = async(req: Request, res: Response) => {
             phone:'',
             dob:'',
             country:'',
+            review:'',
             createdAt:format(new Date(), "MM/dd/yyyy"),
             requiredPassChange:  true
         }
