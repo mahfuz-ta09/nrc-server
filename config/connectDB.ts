@@ -1,10 +1,11 @@
 const { MongoClient } = require("mongodb")
 
 const uri = process.env.DATABASE_URI
-// mongodb+srv://mahfuzta09:nlSs7NBLOvnUpMw6@cluster0.8goaquo.mongodb.net/?retryWrites=true&w=majority&appName=cluster0
+
 let db:any
 let client:any
 let isConnected = false
+console.log(uri)
 
 
 const connectDb = async() =>{
@@ -14,7 +15,7 @@ const connectDb = async() =>{
     }
 
     try{
-        client = new MongoClient('mongodb+srv://kamrul12:FOqCFgcYwa1mIVLd@cluster0.qwtac.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+        client = new MongoClient(uri)
         await client.connect()
         db = client.db()
         isConnected = true
