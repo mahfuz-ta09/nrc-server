@@ -5,10 +5,10 @@ const uri = process.env.DATABASE_URI
 let db:any
 let client:any
 let isConnected = false
-console.log(uri)
-if (!uri) {
-    throw new Error("MongoDB URI is not defined! Check Railway environment variables.")
-}
+console.log(process.env.DATABASE_URI)
+// if (!uri) {
+//     throw new Error("MongoDB URI is not defined! Check Railway environment variables.")
+// }
 
 
 const connectDb = async() =>{
