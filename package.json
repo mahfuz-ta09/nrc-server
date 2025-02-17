@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "server.ts",
   "scripts": {
-    "build": "tsc",
-    "start": "ts-node -r dotenv/config server.ts",
-    "dev": "nodemon --exec npx ts-node server.ts"
+  "build": "tsc",
+  "start": "node -r dotenv/config dist/server.js", 
+  "dev": "nodemon --exec npx ts-node -r dotenv/config server.ts"
   },
   "author": "",
   "license": "ISC",
