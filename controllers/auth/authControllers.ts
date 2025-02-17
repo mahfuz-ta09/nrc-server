@@ -76,7 +76,7 @@ const logIn = async(req: Request, res: Response) => {
 
         const refreshToken = jwt.sign(
             userData, 
-            process.env.PARSERSECRET,{ 
+            process.env.REFRESHTOKEN,{ 
             expiresIn: "30d" 
         })
 
@@ -174,7 +174,7 @@ const signUp = async(req: Request, res: Response) => {
 
         const refreshToken = jwt.sign(
             userData, 
-            process.env.PARSERSECRET,{ 
+            process.env.REFRESHTOKEN,{ 
             expiresIn: "30d" 
         })
 
@@ -232,7 +232,7 @@ const getAccessToken = async(req: Request, res: Response) => {
         if(token){
             const db = await getDb()
             const collection = db.collection('users')
-            const decoded = await jwt.verify(token, process.env.PARSERSECRET)
+            const decoded = await jwt.verify(token, process.env.REFRESHTOKEN)
             
             
             const query = { email: decoded?.email }

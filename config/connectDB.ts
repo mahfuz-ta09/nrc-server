@@ -1,11 +1,11 @@
 const { MongoClient } = require("mongodb")
 
 const uri = process.env.DATABASE_URI
-
+// mongodb+srv://mahfuzta09:nlSs7NBLOvnUpMw6@cluster0.8goaquo.mongodb.net/?retryWrites=true&w=majority&appName=cluster0
 let db:any
 let client:any
 let isConnected = false
-console.log(process.env.DATABASE_URI)
+
 // if (!uri) {
 //     throw new Error("MongoDB URI is not defined! Check Railway environment variables.")
 // }
