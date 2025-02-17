@@ -5,10 +5,6 @@ const uri = process.env.DATABASE_URI
 let db:any
 let client:any
 let isConnected = false
-console.log(uri)
-// if (!uri) {
-//     throw new Error("MongoDB URI is not defined! Check Railway environment variables.")
-// }
 
 
 const connectDb = async() =>{
@@ -18,7 +14,7 @@ const connectDb = async() =>{
     }
 
     try{
-        client = new MongoClient(uri)
+        client = new MongoClient('mongodb+srv://kamrul12:FOqCFgcYwa1mIVLd@cluster0.qwtac.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
         await client.connect()
         db = client.db()
         isConnected = true
