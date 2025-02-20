@@ -239,7 +239,7 @@ const successResponse = async(req: Request, res: Response) => {
         }
         const query = { email : email }
         const user = await collection.findOne(query)
-        console.log(user)
+        
         if(!user){
             return sendResponse(res,{
                 statusCode: 500,
