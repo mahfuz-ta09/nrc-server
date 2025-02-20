@@ -5,7 +5,6 @@ const uri = process.env.DATABASE_URI
 let db:any
 let client:any
 let isConnected = false
-console.log(uri)
 
 
 const connectDb = async() =>{

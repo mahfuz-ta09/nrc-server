@@ -49,7 +49,7 @@ const createReview = async (req: Request, res: Response) => {
         const result = await collection.updateOne(
             { email },
             { $set: { review: comment } }
-        );
+        )
 
         if (!result.modifiedCount) {
             return sendResponse(res, {

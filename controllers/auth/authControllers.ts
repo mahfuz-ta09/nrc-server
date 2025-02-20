@@ -2,6 +2,8 @@ import { Request , Response } from "express"
 import { UserObject } from "./commonType"
 import sendResponse from "../../helper/sendResponse"
 import { format } from "date-fns"
+import path from "path"
+import sendEmail from "../../helper/sendEmail"
 const { getDb } = require('../../config/connectDB')
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
@@ -121,7 +123,7 @@ const signUp = async(req: Request, res: Response) => {
             return sendResponse( res, {
                 statusCode: 500,
                 success: false,
-                message: 'Invalid email format!!!',
+                message: "Invalid email format"
             })
         }
 
@@ -132,14 +134,39 @@ const signUp = async(req: Request, res: Response) => {
                 message: 'Password is to short!!!',
             })
         }
-        const query = { email: email }
         
+        
+        const query = { email: email }
         const user = await collection.findOne(query)
+
+        const randomToken = Math.floor(100000 + Math.random() * 900000).toString()
+
+        const sendVerificationEmail = async (userEmail: string, code: string) => {
+            const subject = "Your Verification Code"
+            const htmlContent = `
+                <h2>Email Verification</h2>
+                <p>Your 6-digit verification code is: <strong>${code}</strong></p>
+                <p>Enter this code on the website to verify your email.</p>
+            `
+        
+            return await sendEmail(userEmail, subject, htmlContent)
+        }
+
+        sendVerificationEmail(email,randomToken)
         if(user){
+            await collection.updateOne(query,{ 
+                $set: {
+                     status: randomToken
+                }}
+            )
+
             return sendResponse( res, {
-                statusCode: 500,
-                success: false,
-                message: 'User already exist!!!, Please login.',
+                statusCode: 200,
+                success: true,
+                data:{
+                    id:user._id
+                },
+                message: 'Check email for verification code',
             })
         }
 
@@ -148,7 +175,7 @@ const signUp = async(req: Request, res: Response) => {
             email:email,
             password:hashedPassword,
             role: '',
-            status:'active',
+            status: randomToken,
             image:'',
             name:name,
             phone: null,
@@ -159,44 +186,15 @@ const signUp = async(req: Request, res: Response) => {
         }
 
         const result = await collection.insertOne(userObject)
-        const userData = {
-            id: result.insertedId,
-            email: email,
-            role: '',
-            status:'active',
-        }
-
-        const accessToken = jwt.sign(
-            userData, 
-            process.env.ACCESSTOKEN, { 
-            expiresIn: "5m" 
-        })
-
-        const refreshToken = jwt.sign(
-            userData, 
-            process.env.REFRESHTOKEN,{ 
-            expiresIn: "30d" 
-        })
-
-        res.cookie("refreshToken", 
-            refreshToken, {
-            httpOnly: true,
-            signed: true,
-            secure: true,
-            path: "/",
-            sameSite: "none",
-        })
-        
-
-        sendResponse(res,{
+        sendResponse( res, {
             statusCode: 200,
             success: true,
-            message: "Signup successful!!!",
-            data: result,
-            meta: {
-                accessToken:accessToken,
-            },
+            message: 'Check email for verification code',
+            data:{
+                id:result._id
+            }
         })
+
     }catch(err){
         console.log(err)
     }
@@ -225,6 +223,88 @@ const logOut = async(req: Request, res: Response) => {
     }
 }
 
+const successResponse = async(req: Request, res: Response) => {
+    try{
+        const db = await getDb()
+        const collection = db.collection('users')
+        
+        const { email , id , code } = req.body
+
+        if(!email  || !code || !id){
+            return sendResponse(res,{
+                statusCode: 500,
+                success: false,
+                message: 'Email or id missing',
+            })
+        }
+        const query = { email : email }
+        const user = await collection.findOne(query)
+        console.log(user)
+        if(!user){
+            return sendResponse(res,{
+                statusCode: 500,
+                success: false,
+                message: 'No user found, try again',
+            })
+        }
+
+        if(user.status === code){
+            const updateField = {
+                $set:{
+                    status:'active'
+                }
+            }
+
+            const verified = await collection.updateOne(query,updateField)
+            console.log(verified)
+
+            const userData = {
+                id: user._id,
+                email: email,
+                role: '',
+                status:'active',
+            }
+
+            const accessToken = jwt.sign(
+                userData, 
+                process.env.ACCESSTOKEN, { 
+                expiresIn: "5m" 
+            })
+
+            const refreshToken = jwt.sign(
+                userData, 
+                process.env.REFRESHTOKEN,{ 
+                expiresIn: "30d" 
+            })
+
+            res.cookie("refreshToken", 
+                refreshToken, {
+                httpOnly: true,
+                signed: true,
+                secure: true,
+                path: "/",
+                sameSite: "none",
+            })
+
+            sendResponse(res,{
+                statusCode: 200,
+                success: true,
+                message: 'Account created!!',
+                meta:{
+                    accessToken: accessToken
+                }
+            })
+        }else{
+            return sendResponse(res,{
+                statusCode: 500,
+                success: false,
+                message: 'Failed to verify, try again',
+            })
+        }
+    }catch(err){
+        console.log(err)
+    }
+}
 
 const getAccessToken = async(req: Request, res: Response) => {
     try{
@@ -275,5 +355,6 @@ module.exports  = {
     logIn,
     signUp,
     logOut,
-    getAccessToken
+    getAccessToken,
+    successResponse
 } 

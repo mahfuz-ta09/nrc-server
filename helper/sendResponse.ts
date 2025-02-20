@@ -1,5 +1,6 @@
 import { Response } from 'express'
 
+
 type IApiReponse<T> = {
   statusCode: number
   success: boolean
