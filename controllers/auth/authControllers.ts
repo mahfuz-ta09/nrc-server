@@ -135,7 +135,7 @@ const signUp = async(req: Request, res: Response) => {
             })
         }
         
-        
+
         const query = { email: email }
         const user = await collection.findOne(query)
 
