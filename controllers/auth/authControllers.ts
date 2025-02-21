@@ -256,7 +256,6 @@ const successResponse = async(req: Request, res: Response) => {
             }
 
             const verified = await collection.updateOne(query,updateField)
-            console.log(verified)
 
             const userData = {
                 id: user._id,
