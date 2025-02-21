@@ -300,13 +300,12 @@ const getSingleUniversity = async( req: Request , res: Response) =>{
     }
 }
 
-
-const getUniOriginName = async( req: Request , res: Response) =>{
+const getUniOriginName = async (req: Request, res: Response) => {
     try {
-        const db = getDb()
-        const collection = db.collection('university')
+        const db = getDb();
+        const collection = db.collection('university');
 
-        const country = await await collection.aggregate([
+        const country = await collection.aggregate([
             {
                 $group: {
                     _id: "$country",
@@ -323,23 +322,26 @@ const getUniOriginName = async( req: Request , res: Response) =>{
                 }
             }
         ]).toArray()
-        const total = await collection.countDocuments()
 
-        sendResponse(res,{
+
+        const uniqueCountryCount = await collection.distinct("country")
+        const totalUniqueCountries = uniqueCountryCount.length
+
+        sendResponse(res, {
             statusCode: 200,
             success: true,
             message: 'Course retrieval successful!!!',
             data: country,
-            meta:{
-                total: total
+            meta: {
+                total: totalUniqueCountries
             }
-        })
+        });
     } catch (err) {
         console.log(err)
-        sendResponse(res,{
+        sendResponse(res, {
             statusCode: 500,
             success: false,
-            message: 'Internel server error',
+            message: 'Internal server error',
             data: err
         })
     }

@@ -212,7 +212,6 @@ const signUp = async(req: Request, res: Response) => {
 }
 
 
-
 const logOut = async(req: Request, res: Response) => {
     try{
         res.clearCookie(
