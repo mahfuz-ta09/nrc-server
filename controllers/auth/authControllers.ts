@@ -139,6 +139,14 @@ const signUp = async(req: Request, res: Response) => {
         const query = { email: email }
         const user = await collection.findOne(query)
 
+        if(user.status==='active' || user.status==='inactive' || user.status==='banned'){
+            return sendResponse( res, {
+                statusCode: 500,
+                success: false,
+                message: 'Error signing in!!!',
+            })
+        }
+
         const randomToken = Math.floor(100000 + Math.random() * 900000).toString()
 
         const sendVerificationEmail = async (userEmail: string, code: string) => {
