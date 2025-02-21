@@ -4,7 +4,13 @@ const allowedOrigins = [
 ]
 
 const corsOption = {    
-    origin: 'https://nrc-london.vercel.app',
+    origin: (origin: string | undefined, callback: any) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, origin);
+        } else {
+            callback(new Error("Not Allowed by CORS"));
+        }
+    },
     credentials: true,
     methods: 'GET,POST,PUT,DELETE,OPTIONS,PATCH',
     allowedHeaders: ["Content-Type", "Authorization","authorization"],

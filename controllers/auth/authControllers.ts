@@ -109,6 +109,7 @@ const signUp = async(req: Request, res: Response) => {
         const db = await getDb()
         const collection = db.collection('users')
         const { name , email , password } = req.body
+        
 
         if(!email || !password || !name){
             return sendResponse( res, {
@@ -139,7 +140,8 @@ const signUp = async(req: Request, res: Response) => {
         const query = { email: email }
         const user = await collection.findOne(query)
 
-        if(user.status==='active' || user.status==='inactive' || user.status==='banned'){
+        
+        if(user?.status=='active' || user?.status=='inactive' || user?.status=='banned'){
             return sendResponse( res, {
                 statusCode: 500,
                 success: false,
@@ -159,7 +161,7 @@ const signUp = async(req: Request, res: Response) => {
         
             return await sendEmail(userEmail, subject, htmlContent)
         }
-
+        
         sendVerificationEmail(email,randomToken)
         if(user){
             await collection.updateOne(query,{ 
@@ -172,7 +174,7 @@ const signUp = async(req: Request, res: Response) => {
                 statusCode: 200,
                 success: true,
                 data:{
-                    id:user._id
+                    id:user?._id
                 },
                 message: 'Check email for verification code',
             })
@@ -194,12 +196,13 @@ const signUp = async(req: Request, res: Response) => {
         }
 
         const result = await collection.insertOne(userObject)
+        
         sendResponse( res, {
             statusCode: 200,
             success: true,
             message: 'Check email for verification code',
             data:{
-                id:result._id
+                id:result?.insertedId
             }
         })
 
