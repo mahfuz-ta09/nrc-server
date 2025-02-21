@@ -299,7 +299,7 @@ const successResponse = async(req: Request, res: Response) => {
             sendResponse(res,{
                 statusCode: 200,
                 success: true,
-                message: 'Account created!!',
+                message: 'Signup successfully!!',
                 meta:{
                     accessToken: accessToken
                 }
