@@ -19,7 +19,7 @@ const sendEmail = async (to: string, subject: string, htmlContent: string) => {
         }
 
         const emailRes = await transporter.sendMail(mailOptions)
-        console.log(emailRes)
+        
         return emailRes
     } catch (error) {
         console.error("Error sending email: ", error)
