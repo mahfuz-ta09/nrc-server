@@ -142,18 +142,19 @@ const deleteReview = async( req: AuthenticatedRequest , res: Response) =>{
 
 const getAllReview = async (req: Request, res: Response) => {
     try {
-        const db = getDb();
+        const db = getDb()
         const collection = db.collection("users")
 
-        const review = await collection.find({ review: { $exists: true , $ne: " "} })
+        // Find users with non-empty review fields
+        const review = await collection.find({ review: { $exists: true, $ne: "" } })
             .sort({ "_id": -1 })
             .toArray()
 
-        const countReviews = await collection.countDocuments({ review: { $exists: true } })
+        const countReviews = await collection.countDocuments({ review: { $exists: true, $ne: "" } })
 
         const metaData = {
             total: countReviews,
-        }
+        };
 
         sendResponse(res, {
             statusCode: 200,
@@ -161,17 +162,18 @@ const getAllReview = async (req: Request, res: Response) => {
             message: "Review retrieval successful!!!",
             meta: metaData,
             data: review,
-        })
-    }catch(err){
+        });
+    } catch (err) {
         console.error(err);
         sendResponse(res, {
             statusCode: 500,
             success: false,
             message: "Internal server error",
             data: err,
-        })
+        });
     }
 };
+
 
 
 // const getSingleReview = async( req: Request , res: Response) =>{
