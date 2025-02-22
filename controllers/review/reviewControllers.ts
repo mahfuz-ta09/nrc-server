@@ -140,17 +140,29 @@ const deleteReview = async( req: AuthenticatedRequest , res: Response) =>{
     }
 }
 
+
 const getAllReview = async (req: Request, res: Response) => {
     try {
-        const db = getDb()
-        const collection = db.collection("users")
+        const db = getDb();
+        const collection = db.collection("users");
 
-        // Find users with non-empty review fields
-        const review = await collection.find({ review: { $exists: true, $ne: "" } })
-            .sort({ "_id": -1 })
-            .toArray()
+        const review = await collection.find({ 
+            $and: [
+                { review: { $exists: true } }, 
+                { review: { $ne: "" } }, 
+                { review: { $ne: null } }
+            ] 
+        })
+        .sort({ "_id": -1 })
+        .toArray();
 
-        const countReviews = await collection.countDocuments({ review: { $exists: true, $ne: "" } })
+        const countReviews = await collection.countDocuments({ 
+            $and: [
+                { review: { $exists: true } }, 
+                { review: { $ne: "" } }, 
+                { review: { $ne: null } }
+            ] 
+        });
 
         const metaData = {
             total: countReviews,
@@ -173,6 +185,7 @@ const getAllReview = async (req: Request, res: Response) => {
         });
     }
 };
+
 
 
 
@@ -222,7 +235,15 @@ const getReviewByPage = async (req: Request, res: Response) => {
         const pageNumber = parseInt(page as string, 10) || 1
         const itemsPerPage = parseInt(item as string, 10) || 3
 
-        const filter = { review: { $exists: true } }
+        const filter = { 
+            $and: [
+                { review: { $exists: true } }, 
+                { review: { $ne: "" } }, 
+                { review: { $ne: null } }
+            ] 
+        }
+
+
         const totalReviews = await collection.countDocuments(filter)
 
         const reviews = await collection
