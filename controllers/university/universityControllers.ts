@@ -27,14 +27,16 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
             })
         }
 
+
         const { name, url , flag , country, tuitionFee, requardQualification, initialDepossit , englishTest} = req.body        
-        if(!name  || !country || !url || !flag || !tuitionFee || !requardQualification || !initialDepossit || englishTest){
+        if(!name  || !country || !tuitionFee || !requardQualification || !initialDepossit || !englishTest){
+                    console.log("first:", user1,req.body)
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
                 message: "No empty field allowed"
             })
-        }
+        }      
 
         const insertedObject = {
             name:name,
@@ -169,7 +171,7 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
                 message: "No university exist with the id!!!",
             })
         }
-
+        console.log(req.body)
         const field = {
             name:name?name:university?.name,
             country:country?country.toUpperCase():university?.country,
@@ -178,8 +180,8 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
             tuitionFee:tuitionFee?tuitionFee:university?.tuitionFee,
             requardQualification:requardQualification?requardQualification:university?.requardQualification,
             initialDepossit:initialDepossit?initialDepossit:university?.initialDepossit,
-            englishTest:englishTest?englishTest:englishTest?.englishTest,
-            SCHOLARSHIP:SCHOLARSHIP?SCHOLARSHIP:SCHOLARSHIP?.SCHOLARSHIP,
+            englishTest:englishTest?englishTest:university?.englishTest,
+            SCHOLARSHIP:SCHOLARSHIP?SCHOLARSHIP:university?.SCHOLARSHIP,
         }
 
         const updateDoc = {

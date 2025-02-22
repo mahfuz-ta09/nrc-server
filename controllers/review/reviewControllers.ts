@@ -145,7 +145,7 @@ const getAllReview = async (req: Request, res: Response) => {
         const db = getDb();
         const collection = db.collection("users")
 
-        const review = await collection.find({ review: { $exists: true , $ne: ""} })
+        const review = await collection.find({ review: { $exists: true , $ne: " "} })
             .sort({ "_id": -1 })
             .toArray()
 
