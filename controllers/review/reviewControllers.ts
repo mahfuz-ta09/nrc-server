@@ -144,7 +144,7 @@ const deleteReview = async( req: AuthenticatedRequest , res: Response) =>{
 const getAllReview = async (req: Request, res: Response) => {
     try {
         const db = getDb();
-        const collection = db.collection("users");
+        const collection = db.collection("users")
 
         const review = await collection.find({ 
             $and: [

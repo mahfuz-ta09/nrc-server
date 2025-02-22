@@ -358,8 +358,6 @@ const getAccessToken = async(req: Request, res: Response) => {
 }
 
 
-
-
 module.exports  = {
     logIn,
     signUp,

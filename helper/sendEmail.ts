@@ -9,7 +9,7 @@ const sendEmail = async (to: string, subject: string, htmlContent: string) => {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
             },
-        });
+        })
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
