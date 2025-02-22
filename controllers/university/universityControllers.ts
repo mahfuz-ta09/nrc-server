@@ -27,8 +27,8 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
             })
         }
 
-        const { name, url , flag , country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body        
-        if(!name  || !country || !url || !flag || !ranking || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || !entryRequirements || !applicationDeadlines){
+        const { name, url , flag , country, tuitionFee, requardQualification, initialDepossit , englishTest} = req.body        
+        if(!name  || !country || !url || !flag || !tuitionFee || !requardQualification || !initialDepossit || englishTest){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
@@ -41,14 +41,10 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
             country:country.toUpperCase(),
             url:url,
             flag:flag,
-            ranking:ranking,
             tuitionFee:tuitionFee,
-            requiredDocs:requiredDocs,
-            applicationFee:applicationFee,
-            duration:duration,
-            intakes:intakes,
-            entryRequirements:entryRequirements,
-            applicationDeadlines:applicationDeadlines,
+            requardQualification:requardQualification,
+            initialDepossit:initialDepossit,
+            englishTest:englishTest,
         }
 
         const result = await collection.insertOne(insertedObject)
@@ -161,7 +157,7 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
 
 
         const id = req.params.id
-        const { name, url , flag , country, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
+        const { name, url , flag , country, tuitionFee, requardQualification, initialDepossit , englishTest , SCHOLARSHIP} = req.body
 
         const query = { _id : new ObjectId(id) }
 
@@ -173,20 +169,17 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
                 message: "No university exist with the id!!!",
             })
         }
-        
+
         const field = {
             name:name?name:university?.name,
             country:country?country.toUpperCase():university?.country,
             url:url?url:university?.url,
             flag:flag?flag:university?.flag,
-            ranking:ranking?ranking:university?.ranking,
             tuitionFee:tuitionFee?tuitionFee:university?.tuitionFee,
-            requiredDocs:requiredDocs?requiredDocs:university?.requiredDocs,
-            applicationFee:applicationFee?applicationFee:university?.applicationFee,
-            duration:duration?duration:university?.duration,
-            intakes:intakes?intakes:university?.intakes,
-            entryRequirements:entryRequirements?entryRequirements:university?.entryRequirements,
-            applicationDeadlines:applicationDeadlines?applicationDeadlines:university?.applicationDeadlines,
+            requardQualification:requardQualification?requardQualification:university?.requardQualification,
+            initialDepossit:initialDepossit?initialDepossit:university?.initialDepossit,
+            englishTest:englishTest?englishTest:englishTest?.englishTest,
+            SCHOLARSHIP:SCHOLARSHIP?SCHOLARSHIP:SCHOLARSHIP?.SCHOLARSHIP,
         }
 
         const updateDoc = {
@@ -346,7 +339,6 @@ const getUniOriginName = async (req: Request, res: Response) => {
         })
     }
 }
-
 
 
 const getUniversityByCountry = async( req: Request , res: Response) =>{
