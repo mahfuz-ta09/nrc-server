@@ -5,6 +5,7 @@ export type UserObject = {
     role:string
     status:string
     image:string
+    publicid:string
     phone: number | null
     country: string
     dob: string

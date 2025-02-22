@@ -72,6 +72,7 @@ const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
             role: 'admin',
             status: 'active',
             image:'',
+            publicid:'',
             name:'',
             phone:'',
             dob:'',

@@ -187,6 +187,7 @@ const signUp = async(req: Request, res: Response) => {
             role: '',
             status: randomToken,
             image:'',
+            publicid:'', // to delete photo
             name:name,
             phone: null,
             dob:'',

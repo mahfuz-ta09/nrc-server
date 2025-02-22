@@ -5,9 +5,9 @@ import * as fs from 'fs'
 
 
 cloudinary.config({ 
-   cloud_name: "dmxiz25qo", 
-   api_key: "885554742652777", 
-   api_secret: "iZZ_BhLcIc9zsTN_ad3vPDo_Zfs"
+   cloud_name: "dqae4zlgs", 
+   api_key: "856842232285687", 
+   api_secret: "ZcIw7rPXZkkDuHQxlk_Oa4Se_48"
 })
 
 
@@ -23,20 +23,22 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage })
 
+
+
 const uploadToCloud = async(file:any)  =>{
-  console.log("tyet=================================sddddddddddddd",file)
-    return new Promise((resolve, reject) => {
-      cloudinary.uploader.upload(file?.path,
-          (error: Error, result: any) => {
-              fs.unlinkSync(file.path);
-              if (error) {
-                  reject(error)
-              }
-              else {
-                  resolve(result)
-              }
-          })
-    })
+  console.log("from fileupload: ",file)
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload(file.path,
+        (error: Error, result: any) => {
+            fs.unlinkSync(file.path);
+            if (error) {
+                reject(error)
+            }
+            else {
+                resolve(result)
+            }
+        })
+  })
 }
 
 

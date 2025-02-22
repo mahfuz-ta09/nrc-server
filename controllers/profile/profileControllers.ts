@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt")
 import { format } from "date-fns"
 import { ObjectId } from "mongodb"
 import sendEmail from "../../helper/sendEmail"
+import { fileUploadHelper } from "../../helper/fileUploadHealper"
 const { getDb } = require('../../config/connectDB')
 
 
@@ -57,9 +58,9 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
         const db = await getDb()
         const collection = db.collection('users')
 
-        const { name , phone , image , dob , country , password , review } = req.body
+        const { name , phone , dob , country , password , review } = req.body
         const id  = req.params.id
-
+        
         const query = { _id : new ObjectId(id) }
         const user = await collection.findOne(query)
         if(!user){
@@ -90,16 +91,31 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
         }
 
         const hashedPassword = await bcrypt.hash(password,10)
-        const doc = {
-            $set: {
-                name: name || user.name,
-                image: (typeof image === "string" && image) ? image : user.image,
-                phone: phone || user.phone,
-                country: country || user.country,
-                review: review || user.review,
-                dob: dob || user.dob,
-                password: password ? hashedPassword : user.password,
+        const updateDoc = {
+            name: name || user.name,
+            image: user.image,
+            publicid:user.publicid,
+            phone: phone || user.phone,
+            country: country || user.country,
+            review: review || user.review,
+            dob: dob || user.dob,
+            password: password ? hashedPassword : user.password,
+        }
+
+        if(req?.file){
+            const uploaded:any = await fileUploadHelper.uploadToCloud(req?.file)
+            
+
+            if(uploaded?.url){
+                updateDoc.image = uploaded?.url 
+                updateDoc.publicid = uploaded?.public_id
+                if(user?.publicid) await fileUploadHelper.deleteFromCloud(user?.publicid)
             }
+            
+        }
+
+        const doc = {
+            $set: updateDoc
         }
 
         const response = await collection.updateOne(query, doc)
