@@ -114,7 +114,6 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
                 updateDoc.publicid = uploaded?.public_id
                 if(user?.publicid) await fileUploadHelper.deleteFromCloud(user?.publicid)
             }
-            
         }
 
         const doc = {

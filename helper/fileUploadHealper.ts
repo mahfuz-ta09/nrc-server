@@ -10,19 +10,21 @@ cloudinary.config({
    api_secret: "ZcIw7rPXZkkDuHQxlk_Oa4Se_48"
 })
 
+const uploadPath = path.resolve(process.cwd(), 'helper', 'uploads');
+
+if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+}
 
 const storage = multer.diskStorage({
-    destination: (req:any, file:any, cb:any) => {
-        const uploadPath = path.resolve(process.cwd(), 'helper', 'uploads')
-        return cb(null, uploadPath)
+    destination: (req:any , file:any , cb: any) => {
+        cb(null, uploadPath);
     },
-    filename: (req:any, file:any, cb:any) => {
-        return cb(null,file.originalname)
+    filename: (req:any , file:any , cb: any) => {
+        cb(null, file.originalname);
     }
 })
-
-const upload = multer({ storage: storage })
-
+const upload = multer({ storage })
 
 
 const uploadToCloud = async(file:any)  =>{
