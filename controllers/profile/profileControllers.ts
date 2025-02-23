@@ -149,7 +149,7 @@ const emailContact = async(req: Request , res: Response) =>{
         
         const htmlContent = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
-                <h2 style="background-color: #0073e6; color: white; padding: 15px; text-align: center; border-radius: 5px 5px 0 0;">
+                <h2 style="background-color: #002c3a; color: white; padding: 15px; text-align: center; border-radius: 5px 5px 0 0;">
                     New Inquiry from ${fullName}
                 </h2>
                 <div style="padding: 20px; background-color: white; border-radius: 0 0 5px 5px;">
@@ -162,7 +162,7 @@ const emailContact = async(req: Request , res: Response) =>{
                     <p style="background-color: #f1f1f1; padding: 10px; border-radius: 5px;">${message}</p>
                 </div>
                 <p style="text-align: center; font-size: 12px; color: #777;">
-                    This is an automated email. Please do not reply.
+                    
                 </p>
             </div>
         `

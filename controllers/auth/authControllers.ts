@@ -359,10 +359,83 @@ const getAccessToken = async(req: Request, res: Response) => {
 }
 
 
+const resetPassword  = async(req: Request, res: Response) => {
+    try{
+        const db = await getDb()
+        const collection = db.collection('users')
+        const { email } = req.body
+
+        if(!email){
+            return sendResponse(res,{
+                statusCode: 500,
+                success: false,
+                message: 'Email requard to reset password',
+            })
+        }
+
+        const query = { email: email }
+        const user = await collection.findOne(query)
+
+        if(!user){
+            return sendResponse(res,{
+                statusCode: 500,
+                success: false,
+                message: 'No user exist with this email',
+            })
+        }
+
+        const randomToken = Math.floor(100000 + Math.random() * 900000).toString()
+        const hashedPassword = await bcrypt.hash(randomToken,10)
+
+        const updatedDoc = {
+            $set:{
+                password: hashedPassword,
+            }
+        }
+
+        const changed = await collection.updateOne(query,updatedDoc)
+        
+        if(changed.modifiedCount===0){
+            return sendResponse(res,{
+                statusCode: 500,
+                success: false,
+                message: 'Failed to reset. Try again',
+            })
+        }
+
+        const content = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+                <h2 style="background-color: #002c3a; color: white; padding: 15px; text-align: center; border-radius: 5px 5px 0 0;">
+                    NRC-london
+                </h2>
+                <div style="padding: 20px; background-color: white; border-radius: 0 0 5px 5px;">
+                    <p><strong>Name:</strong> ${user?.name}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Password:</strong></p>
+                    <p style="background-color: #f1f1f1; padding: 10px; border-radius: 5px;">${randomToken}</p>
+                </div>
+                <p style="text-align: center; font-size: 12px; color: red;">
+                    Please change your password from your profile.
+                </p>
+            </div>
+        `
+        sendEmail(email,"Reset password request",content)
+        console.log(changed)
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: 'Successfull. Check your email',
+        })
+    }catch(err){
+        console.log(err)
+    }
+}
+
 module.exports  = {
     logIn,
     signUp,
     logOut,
     getAccessToken,
-    successResponse
+    successResponse,
+    resetPassword
 } 

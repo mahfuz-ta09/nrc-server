@@ -5,9 +5,9 @@ import * as fs from 'fs'
 
 
 cloudinary.config({ 
-   cloud_name: "dqae4zlgs", 
-   api_key: "856842232285687", 
-   api_secret: "ZcIw7rPXZkkDuHQxlk_Oa4Se_48"
+   cloud_name:process.env.cloud_name, 
+   api_key:process.env.api_key, 
+   api_secret:process.env.api_secret,
 })
 
 const uploadPath = path.resolve(process.cwd(), 'helper', 'uploads');
@@ -45,7 +45,6 @@ const uploadToCloud = async(file:any)  =>{
 
 const deleteFromCloud = async(publicId:string)  =>{
     try {
-        console.log(publicId)
         const result = await cloudinary.uploader.destroy(publicId)
         return result
       } catch (error) {
