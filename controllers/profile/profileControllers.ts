@@ -90,7 +90,10 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
             })
         }
 
-        const hashedPassword = await bcrypt.hash(password,10)
+        let hashedPassword:string  = user.password
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
         const updateDoc = {
             name: name || user.name,
             image: user.image,

@@ -1,7 +1,3 @@
-const allowedOrigins = [
-    'http://localhost:3000',
-    'https://nrc-london.vercel.app'
-]
 
 const corsOption = {    
     origin: 'https://nrc-london.vercel.app',
