@@ -61,6 +61,7 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
         const { name , phone , dob , country , password , review } = req.body
         const id  = req.params.id
         
+
         const query = { _id : new ObjectId(id) }
         const user = await collection.findOne(query)
         if(!user){
