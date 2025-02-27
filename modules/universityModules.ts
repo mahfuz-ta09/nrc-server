@@ -1,3 +1,5 @@
+import { fileUploadHelper } from "../helper/fileUploadHealper"
+
 const express = require('express')
 const router = express.Router()
 const { createUniversity , getAllUniversity , getSingleUniversity , deleteUniversity , editUniversity,getUniOriginName ,getUniversityByCountry} = require('../controllers/university/universityControllers')
@@ -14,10 +16,18 @@ router.get('/single/:id',
 
 router.post('/create',  
     verifyUser,
+    fileUploadHelper.upload.fields([
+        { name: "file", maxCount: 1 },
+        { name: "flag", maxCount: 1 }
+    ]),
     createUniversity)
 
 router.patch('/update/:id',
-    verifyUser,  
+    verifyUser,
+    fileUploadHelper.upload.fields([
+        { name: "file", maxCount: 1 },
+        { name: "flag", maxCount: 1 }
+    ]),
     editUniversity)
 
 router.delete('/delete/:id',

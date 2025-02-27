@@ -57,7 +57,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
             })
         }
         
-        const files = req.files as MulterFiles;
+        const files = req.files as MulterFiles
         const licenseDocument = files["license_document"]?.[0]
         const backgroundCheck = files["background_check"]?.[0]
         

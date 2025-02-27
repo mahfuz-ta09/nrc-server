@@ -19,6 +19,7 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
         const tRole = req.user?.role || null
         const tStatus = req.user?.status || null
         const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        
         if(!user1){
             return sendResponse( res, {
                 statusCode: 411,
@@ -28,21 +29,53 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
         }
 
 
-        const { name, url , flag , country, tuitionFee, requardQualification, initialDepossit , englishTest} = req.body        
+        const { name, country, tuitionFee, requardQualification, initialDepossit , englishTest} = req.body        
         if(!name  || !country || !tuitionFee || !requardQualification || !initialDepossit || !englishTest){
-                    console.log("first:", user1,req.body)
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
                 message: "No empty field allowed"
             })
-        }      
+        }   
+        
+        let cntry:any , cntryId, flg:any , flgId
+        const uni = await collection.findOne({
+            country: country.toUpperCase(),
+            url:  { $exists: true},
+            flag: { $exists: true},
+        })
+
+
+        if(uni){
+            cntry = uni.url
+            flg = uni.flag
+        }else{
+            const files:any = req.files
+            if(files["file"]?.[0] || files["flag"]?.[0]){
+                let local_country:any = await fileUploadHelper.uploadToCloud(files["file"]?.[0])
+                let local_flag:any   = await fileUploadHelper.uploadToCloud(files["flag"]?.[0])
+
+                cntryId = local_country.public_id
+                flgId = local_flag.public_id
+
+                cntry = local_country.url
+                flg = local_flag.url
+            }else{
+                return sendResponse(res,{
+                    statusCode: 500,
+                    success: false,
+                    message: "Flag and country image required for new country"
+                })
+            }
+        }
 
         const insertedObject = {
             name:name,
             country:country.toUpperCase(),
-            url:url,
-            flag:flag,
+            url:cntry,
+            flag:flg,
+            cntryId:cntryId,
+            flgId:flgId,
             tuitionFee:tuitionFee,
             requardQualification:requardQualification,
             initialDepossit:initialDepossit,
@@ -88,6 +121,7 @@ const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
         const tRole = req.user?.role || null
         const tStatus = req.user?.status || null
         const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        
         if(!user1){
             return sendResponse( res, {
                 statusCode: 411,
@@ -98,10 +132,10 @@ const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
 
 
         const id  = req.params.id
-        
         const query = { _id : new ObjectId(id) }
         const exist = await collection.findOne(query)
-
+        const total = await collection.countDocuments({ country : exist?.country })
+        
         if(!exist){
             return sendResponse(res,{
                 statusCode: 500,
@@ -110,9 +144,13 @@ const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
                 data: exist,
             })
         }
-       
-        const result = await collection.deleteOne(query)
 
+        if(total === 1){
+            if(exist?.flgId) await fileUploadHelper.deleteFromCloud(exist?.flgId)
+            if(exist?.cntryId) await fileUploadHelper.deleteFromCloud(exist?.cntryId)
+        }
+
+        const result = await collection.deleteOne(query)
         if(!result.acknowledged){
             return sendResponse(res,{
                 statusCode: 500,
@@ -159,7 +197,8 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
 
 
         const id = req.params.id
-        const { name, url , flag , country, tuitionFee, requardQualification, initialDepossit , englishTest , SCHOLARSHIP} = req.body
+        const { name, url , flag , country, tuitionFee, requardQualification, initialDepossit , 
+            englishTest , SCHOLARSHIP } = req.body
 
         const query = { _id : new ObjectId(id) }
 
@@ -171,7 +210,19 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
                 message: "No university exist with the id!!!",
             })
         }
-        console.log(req.body)
+        
+        // const files:any = req.files
+        // if(files["file"]?.[0] || files["flag"]?.[0]){
+        //     let local_country:any = await fileUploadHelper.uploadToCloud(files["file"]?.[0])
+        //     let local_flag:any   = await fileUploadHelper.uploadToCloud(files["flag"]?.[0])
+
+        //     cntryId = local_country.public_id
+        //     flgId = local_flag.public_id
+
+        //     cntry = local_country.url
+        //     flg = local_flag.url
+        // }
+        
         const field = {
             name:name?name:university?.name,
             country:country?country.toUpperCase():university?.country,
