@@ -22,10 +22,6 @@ router.post('/create',
 
 router.patch('/update/:id',
     verifyUser,
-    fileUploadHelper.upload.fields([
-        { name: "file", maxCount: 1 },
-        { name: "flag", maxCount: 1 }
-    ]),
     editUniversity)
 
 router.delete('/delete/:id',
