@@ -31,7 +31,7 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
         const { name, country, tuitionFee, requardQualification, 
             initialDepossit , englishTest , SCHOLARSHIP } = req.body        
 
-        if(!country){
+        if(!country || !name){
             return sendResponse( res, {
                 statusCode: 411,
                 success: false,
