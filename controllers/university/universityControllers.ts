@@ -29,8 +29,8 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
         }
 
 
-        const { name, country, tuitionFee, requardQualification, initialDepossit , englishTest} = req.body        
-        if(!name  || !country || !tuitionFee || !requardQualification || !initialDepossit || !englishTest){
+        const { name, country, tuitionFee, requardQualification, initialDepossit , englishTest , SCHOLARSHIP} = req.body        
+        if(!name  || !country || !tuitionFee || !requardQualification || !initialDepossit || !englishTest || !SCHOLARSHIP){
             return sendResponse(res,{
                 statusCode: 500,
                 success: false,
@@ -77,6 +77,7 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
             cntryId:cntryId,
             flgId:flgId,
             tuitionFee:tuitionFee,
+            SCHOLARSHIP:SCHOLARSHIP,
             requardQualification:requardQualification,
             initialDepossit:initialDepossit,
             englishTest:englishTest,
@@ -197,7 +198,7 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
 
 
         const id = req.params.id
-        const { name, url , flag , country, tuitionFee, requardQualification, initialDepossit , 
+        const { name , country, tuitionFee, requardQualification, initialDepossit , 
             englishTest , SCHOLARSHIP } = req.body
 
         const query = { _id : new ObjectId(id) }
@@ -211,23 +212,27 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
             })
         }
         
-        // const files:any = req.files
-        // if(files["file"]?.[0] || files["flag"]?.[0]){
-        //     let local_country:any = await fileUploadHelper.uploadToCloud(files["file"]?.[0])
-        //     let local_flag:any   = await fileUploadHelper.uploadToCloud(files["flag"]?.[0])
+        let cntryId , flgId , flag , url
 
-        //     cntryId = local_country.public_id
-        //     flgId = local_flag.public_id
+        const files:any = req.files
+        if(files["file"]?.[0] || files["flag"]?.[0]){
+            let local_country:any = await fileUploadHelper.uploadToCloud(files["file"]?.[0])
+            let local_flag:any   = await fileUploadHelper.uploadToCloud(files["flag"]?.[0])
 
-        //     cntry = local_country.url
-        //     flg = local_flag.url
-        // }
+            cntryId = local_country.public_id
+            flgId = local_flag.public_id
+
+            url = local_country.url
+            flag = local_flag.url
+        }
         
         const field = {
             name:name?name:university?.name,
             country:country?country.toUpperCase():university?.country,
             url:url?url:university?.url,
             flag:flag?flag:university?.flag,
+            cntryId:cntryId?cntryId:university?.cntryId,
+            flgId:flgId?flgId:university?.flgId,
             tuitionFee:tuitionFee?tuitionFee:university?.tuitionFee,
             requardQualification:requardQualification?requardQualification:university?.requardQualification,
             initialDepossit:initialDepossit?initialDepossit:university?.initialDepossit,
