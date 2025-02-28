@@ -28,16 +28,7 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
             })
         }
 
-
         const { name, country, tuitionFee, requardQualification, initialDepossit , englishTest , SCHOLARSHIP} = req.body        
-
-        if(!name  || !country || !tuitionFee || !requardQualification || !initialDepossit || !englishTest || !SCHOLARSHIP){
-            return sendResponse(res,{
-                statusCode: 500,
-                success: false,
-                message: "No empty field allowed"
-            })
-        }   
 
         let cntry:any , cntryId, flg:any , flgId
         const uni = await collection.findOne({
