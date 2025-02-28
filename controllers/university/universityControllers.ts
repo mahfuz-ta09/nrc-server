@@ -28,8 +28,6 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
             })
         }
 
-        console.log(req.body)
-
         const { name, country, tuitionFee, requardQualification, 
             initialDepossit , englishTest , SCHOLARSHIP } = req.body        
 
