@@ -28,7 +28,18 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
             })
         }
 
-        const { name, country, tuitionFee, requardQualification, initialDepossit , englishTest , SCHOLARSHIP} = req.body        
+        console.log(req.body)
+
+        const { name, country, tuitionFee, requardQualification, 
+            initialDepossit , englishTest , SCHOLARSHIP } = req.body        
+
+        if(!country){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Country name required!!!',
+            })
+        }
 
         let cntry:any , cntryId, flg:any , flgId
         const uni = await collection.findOne({
