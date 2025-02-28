@@ -225,7 +225,8 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
             url = local_country.url
             flag = local_flag.url
         }
-        
+
+
         const field = {
             name:name?name:university?.name,
             country:country?country.toUpperCase():university?.country,
