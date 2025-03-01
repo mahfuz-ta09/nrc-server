@@ -31,9 +31,9 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
         const { name, country, tuitionFee, requardQualification, 
             initialDepossit , englishTest , SCHOLARSHIP } = req.body        
 
-        if(!country || !name){
+        if(!country || !name || !tuitionFee){
             return sendResponse( res, {
-                statusCode: 411,
+                statusCode: 400,
                 success: false,
                 message: 'Country name required!!!',
             })
@@ -63,7 +63,7 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
                 flg = local_flag.url
             }else{
                 return sendResponse(res,{
-                    statusCode: 500,
+                    statusCode: 400,
                     success: false,
                     message: "Flag and country image required for new country"
                 })
@@ -88,7 +88,7 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
 
         if(!result.acknowledged){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Insertion failed!!!",
                 data: result,
@@ -104,7 +104,7 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -140,7 +140,7 @@ const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
         
         if(!exist){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'No data exist',
                 data: exist,
@@ -155,7 +155,7 @@ const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
         const result = await collection.deleteOne(query)
         if(!result.acknowledged){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Failed to delete!!!",
                 data: result,
@@ -171,7 +171,7 @@ const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -207,7 +207,7 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
         const university = await collection.findOne(query)
         if(!university){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "No university exist with the id!!!",
             })
@@ -250,7 +250,7 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
 
         if(!result.acknowledged){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Failed to update!!!",
             })
@@ -264,7 +264,7 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -309,7 +309,7 @@ const getAllUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -329,7 +329,7 @@ const getSingleUniversity = async( req: Request , res: Response) =>{
 
         if(!university){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "No data exist!!!",
               }
@@ -345,7 +345,7 @@ const getSingleUniversity = async( req: Request , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -392,7 +392,7 @@ const getUniOriginName = async (req: Request, res: Response) => {
     } catch (err) {
         console.log(err)
         sendResponse(res, {
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internal server error',
             data: err
@@ -424,7 +424,7 @@ const getUniversityByCountry = async( req: Request , res: Response) =>{
         })
     } catch (error) {
         console.error("Error fetching universities:", error)
-        res.status(500).json({
+        res.status(400).json({
             success: false,
             message: "Internal Server Error",
             error,

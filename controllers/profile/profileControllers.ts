@@ -24,7 +24,7 @@ const getSingleUserById = async(req: AuthenticatedRequest, res: Response) => {
         
         if(!user){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'User not found!!!',
                 data: user,
@@ -66,7 +66,7 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
         const user = await collection.findOne(query)
         if(!user){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'User not found!!!',
                 data: user,
@@ -75,7 +75,7 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
 
         if(password && password?.length < 6){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Password is to short!!!',
             })
@@ -142,7 +142,7 @@ const emailContact = async(req: Request , res: Response) =>{
         
         if (!fullName || !email || !phone || !country || !state || !message) {
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Failed !!!',
             })
@@ -185,7 +185,7 @@ const emailContact = async(req: Request , res: Response) =>{
     }catch(err){
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Failed !!!',
         })

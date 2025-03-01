@@ -53,7 +53,7 @@ const createReview = async (req: Request, res: Response) => {
 
         if (!result.modifiedCount) {
             return sendResponse(res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Failed to add comment.",
             });
@@ -68,7 +68,7 @@ const createReview = async (req: Request, res: Response) => {
     } catch (err) {
         console.error(err);
         sendResponse(res, {
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: "Internal server error.",
             data: err,
@@ -88,7 +88,7 @@ const deleteReview = async( req: AuthenticatedRequest , res: Response) =>{
         const exist = await collection.findOne(query)
         if(!exist?.review){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'You are not logged in or never commented!',
             })
@@ -116,7 +116,7 @@ const deleteReview = async( req: AuthenticatedRequest , res: Response) =>{
         const result = await collection.updateOne(query,insertedObject)
         if(result?.modifiedCount === 0){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Failed to delete!!!",
                 data: result,
@@ -132,7 +132,7 @@ const deleteReview = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -178,7 +178,7 @@ const getAllReview = async (req: Request, res: Response) => {
     } catch (err) {
         console.error(err);
         sendResponse(res, {
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: "Internal server error",
             data: err,
@@ -200,7 +200,7 @@ const getAllReview = async (req: Request, res: Response) => {
 
 //         if(!review){
 //             return sendResponse(res,{
-//                 statusCode: 500,
+//                 statusCode: 400,
 //                 success: false,
 //                 message: "No data exist!!!",
 //               }
@@ -216,7 +216,7 @@ const getAllReview = async (req: Request, res: Response) => {
 //     } catch (err) {
 //         console.log(err)
 //         sendResponse(res,{
-//             statusCode: 500,
+//             statusCode: 400,
 //             success: false,
 //             message: 'Internel server error',
 //             data: err
@@ -271,7 +271,7 @@ const getReviewByPage = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error("Error fetching reviews:", error);
-        res.status(500).json({
+        res.status(400).json({
             success: false,
             message: "Internal Server Error",
             error,

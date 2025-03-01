@@ -21,7 +21,7 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
         
         if(!email){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "You must login to proceed"
             })
@@ -29,7 +29,7 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
         
         if(role==='admin' || role==='super_admin'){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Admin can't access."
             })
@@ -58,7 +58,7 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
 
         if(exist){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'You have finished processing. Update or delete to process again!!',
                 data: exist,
@@ -111,7 +111,7 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
 
         if(!result.acknowledged){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Failed to proceed!!!",
                 data: result,
@@ -127,7 +127,7 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -146,7 +146,7 @@ const deleteProcessData = async( req: AuthenticatedRequest , res: Response) =>{
         
         if(!id){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Error finding id!!!"
             })
@@ -171,7 +171,7 @@ const deleteProcessData = async( req: AuthenticatedRequest , res: Response) =>{
 
         if(!exist){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'You are not logged in or never submited data!',
                 data: exist,
@@ -182,7 +182,7 @@ const deleteProcessData = async( req: AuthenticatedRequest , res: Response) =>{
         if(result?.deletedCount===0){
             console.log(result)
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Failed to delete!!!",
                 data: result,
@@ -198,7 +198,7 @@ const deleteProcessData = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -223,7 +223,7 @@ const editProcessData = async( req: AuthenticatedRequest , res: Response) =>{
         const data = await collection.findOne(query)
         if(!data){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "User not logged in!!!",
             })
@@ -290,7 +290,7 @@ const editProcessData = async( req: AuthenticatedRequest , res: Response) =>{
         const result = await collection.updateOne(query, updateDoc)
         if(!result.acknowledged){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Failed to update!!!",
             })
@@ -305,7 +305,7 @@ const editProcessData = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -352,7 +352,7 @@ const getAllData = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -373,7 +373,7 @@ const getSingleData = async( req: AuthenticatedRequest , res: Response) =>{
 
         if(!data){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "No data exist!!!",
               }
@@ -402,7 +402,7 @@ const getSingleData = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -446,7 +446,7 @@ const getSingleData = async( req: AuthenticatedRequest , res: Response) =>{
 //         })
 //     } catch (error) {
 //         console.error("Error fetching universities:", error)
-//         res.status(500).json({
+//         res.status(400).json({
 //             success: false,
 //             message: "Internal Server Error",
 //             error,

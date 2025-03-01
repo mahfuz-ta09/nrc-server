@@ -29,7 +29,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
         
         if(role==='admin' || role==='super_admin'){
             return sendResponse(res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'admin/super admin not allowed!!!',
             })
@@ -40,7 +40,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
             || !passport_number || !agency_name || !agency_address || !agency_website || !experience || !services
             || !partner_universities || !license_number || !tax_id || !criminal_record || !referral){
             return sendResponse(res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Not Logged in or some required field missing!!!',
             })
@@ -51,7 +51,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
         
         if(application){
             return sendResponse(res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Already applied',
             })
@@ -184,7 +184,7 @@ const getAllAgentReq = async(req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -225,7 +225,7 @@ const getAllAgents = async(req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -245,7 +245,7 @@ const updateAgentStatus = async (req: AuthenticatedRequest, res: Response) => {
 
         if (!id) {
             return sendResponse(res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Id required',
             })
@@ -268,7 +268,7 @@ const updateAgentStatus = async (req: AuthenticatedRequest, res: Response) => {
 
         if (!exist) {
             return sendResponse(res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'No data found!',
             });
@@ -302,7 +302,7 @@ const updateAgentStatus = async (req: AuthenticatedRequest, res: Response) => {
     } catch (err) {
         console.log(err);
         sendResponse(res, {
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internal server error',
             data: err,

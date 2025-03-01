@@ -21,7 +21,7 @@ const logIn = async(req: Request, res: Response) => {
 
         if(!email || !password){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'No empty field allowed!!!',
             })
@@ -29,7 +29,7 @@ const logIn = async(req: Request, res: Response) => {
 
         if(emaiReg.test(email) === false){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Invalid email format!!!',
             })
@@ -37,7 +37,7 @@ const logIn = async(req: Request, res: Response) => {
 
         if(password.length < 6){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Password is to short!!!',
             })
@@ -48,7 +48,7 @@ const logIn = async(req: Request, res: Response) => {
 
         if(!user || user.status !== 'active'){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'No user exist with this email!!!',
             })
@@ -57,7 +57,7 @@ const logIn = async(req: Request, res: Response) => {
         const pass = await bcrypt.compare(password, user.password)
         if(!pass){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Invalid password!!!',
             })
@@ -113,7 +113,7 @@ const signUp = async(req: Request, res: Response) => {
 
         if(!email || !password || !name){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'No empty field allowed!!!',
             })
@@ -122,7 +122,7 @@ const signUp = async(req: Request, res: Response) => {
 
         if(emaiReg.test(email) === false){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Invalid email format"
             })
@@ -130,7 +130,7 @@ const signUp = async(req: Request, res: Response) => {
 
         if(password.length < 6){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Password is to short!!!',
             })
@@ -143,7 +143,7 @@ const signUp = async(req: Request, res: Response) => {
         
         if(user?.status=='active' || user?.status=='inactive' || user?.status=='banned'){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Error signing in!!!',
             })
@@ -157,6 +157,7 @@ const signUp = async(req: Request, res: Response) => {
                 <h2>Email Verification</h2>
                 <p>Your 6-digit verification code is: <strong>${code}</strong></p>
                 <p>Enter this code on the website to verify your email.</p>
+                <p>Never share this code.</p>
             `
         
             return await sendEmail(userEmail, subject, htmlContent)
@@ -243,7 +244,7 @@ const successResponse = async(req: Request, res: Response) => {
 
         if(!email  || !code || !id){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Email or id missing',
             })
@@ -253,7 +254,7 @@ const successResponse = async(req: Request, res: Response) => {
         
         if(!user){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'No user found, try again',
             })
@@ -306,7 +307,7 @@ const successResponse = async(req: Request, res: Response) => {
             })
         }else{
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Failed to verify, try again',
             })
@@ -367,7 +368,7 @@ const resetPassword  = async(req: Request, res: Response) => {
 
         if(!email){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Email requard to reset password',
             })
@@ -378,7 +379,7 @@ const resetPassword  = async(req: Request, res: Response) => {
 
         if(!user){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'No user exist with this email',
             })
@@ -397,7 +398,7 @@ const resetPassword  = async(req: Request, res: Response) => {
         
         if(changed.modifiedCount===0){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Failed to reset. Try again',
             })

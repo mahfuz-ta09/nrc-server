@@ -20,7 +20,7 @@ const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
         
         if(!email || !password ){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'No empty field allowed!!!',
             })
@@ -28,7 +28,7 @@ const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
 
         if(emaiReg.test(email) === false){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Invalid email format!!!',
             })
@@ -36,7 +36,7 @@ const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
 
         if(password.length < 6){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Password is to short!!!',
             })
@@ -59,7 +59,7 @@ const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
         const user = await collection.findOne(query)
         if(user){
             return sendResponse( res, {
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'User already exist!!!, Please login.',
             })
@@ -125,7 +125,7 @@ const getAllAdmin = async(req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -165,7 +165,7 @@ const getAllUsers = async(req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -184,7 +184,7 @@ const updateAdminStatus = async(req: AuthenticatedRequest , res: Response) =>{
         
         if(!id){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'Id required',
             })
@@ -207,7 +207,7 @@ const updateAdminStatus = async(req: AuthenticatedRequest , res: Response) =>{
         console.log(exist)
         if(!exist){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'No data found!'
             })
@@ -231,7 +231,7 @@ const updateAdminStatus = async(req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err

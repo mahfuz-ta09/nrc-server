@@ -15,10 +15,13 @@ const createSubject = async( req: AuthenticatedRequest , res: Response) =>{
         const usersCollection = db.collection('users')
 
 
-        const {name,destination,tuitionFee,requiredDocs,applicationFee,duration,intakes,entryRequirements,applicationDeadlines } = req.body
-        if(!name || !destination || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || !entryRequirements || !applicationDeadlines){
+        const { name , destination , tuitionFee , requiredDocs , applicationFee , duration , intakes , 
+            entryRequirements , applicationDeadlines } = req.body
+            
+        if(!name || !destination || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || 
+            !entryRequirements || !applicationDeadlines){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "No empty field allowed"
             })
@@ -53,7 +56,7 @@ const createSubject = async( req: AuthenticatedRequest , res: Response) =>{
 
         if(!result.acknowledged){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Insertion failed!!!",
                 data: result,
@@ -69,7 +72,7 @@ const createSubject = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -103,7 +106,7 @@ const deleteSubject = async( req: AuthenticatedRequest , res: Response) =>{
 
         if(!exist){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: 'No data exist',
                 data: exist,
@@ -114,7 +117,7 @@ const deleteSubject = async( req: AuthenticatedRequest , res: Response) =>{
 
         if(!result.acknowledged){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Failed to delete!!!",
                 data: result,
@@ -130,7 +133,7 @@ const deleteSubject = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -153,7 +156,7 @@ const editSubject = async( req: AuthenticatedRequest , res: Response) =>{
         const subject = await collection.findOne(query)
         if(!subject){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "No university exist with the id!!!",
             })
@@ -166,7 +169,7 @@ const editSubject = async( req: AuthenticatedRequest , res: Response) =>{
         
         if(!user){
             return sendResponse( res, {
-                statusCode: 411,
+                statusCode: 400,
                 success: false,
                 message: 'Unauthorized!!!',
             })
@@ -194,7 +197,7 @@ const editSubject = async( req: AuthenticatedRequest , res: Response) =>{
 
         if(!result.acknowledged){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "Failed to update!!!",
             })
@@ -208,7 +211,7 @@ const editSubject = async( req: AuthenticatedRequest , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -242,7 +245,7 @@ const getAllSubject = async( req: Request , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
@@ -261,7 +264,7 @@ const getSingleSubject = async( req: Request , res: Response) =>{
 
         if(!course){
             return sendResponse(res,{
-                statusCode: 500,
+                statusCode: 400,
                 success: false,
                 message: "No data exist!!!",
               }
@@ -277,7 +280,7 @@ const getSingleSubject = async( req: Request , res: Response) =>{
     } catch (err) {
         console.log(err)
         sendResponse(res,{
-            statusCode: 500,
+            statusCode: 400,
             success: false,
             message: 'Internel server error',
             data: err
