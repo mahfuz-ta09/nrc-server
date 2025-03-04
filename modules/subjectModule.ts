@@ -1,26 +1,36 @@
+import { fileUploadHelper } from "../helper/fileUploadHealper"
+
 const express = require('express')
 const router = express.Router()
-const { getAllSubject , getSingleSubject , createSubject , editSubject , deleteSubject } = require('../controllers/subject/subjectControllers')
+const { getSubjectOrigin , getSubjectsByCountry , getAllSubjects , getSingleSubjects , createSubject , editSubject , deleteSubjects } = require('../controllers/subject/subjectController')
 const verifyUser = require('../middleware/verifyUser')
 
-// course editorials 
+
 router.get('/all', 
-    getAllSubject)
+    getAllSubjects)
 
 router.get('/single/:id', 
-    getSingleSubject)
+    getSingleSubjects)
 
 router.post('/create',  
     verifyUser,
+    fileUploadHelper.upload.none(),
     createSubject)
 
 router.patch('/update/:id',  
     verifyUser,
+    fileUploadHelper.upload.none(),
     editSubject)
 
 router.delete('/delete/:id', 
     verifyUser,
-    deleteSubject)
+    deleteSubjects)
 
+router.get('/sub-area', 
+    getSubjectOrigin)
+    
+router.get('/all/:country', 
+    getSubjectsByCountry)
+    
 
 export const subjectModule = router

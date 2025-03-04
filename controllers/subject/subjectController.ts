@@ -1,6 +1,7 @@
 import { Request , Response } from "express"
 import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
+import { fileUploadHelper } from "../../helper/fileUploadHealper"
 const { getDb } = require('../../config/connectDB')
 
 
@@ -15,11 +16,9 @@ const createSubject = async( req: AuthenticatedRequest , res: Response) =>{
         const usersCollection = db.collection('users')
 
 
-        const { name , destination , tuitionFee , requiredDocs , applicationFee , duration , intakes , 
-            entryRequirements , applicationDeadlines } = req.body
+        const { name , country , initialDepossit , tuitionFee , entryRequ , engTest , duration , details } = req.body
             
-        if(!name || !destination || !tuitionFee || !requiredDocs || !applicationFee || !duration || !intakes || 
-            !entryRequirements || !applicationDeadlines){
+        if(!name || !country || !initialDepossit || !tuitionFee || !entryRequ || !engTest || !duration || !details){
             return sendResponse(res,{
                 statusCode: 400,
                 success: false,
@@ -33,7 +32,7 @@ const createSubject = async( req: AuthenticatedRequest , res: Response) =>{
         const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
         if(!user){
             return sendResponse( res, {
-                statusCode: 411,
+                statusCode: 400,
                 success: false,
                 message: 'Unauthorized!!!',
             })
@@ -42,14 +41,13 @@ const createSubject = async( req: AuthenticatedRequest , res: Response) =>{
 
         const insertedObject = {
             name:name,
-            destination:destination,
+            country:country.toUpperCase(),
             tuitionFee:tuitionFee,
-            requiredDocs:requiredDocs,
-            applicationFee:applicationFee,
             duration:duration,
-            intakes:intakes,
-            entryRequirements:entryRequirements,
-            applicationDeadlines:applicationDeadlines,
+            initialDepossit:initialDepossit,
+            entryRequ:entryRequ,
+            engTest:engTest,
+            details:details,
         }
 
         const result = await collection.insertOne(insertedObject)
@@ -81,22 +79,18 @@ const createSubject = async( req: AuthenticatedRequest , res: Response) =>{
 }
 
 
-const deleteSubject = async( req: AuthenticatedRequest , res: Response) =>{
+const deleteSubjects = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('subjects')
         const usersCollection = db.collection('users')
 
-        const id  = req.params.id
-        
-        const query = { _id : new ObjectId(id) }
-        const exist = await collection.findOne(query)
-            
         const tEmail = req.user?.email || null
         const tRole = req.user?.role || null
         const tStatus = req.user?.status || null
-        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        if(!user){
+        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        
+        if(!user1){
             return sendResponse( res, {
                 statusCode: 411,
                 success: false,
@@ -104,6 +98,10 @@ const deleteSubject = async( req: AuthenticatedRequest , res: Response) =>{
             })
         }
 
+        const id  = req.params.id
+        const query = { _id : new ObjectId(id) }
+        const exist = await collection.findOne(query)
+        
         if(!exist){
             return sendResponse(res,{
                 statusCode: 400,
@@ -112,9 +110,9 @@ const deleteSubject = async( req: AuthenticatedRequest , res: Response) =>{
                 data: exist,
             })
         }
-       
-        const result = await collection.deleteOne(query)
 
+
+        const result = await collection.deleteOne(query)
         if(!result.acknowledged){
             return sendResponse(res,{
                 statusCode: 400,
@@ -141,52 +139,50 @@ const deleteSubject = async( req: AuthenticatedRequest , res: Response) =>{
     }
 }
 
-
 const editSubject = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('subjects')
         const usersCollection = db.collection('users')
 
-        const id = req.params.id
-        const { name, destination, ranking, tuitionFee, requiredDocs, applicationFee, duration, intakes, entryRequirements, applicationDeadlines} = req.body
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        if(!user1){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
 
+        const id = req.params.id
+        
+        const { 
+            name , country , initialDepossit , tuitionFee , entryRequ , engTest , duration , details
+         } = req.body
+         
         const query = { _id : new ObjectId(id) }
 
-        const subject = await collection.findOne(query)
-        if(!subject){
+        const subjects = await collection.findOne(query)
+        if(!subjects){
             return sendResponse(res,{
                 statusCode: 400,
                 success: false,
                 message: "No university exist with the id!!!",
             })
         }
-         
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
         
-        if(!user){
-            return sendResponse( res, {
-                statusCode: 400,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
-
-
         const field = {
-            name:name? name : subject?.name, 
-            ranking:ranking? ranking : subject?.ranking, 
-            destination:destination? destination : subject?.destination,
-            tuitionFee:tuitionFee? tuitionFee : subject?.tuitionFee, 
-            requiredDocs:requiredDocs? requiredDocs : subject?.requiredDocs, 
-            applicationFee:applicationFee? applicationFee : subject?.applicationFee, 
-            duration:duration? duration : subject?.duration, 
-            intakes:intakes? intakes : subject?.intakes, 
-            entryRequirements:entryRequirements? entryRequirements : subject?.entryRequirements, 
-            applicationDeadlines:applicationDeadlines? applicationDeadlines : subject?.applicationDeadlines, 
+            name:name?name:subjects?.name,
+            country:country?country.toUpperCase():subjects?.country,
+            initialDepossit:initialDepossit?initialDepossit.toUpperCase():subjects?.initialDepossit,
+            tuitionFee:tuitionFee?tuitionFee.toUpperCase():subjects?.tuitionFee,
+            entryRequ:entryRequ?entryRequ.toUpperCase():subjects?.entryRequ,
+            engTest:engTest?engTest.toUpperCase():subjects?.engTest,
+            duration:duration?duration.toUpperCase():subjects?.duration,
+            details:details?details.toUpperCase():subjects?.details,
         }
 
         const updateDoc = {
@@ -219,15 +215,13 @@ const editSubject = async( req: AuthenticatedRequest , res: Response) =>{
     }
 }
 
-const getAllSubject = async( req: Request , res: Response) =>{
+const getAllSubjects = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('subjects')
 
-        const courses = await collection.find({}, { 
-                projection: { courseContent: 0, studentData: 0 , courseSchedule: 0}
-            }).sort({"_id": -1}).toArray()
-        const countCourse     = await collection.countDocuments()
+        const subjects = await collection.find({}).sort({"_id": -1}).toArray()
+        const countCourse  = await collection.countDocuments()
 
         const metaData = {
             page: 0,
@@ -240,7 +234,7 @@ const getAllSubject = async( req: Request , res: Response) =>{
             success: true,
             message: 'Course retrieval successful!!!',
             meta: metaData,
-            data: courses,
+            data: subjects,
         })
     } catch (err) {
         console.log(err)
@@ -253,16 +247,17 @@ const getAllSubject = async( req: Request , res: Response) =>{
     }
 }
 
-const getSingleSubject = async( req: Request , res: Response) =>{
+
+const getSingleSubjects = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('subjects')
 
         const id = req.params.id 
         const query = { _id : new ObjectId(id)}
-        const course = await collection.findOne(query,{projection: { courseContent: 0, studentData: 0 }})
+        const subject = await collection.findOne(query)
 
-        if(!course){
+        if(!subject){
             return sendResponse(res,{
                 statusCode: 400,
                 success: false,
@@ -274,8 +269,8 @@ const getSingleSubject = async( req: Request , res: Response) =>{
         sendResponse(res,{
             statusCode: 200,
             success: false,
-            message: "Showing university details",
-            data: course,
+            message: "Showing subject details",
+            data: subject,
         })
     } catch (err) {
         console.log(err)
@@ -288,12 +283,88 @@ const getSingleSubject = async( req: Request , res: Response) =>{
     }
 }
 
+const getSubjectOrigin = async (req: Request, res: Response) => {
+    try {
+        const db = getDb();
+        const collection = db.collection('subjects');
+
+        const country = await collection.aggregate([
+            {
+                $group: {
+                    _id: "$country",
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    country: "$_id",
+                }
+            }
+        ]).toArray()
+
+
+        const uniqueCountryCount = await collection.distinct("country")
+        const totalUniqueSubjcts = uniqueCountryCount.length
+
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: 'Course retrieval successful!!!',
+            data: country,
+            meta: {
+                total: totalUniqueSubjcts
+            }
+        });
+    } catch (err) {
+        console.log(err)
+        sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: 'Internal server error',
+            data: err
+        })
+    }
+}
+
+
+const getSubjectsByCountry = async( req: Request , res: Response) =>{
+    try {
+        const db = getDb();
+        const collection = db.collection("subjects")
+
+        const country = req.params.country
+        
+        const subjects = await collection.find({ country: country }).toArray()
+        
+        if (subjects.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No subjects found for this country",
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Universities retrieved successfully",
+            data: subjects,
+        })
+    } catch (error) {
+        console.error("Error fetching universities:", error)
+        res.status(400).json({
+            success: false,
+            message: "Internal Server Error",
+            error,
+        })
+    }
+}
 
 
 module.exports = {
     createSubject,
     editSubject,
-    deleteSubject,
-    getAllSubject,
-    getSingleSubject
+    getAllSubjects,
+    getSingleSubjects,
+    deleteSubjects,
+    getSubjectOrigin,
+    getSubjectsByCountry
 }
