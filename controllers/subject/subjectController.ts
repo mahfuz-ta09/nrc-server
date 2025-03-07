@@ -1,7 +1,6 @@
 import { Request , Response } from "express"
 import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
-import { fileUploadHelper } from "../../helper/fileUploadHealper"
 const { getDb } = require('../../config/connectDB')
 
 
@@ -333,7 +332,6 @@ const getSubjectsByCountry = async( req: Request , res: Response) =>{
         const collection = db.collection("subjects")
 
         const country = req.params.country
-        
         const subjects = await collection.find({ country: country }).toArray()
         
         if (subjects.length === 0) {
