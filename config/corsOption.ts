@@ -1,7 +1,8 @@
 
 // origin: 'https://nrc-london.vercel.app',
 // origin: 'http://localhost:3000',
-// const allowedOrigins = ['https://www.nrcedu-uk.com', 'https://subdomain.nrcedu-uk.com']
+//   origin: 'https://www.nrcedu-uk.com',
+// const allowedOrigins = ['https://www.nrcedu-uk.com', 'https://nrc-london.vercel.app']
 // origin: (origin, callback) => {
 //     if (!origin || allowedOrigins.includes(origin)) {
 //         callback(null, true);
