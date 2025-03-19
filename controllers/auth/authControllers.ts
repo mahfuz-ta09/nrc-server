@@ -82,6 +82,15 @@ const logIn = async(req: Request, res: Response) => {
             expiresIn: "30d" 
         })
 
+        res.cookie("accessToken",
+            accessToken, { 
+            httpOnly: true,
+            signed: true,
+            path: "/",
+            secure: true,
+            sameSite: "none",
+        })
+
         res.cookie("refreshToken", 
             refreshToken, {
             httpOnly: true,
@@ -225,6 +234,14 @@ const logOut = async(req: Request, res: Response) => {
                 sameSite: "none"
         })
 
+        res.clearCookie("accessToken",{ 
+            httpOnly: true,
+            signed: true,
+            path: "/",
+            secure: true,
+            sameSite: "none",
+        })
+        
         sendResponse(res,{
             statusCode: 200,
             success: true,
@@ -288,6 +305,15 @@ const successResponse = async(req: Request, res: Response) => {
                 expiresIn: "30d" 
             })
 
+            res.cookie("accessToken",
+                accessToken, { 
+                httpOnly: true,
+                signed: true,
+                path: "/",
+                secure: true,
+                sameSite: "none",
+            })
+
             res.cookie("refreshToken", 
                 refreshToken, {
                 httpOnly: true,
@@ -325,10 +351,8 @@ const getAccessToken = async(req: Request, res: Response) => {
             const collection = db.collection('users')
             const decoded = await jwt.verify(token, process.env.REFRESHTOKEN)
             
-            
             const query = { email: decoded?.email }
             const user = await collection.findOne(query)
-
             if(user.status === "active" && user.role === decoded.role){
                 const userData = {
                     id: user._id,
@@ -342,6 +366,16 @@ const getAccessToken = async(req: Request, res: Response) => {
                     process.env.ACCESSTOKEN, { 
                     expiresIn: "5m" 
                 })
+                
+                res.cookie("accessToken",
+                    accessToken, { 
+                    httpOnly: true,
+                    signed: true,
+                    path: "/",
+                    secure: true,
+                    sameSite: "none",
+                })
+                
                 sendResponse(res,{
                     statusCode: 200,
                     success: true,
