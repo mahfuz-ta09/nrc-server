@@ -82,15 +82,6 @@ const logIn = async(req: Request, res: Response) => {
             expiresIn: "30d" 
         })
 
-        res.cookie("accessToken",
-            accessToken, { 
-            httpOnly: true,
-            signed: true,
-            path: "/",
-            secure: true,
-            sameSite: "none",
-        })
-
         res.cookie("refreshToken", 
             refreshToken, {
             httpOnly: true,
@@ -305,15 +296,6 @@ const successResponse = async(req: Request, res: Response) => {
                 expiresIn: "30d" 
             })
 
-            res.cookie("accessToken",
-                accessToken, { 
-                httpOnly: true,
-                signed: true,
-                path: "/",
-                secure: true,
-                sameSite: "none",
-            })
-
             res.cookie("refreshToken", 
                 refreshToken, {
                 httpOnly: true,
@@ -365,15 +347,6 @@ const getAccessToken = async(req: Request, res: Response) => {
                     userData, 
                     process.env.ACCESSTOKEN, { 
                     expiresIn: "5m" 
-                })
-                
-                res.cookie("accessToken",
-                    accessToken, { 
-                    httpOnly: true,
-                    signed: true,
-                    path: "/",
-                    secure: true,
-                    sameSite: "none",
                 })
                 
                 sendResponse(res,{
