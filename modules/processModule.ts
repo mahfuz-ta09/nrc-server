@@ -1,3 +1,5 @@
+import { fileUploadHelper } from "../helper/fileUploadHealper"
+
 const express = require('express')
 const router = express.Router()
 const { getAllData , createProceed , editProcessData , deleteProcessData , getSingleData } = require('../controllers/process/processControllers')
@@ -8,12 +10,21 @@ router.get('/all',
     verifyUser,
     getAllData)
 
+
 router.get('/single/:id',
     verifyUser,
     getSingleData)
 
 router.post('/create',  
     verifyUser,
+    fileUploadHelper.upload.fields([
+        { name: "en_result", maxCount: 1 },
+        { name: "ssc_result", maxCount: 1 },
+        { name: "hsc_result", maxCount: 1 },
+        { name: "bachelor_result", maxCount: 1 },
+        { name: "masters_result", maxCount: 1 },
+        { name: "other_result", maxCount: 1 }
+    ]),
     createProceed)
 
 router.patch('/update/:id',
@@ -23,10 +34,6 @@ router.patch('/update/:id',
 router.delete('/delete/:id', 
     verifyUser,
     deleteProcessData)
-
-
-// router.get('/partial/:page/:item', 
-//     getReviewBypage)
 
 
 export const precessModule = router

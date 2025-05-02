@@ -2,7 +2,6 @@ import { Request , Response } from "express"
 import { UserObject } from "./commonType"
 import sendResponse from "../../helper/sendResponse"
 import { format } from "date-fns"
-import path from "path"
 import sendEmail from "../../helper/sendEmail"
 const { getDb } = require('../../config/connectDB')
 const bcrypt = require("bcrypt")
@@ -182,13 +181,14 @@ const signUp = async(req: Request, res: Response) => {
         }
 
         const hashedPassword = await bcrypt.hash(password,10)
+        
         const userObject:UserObject = {
             email:email,
             password:hashedPassword,
             role: '',
             status: randomToken,
             image:'',
-            publicid:'', // to delete photo
+            publicid:'',
             name:name,
             phone: null,
             dob:'',
@@ -202,7 +202,7 @@ const signUp = async(req: Request, res: Response) => {
         sendResponse( res, {
             statusCode: 200,
             success: true,
-            message: 'Check email for verification code',
+            message: 'Check your email for verification code',
             data:{
                 id:result?.insertedId
             }
@@ -403,7 +403,7 @@ const resetPassword  = async(req: Request, res: Response) => {
 
         const changed = await collection.updateOne(query,updatedDoc)
         
-        if(changed.modifiedCount===0){
+        if(changed?.modifiedCount===0){
             return sendResponse(res,{
                 statusCode: 400,
                 success: false,
@@ -428,7 +428,7 @@ const resetPassword  = async(req: Request, res: Response) => {
             </div>
         `
         sendEmail(email,"Reset password request",content)
-        console.log(changed)
+        
         sendResponse(res,{
             statusCode: 200,
             success: true,
