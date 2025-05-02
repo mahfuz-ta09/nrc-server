@@ -197,7 +197,11 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
             </div>
             `;
 
-        sendEmail("admin@nrcedu-uk.com","Student's application data:",content)
+        sendEmail(
+            "admin@nrcedu-uk.com",
+            "Student's application data",
+            content
+        )
         
         sendResponse(res,{
             statusCode: 200,

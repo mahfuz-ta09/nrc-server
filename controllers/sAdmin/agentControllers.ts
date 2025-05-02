@@ -134,7 +134,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
 
 
         const emailResponse = await sendEmail(
-            "Info@nrclondon.co.uk",
+            "admin@nrcedu-uk.com",
             "New Enquiry Submission",
             htmlContent
         )
