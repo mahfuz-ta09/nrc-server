@@ -167,10 +167,11 @@ const emailContact = async(req: Request , res: Response) =>{
                 </p>
             </div>
         `
+        console.log("first it was ok")
 
 
         const emailResponse = await sendEmail(
-            "Info@nrclondon.co.uk",
+            "admin@nrcedu-uk.com",
             "New Enquiry Submission",
             htmlContent
         )

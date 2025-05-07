@@ -138,6 +138,8 @@ const createAgentRequest = async(req: Request, res: Response) => {
             "New Enquiry Submission",
             htmlContent
         )
+
+        
         const result = await collection.insertOne(userObject)
 
         sendResponse(res,{
