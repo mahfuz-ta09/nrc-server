@@ -198,7 +198,7 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
             `;
 
         sendEmail(
-            "admin@nrcedu-uk.com",
+            "info@nrcedu-uk.com",
             "Student's application data",
             content
         )
