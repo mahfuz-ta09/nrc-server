@@ -6,6 +6,7 @@ import { precessModule } from "../modules/processModule"
 import { superAdminModule } from "../modules/superAdminModule"
 import { agentModule } from "../modules/agentModule"
 import { profileModule } from "../modules/profileModule"
+import { countryBaseModule } from "../modules/countryBaseModule"
 
 
 
@@ -24,7 +25,7 @@ const allRoutes = [
     },
     {
         path: '/country',
-        route: universityModules
+        route: countryBaseModule
     },
     {
         path: '/subject',
