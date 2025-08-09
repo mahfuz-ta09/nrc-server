@@ -13,6 +13,7 @@ interface AuthenticatedResponse extends Response {
 
 const verifyUser = (req:AuthenticatedRequest, res: AuthenticatedResponse, next:NextFunction ) => {
     const token = req.headers.authorization
+    
     if (!token) {
         return sendResponse( res, {
             statusCode: 500,
@@ -25,6 +26,7 @@ const verifyUser = (req:AuthenticatedRequest, res: AuthenticatedResponse, next:N
         const secretKey = process.env.ACCESSTOKEN
         const decoded = jwt.verify(token, secretKey)
         req.user = decoded
+
         next()
     } catch (error) {
         return sendResponse( res, {

@@ -21,11 +21,12 @@ const storage = multer.diskStorage({
         cb(null, uploadPath);
     },
     filename: (req:any , file:any , cb: any) => {
-        cb(null, file.originalname);
+        const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1E9)}-${file.originalname}`;
+        cb(null, uniqueName)
     }
 })
-const upload = multer({ storage })
 
+const upload = multer({ storage })
 
 const uploadToCloud = async(file:any)  =>{
   return new Promise((resolve, reject) => {

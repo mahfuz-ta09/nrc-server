@@ -23,6 +23,10 @@ const allRoutes = [
         route: universityModules
     },
     {
+        path: '/country',
+        route: universityModules
+    },
+    {
         path: '/subject',
         route: subjectModule
     },

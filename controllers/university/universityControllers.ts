@@ -9,6 +9,232 @@ interface AuthenticatedRequest extends Request {
     user?: any
 }
 
+
+const getAllCountryBase = async( req:AuthenticatedRequest, res:Response) => {
+        try {
+        const db = getDb();
+        const collection = db.collection("country-uni");
+        
+        
+        const countryBase = await collection.find({}).toArray()
+        const countBaseCount = await collection.countDocuments()
+        
+        if (countryBase.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No Country found",
+            })
+        }
+
+        const metaData = {
+            page: 0,
+            limit: 0,
+            total: countBaseCount,
+        }
+        res.status(200).json({
+            success: true,
+            message: "Country retrieved successfully",
+            data: countryBase,
+            meta: metaData
+        })
+    } catch (error) {
+        console.error("Error fetching universities:", error)
+        res.status(400).json({
+            success: false,
+            message: "Internal Server Error",
+            error,
+        })
+    }
+}
+
+
+const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const db = getDb();
+        const collection = db.collection('country-uni');
+        const usersCollection = db.collection('users');
+
+        const tEmail = req.user?.email || null;
+        const tRole = req.user?.role || null;
+        const tStatus = req.user?.status || null;
+
+        const user1 = await usersCollection.findOne({ email: tEmail, status: tStatus, role: tRole });
+        if (!user1) {
+            return sendResponse(res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            });
+        }
+
+        
+        const id = req.params.id;
+        const { country, serial, countryFull } = req.body;
+        const files: any = req.files;
+
+
+        if (
+            !country &&
+            !serial &&
+            !countryFull &&
+            !files["countryFlag"]?.[0] &&
+            !files["famousFile"]?.[0]
+        ) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: 'All fields missing!!!',
+            });
+        }
+
+        
+
+        const query = { _id: new ObjectId(id) };
+        const countryObj = await collection.findOne(query);
+
+        if (!countryObj) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: 'No country exists with the given id!!!',
+            });
+        }
+
+        let uploadedFlag: any = null;
+        let uploadedFamous: any = null;
+
+        
+        if (files["countryFlag"]?.[0]) {
+            uploadedFlag = await fileUploadHelper.uploadToCloud(files["countryFlag"]?.[0]);
+            const ss = await fileUploadHelper.deleteFromCloud(countryObj.countryFlag_Id);
+            console.log(ss)
+        }
+
+        
+        if (files["famousFile"]?.[0]) {
+            uploadedFamous = await fileUploadHelper.uploadToCloud(files["famousFile"]?.[0]);
+            const ss = await fileUploadHelper.deleteFromCloud(countryObj.famousFile_Id);
+            console.log(ss)
+        }
+
+        const insertedObject = {
+            country: country ? country.toUpperCase() : countryObj.country,
+            countryFull: countryFull ? countryFull.toLowerCase() : countryObj.countryFull,
+            serial: serial ? Number(serial) : Number(countryObj.serial),
+
+            countryFlag_url: uploadedFlag?.url ?? countryObj.countryFlag_url,
+            countryFlag_Id: uploadedFlag?.public_id ?? countryObj.countryFlag_Id,
+
+            famousFile_url: uploadedFamous?.url ?? countryObj.famousFile_url,
+            famousFile_Id: uploadedFamous?.public_id ?? countryObj.famousFile_Id,
+
+            universityList: countryObj.universityList
+        };
+
+        const updateDoc = { $set: insertedObject };
+        const result = await collection.updateOne(query, updateDoc);
+
+        if (!result.acknowledged) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: 'Failed to update!!!',
+            });
+        }
+
+        return sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: 'Successfully updated!!!',
+            data: result,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({
+            success: false,
+            message: 'Internal Server Error',
+            error,
+        });
+    }
+};
+
+const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
+    try{
+        const db = getDb()
+        const collection = db.collection('country-uni')
+        const usersCollection = db.collection('users')
+
+        
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        
+        if(!user1){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
+        const { country , serial , countryFull } = req.body
+        const files:any = req.files
+
+        if(!country || !serial || !countryFull || !files["countryFlag"]?.[0] || !files["famousFile"]?.[0]){
+            return sendResponse( res, {
+                statusCode: 400,
+                success: false,
+                message: 'Field missing!!!',
+            })
+        }
+
+        
+        const local_country:any = await fileUploadHelper.uploadToCloud(files["countryFlag"]?.[0])
+        const local_flag:any   = await fileUploadHelper.uploadToCloud(files["famousFile"]?.[0])
+
+
+        const insertedObject = {
+            country : country.toUpperCase(),
+            countryFull : countryFull.toLowerCase(),
+            serial : Number(serial),
+
+            countryFlag_url : local_country.url,
+            countryFlag_Id : local_country.public_id,
+
+            famousFile_url : local_flag.url,
+            famousFile_Id : local_flag.public_id,
+            
+            universityList: []
+        }
+
+        const result = await collection.insertOne(insertedObject)
+
+        if(!result.acknowledged){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: "Insertion failed!!!",
+                data: result,
+            })
+        }
+
+        return sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: "Inserted successfully!!!",
+            data: result,
+        })
+    }catch(err){
+
+    }
+}
+
+
+
+
+// old from here 
+
 const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
@@ -440,5 +666,18 @@ module.exports = {
     getAllUniversity,
     getSingleUniversity,
     getUniOriginName,
-    getUniversityByCountry
+    getUniversityByCountry,
+
+
+
+
+
+
+
+
+
+    // new
+    createCountryBase,
+    getAllCountryBase,
+    editCountryBase
 }
