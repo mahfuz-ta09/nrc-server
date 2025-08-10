@@ -9,6 +9,41 @@ interface AuthenticatedRequest extends Request {
     user?: any
 }
 
+const getAllCountryBaseName= async( req:AuthenticatedRequest, res:Response) => {
+        try {
+            const db = getDb();
+            const collection = db.collection("country-uni");
+        
+            const countryBase = await collection.find({},{projection: {country : 1}}).toArray()
+            const countBaseCount = await collection.countDocuments()
+            
+            if (countryBase.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "No Country found",
+                })
+            }
+
+            const metaData = {
+                page: 0,
+                limit: 0,
+                total: countBaseCount,
+            }
+            res.status(200).json({
+                success: true,
+                message: "Country retrieved successfully",
+                data: countryBase,
+                meta: metaData
+            })
+        }catch(error){
+            console.error("Error fetching universities:", error)
+            res.status(400).json({
+                success: false,
+                message: "Internal Server Error",
+                error,
+            })
+        }
+}
 
 const getAllCountryBase = async( req:AuthenticatedRequest, res:Response) => {
         try {
@@ -16,8 +51,9 @@ const getAllCountryBase = async( req:AuthenticatedRequest, res:Response) => {
         const collection = db.collection("country-uni");
         
         
-        const countryBase = await collection.find({}).toArray()
+        const countryBase = await collection.find({},{projection: {universityList : 0,famousFile_Id:0,countryFlag_Id:0}}).toArray()
         const countBaseCount = await collection.countDocuments()
+        
         
         if (countryBase.length === 0) {
             return res.status(404).json({
@@ -189,7 +225,22 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
             })
         }
 
+        const exist = await collection.findOne({
+            $or: [
+                { country: country?.toUpperCase() },
+                { countryFull: countryFull?.toLowerCase() }
+            ]
+        })
         
+        if(exist ){
+            return sendResponse( res, {
+                statusCode: 400,
+                success: false,
+                message: 'Already exist!!!',
+            })
+        }
+
+
         const local_country:any = await fileUploadHelper.uploadToCloud(files["countryFlag"]?.[0])
         const local_flag:any   = await fileUploadHelper.uploadToCloud(files["famousFile"]?.[0])
 
@@ -322,5 +373,6 @@ module.exports = {
     createCountryBase,
     getAllCountryBase,
     editCountryBase,
-    deleteCountryBase
+    deleteCountryBase,
+    getAllCountryBaseName
 }

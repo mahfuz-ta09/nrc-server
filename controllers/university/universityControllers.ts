@@ -433,6 +433,250 @@ const getUniversityByCountry = async( req: Request , res: Response) =>{
         })
     }
 }
+const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
+    try{
+        const db = getDb()
+        const collection = db.collection('country-uni')
+        const usersCollection = db.collection('users')
+
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        
+        if(!user1){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
+        const id = req.params.id
+
+        const { englishProf , qualifications , universityName , lowFee , highFee , scholarship , initialDeposite , aboutUni } = req.body        
+        const files:any = req.files
+
+        
+        if( !englishProf || !qualifications || !universityName || !lowFee || !highFee || !scholarship || !initialDeposite || !aboutUni){
+            return sendResponse( res, {
+                statusCode: 400,
+                success: false,
+                message: 'missing field is not allowed!!!',
+            })
+        }
+
+        
+        const exist = await collection.findOne({ _id: new ObjectId(id),'universityList.universityName':universityName.toUpperCase() }) 
+        if(exist){
+            return sendResponse( res, {
+                statusCode: 400,
+                success: false,
+                message: 'this university name already exist!!!',
+            })
+        }       
+        const file:any = await fileUploadHelper.uploadToCloud(files["universityImage"]?.[0])
+
+        const insertedObject = {
+            englishProf:englishProf,
+            qualifications:qualifications,
+            universityName:universityName.toUpperCase(),
+            lowFee:lowFee,
+            highFee:highFee,
+            scholarship:scholarship,
+            initialDeposite:initialDeposite,
+            aboutUni:aboutUni,
+            subjects:  [],
+            universityImage: {
+                url: file?.url,
+                public_id: file?.public_id
+            }
+        }
+        
+        const result = await collection.updateOne(
+            {_id: new ObjectId(id)},
+            {
+                $push:{
+                    universityList: insertedObject
+                }
+            }
+        )
+
+        if(!result.acknowledged){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: "Insertion failed!!!",
+                data: result,
+            })
+        }
+
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: "Inserted successfully!!!",
+            data: result,
+        })
+    }catch(error){
+        console.error("Error fetching universities:", error)
+        res.status(400).json({
+            success: false,
+            message: "Internal Server Error",
+            error,
+        })
+    }
+}
+
+
+    
+const deleteUniversityFromCountry = async(req:AuthenticatedRequest , res: Response) =>{
+    try{
+        const db = getDb()
+        const collection = db.collection('country-uni')
+        const usersCollection = db.collection('users')
+
+        const tEmail = req.user?.email || null
+        const tRole = req.user?.role || null
+        const tStatus = req.user?.status || null
+        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
+        
+        if(!user1){
+            return sendResponse( res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            })
+        }
+
+        const country = req.params.country;
+        const university = req.params.university;
+        const imgId = req.params.imgId;
+
+        if ( !country|| !university ){
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: 'Id missing!!!',
+            });
+        }
+
+        const countryObj = await collection.findOne({
+            country:country,
+            'universityList.universityName':university.toUpperCase()
+        });
+        
+        if (!countryObj){
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: 'No matching data found with the id!!!',
+            });
+        }
+        
+
+        if(countryObj?.universityList) await fileUploadHelper.deleteFromCloud(imgId)
+        const result = await collection.updateOne(
+            { country: country },
+            { $pull: { universityList: { universityName: university.toUpperCase() }}}
+        );
+
+        if(!result.acknowledged){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: "Failed to delete!!!",
+                data: result,
+            })
+        }
+
+        return sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: "Successfully deleted!!!",
+            data: result,
+        })
+    }catch(error){
+        console.error(error);
+        res.status(400).json({
+            success: false,
+            message: 'Internal Server Error',
+            error,
+        });
+    }
+}
+
+const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const db = getDb();
+        const collection = db.collection("country-uni");
+
+        const { all, country, page: pageParam, total: totalParam } = req.query;
+
+
+        // console.log(pageParam,totalParam,all,country)
+        
+        const page = pageParam ? Number(pageParam) : undefined;
+        const total = totalParam ? Number(totalParam) : undefined;
+
+        let matchStage: any = {};
+        if (country) {
+            matchStage.country = (country as string).toUpperCase();
+        }
+
+        if (all === "all") {
+            const countries = await collection.find(matchStage).toArray();
+            const allUniversities = countries.flatMap((c:any) => c.universityList || []);
+            return res.json({
+                success: true,
+                total: allUniversities.length,
+                data: allUniversities
+            });
+        }
+
+        if (!page || !total) {
+            return res.status(400).json({
+                success: false,
+                message: "For paginated results, provide 'page' and 'total'."
+            });
+        }
+
+        const pipeline: any[] = [
+            { $match: matchStage },
+            { $unwind: "$universityList" },
+            { $replaceRoot: { newRoot: "$universityList" } },
+            { $skip: (page - 1) * total },
+            { $limit: total }
+        ];
+
+        const universities = await collection.aggregate(pipeline).toArray();
+
+        const countPipeline: any[] = [
+            { $match: matchStage },
+            { $unwind: "$universityList" },
+            { $count: "count" }
+        ];
+        const countResult = await collection.aggregate(countPipeline).toArray();
+        const totalCount = countResult[0]?.count || 0;
+
+        res.json({
+            success: true,
+            meta: {
+                page,
+                total,
+                totalCount
+            },
+            data: universities
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({
+            success: false,
+            message: "Internal Server Error",
+            error,
+        });
+    }
+};
+
 
 
 module.exports = {
@@ -443,4 +687,11 @@ module.exports = {
     getSingleUniversity,
     getUniOriginName,
     getUniversityByCountry,
+
+
+
+    addUniversity,
+    deleteUniversityFromCountry,
+    getUniversity
+
 }

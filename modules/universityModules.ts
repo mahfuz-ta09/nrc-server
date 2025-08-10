@@ -1,7 +1,9 @@
 import { fileUploadHelper } from "../helper/fileUploadHealper"
 const express = require('express')
 const router = express.Router()
-const { createUniversity , getAllUniversity , getSingleUniversity , deleteUniversity , editUniversity,getUniOriginName ,getUniversityByCountry} = require('../controllers/university/universityControllers')
+const { createUniversity , getAllUniversity , getSingleUniversity , deleteUniversity , editUniversity,getUniOriginName ,getUniversityByCountry,
+    addUniversity , deleteUniversityFromCountry , getUniversity
+} = require('../controllers/university/universityControllers')
 const verifyUser = require('../middleware/verifyUser')
 
 
@@ -33,6 +35,28 @@ router.get('/uni-area',
 
 router.get('/all/:country', 
     getUniversityByCountry)
+
+
+
+
+
+
+
+router.post('/add/:id',
+    verifyUser,
+    fileUploadHelper.upload.fields([
+        { name: "universityImage", maxCount: 1 },
+    ]),
+    addUniversity)
+
+
+router.delete('/add/:country/:university/:imgId',
+    verifyUser,
+    deleteUniversityFromCountry)
+
+
+router.get('/', 
+    getUniversity)
 
 
 
