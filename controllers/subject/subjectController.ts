@@ -357,6 +357,306 @@ const getSubjectsByCountry = async( req: Request , res: Response) =>{
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const getSubject = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const db = getDb();
+        const collection = db.collection('country-uni');
+        const usersCollection = db.collection('users');
+
+        const tEmail = req.user?.email || null;
+        const tRole = req.user?.role || null;
+        const tStatus = req.user?.status || null;
+        const user1 = await usersCollection.findOne({ email: tEmail, status: tStatus, role: tRole });
+
+        if (!user1) {
+            return sendResponse(res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            });
+        }
+        const countryIdRaw = req.params.countryId;
+        const universityNameRaw = req.body.universityName;
+
+        // Validate and cast countryId
+        if (!countryIdRaw || typeof countryIdRaw !== "string") {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Invalid or missing country ID",
+            });
+        }
+
+        if (!universityNameRaw || typeof universityNameRaw !== "string") {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Invalid or missing university name",
+            });
+        }
+
+        const countryId = new ObjectId(countryIdRaw);
+        const universityName = universityNameRaw.toUpperCase();
+
+        // Now safe to use
+        const exist = await collection.findOne({
+            _id: countryId,
+            "universityList.universityName": universityName
+        });
+        if (!exist || !exist.universityList?.[0]) {
+            return sendResponse(res, {
+                statusCode: 404,
+                success: false,
+                message: "University not found!!!"
+            });
+        }
+
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Subjects fetched successfully!",
+            data: exist.universityList[0].subjects || []
+        });
+
+    } catch (error) {
+        console.error("Error fetching subjects:", error);
+        res.status(400).json({
+            success: false,
+            message: "Internal Server Error",
+            error,
+        });
+    }
+};
+
+
+
+const addSubject = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const db = getDb();
+        const collection = db.collection('country-uni');
+        const usersCollection = db.collection('users');
+
+        const tEmail = req.user?.email || null;
+        const tRole = req.user?.role || null;
+        const tStatus = req.user?.status || null;
+        const user1 = await usersCollection.findOne({ email: tEmail, status: tStatus, role: tRole });
+
+        if (!user1) {
+            return sendResponse(res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            });
+        }
+
+        const { countryId, universityName } = req.params;
+        const { subjectName, cost, duration, description } = req.body;
+
+        if (!subjectName || !cost || !duration) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Missing required subject fields!!!",
+            });
+        }
+
+        const newSubject = {
+            subjectName,
+            cost,
+            duration,
+            description: description || "",
+            createdAt: new Date()
+        };
+
+        const result = await collection.updateOne(
+            { _id: new ObjectId(countryId), "universityList.universityName": universityName.toUpperCase() },
+            { $push: { "universityList.$.subjects": newSubject } }
+        );
+
+        if (!result.acknowledged) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Failed to add subject!!!"
+            });
+        }
+
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Subject added successfully!",
+        });
+
+    } catch (error) {
+        console.error("Error adding subject:", error);
+        res.status(400).json({
+            success: false,
+            message: "Internal Server Error",
+            error,
+        });
+    }
+};
+
+
+
+const updateSubject = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const db = getDb();
+        const collection = db.collection('country-uni');
+        const usersCollection = db.collection('users');
+
+        const tEmail = req.user?.email || null;
+        const tRole = req.user?.role || null;
+        const tStatus = req.user?.status || null;
+        const user1 = await usersCollection.findOne({ email: tEmail, status: tStatus, role: tRole });
+
+        if (!user1) {
+            return sendResponse(res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            });
+        }
+
+        const { countryId, universityName, subjectName } = req.params;
+        const { cost, duration, description } = req.body;
+
+        const result = await collection.updateOne(
+            { 
+                _id: new ObjectId(countryId), 
+                "universityList.universityName": universityName.toUpperCase(),
+                "universityList.subjects.subjectName": subjectName 
+            },
+            { 
+                $set: { 
+                    "universityList.$[uni].subjects.$[subj].cost": cost,
+                    "universityList.$[uni].subjects.$[subj].duration": duration,
+                    "universityList.$[uni].subjects.$[subj].description": description 
+                } 
+            },
+            { arrayFilters: [ { "uni.universityName": universityName.toUpperCase() }, { "subj.subjectName": subjectName } ] }
+        );
+
+        if (!result.acknowledged) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Failed to update subject!!!"
+            });
+        }
+
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Subject updated successfully!",
+        });
+
+    } catch (error) {
+        console.error("Error updating subject:", error);
+        res.status(400).json({
+            success: false,
+            message: "Internal Server Error",
+            error,
+        });
+    }
+};
+
+
+
+const deleteSubject = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const db = getDb();
+        const collection = db.collection('country-uni');
+        const usersCollection = db.collection('users');
+
+        const tEmail = req.user?.email || null;
+        const tRole = req.user?.role || null;
+        const tStatus = req.user?.status || null;
+        const user1 = await usersCollection.findOne({ email: tEmail, status: tStatus, role: tRole });
+
+        if (!user1) {
+            return sendResponse(res, {
+                statusCode: 411,
+                success: false,
+                message: 'Unauthorized!!!',
+            });
+        }
+
+        const { countryId, universityName, subjectName } = req.params;
+
+        const result = await collection.updateOne(
+            { _id: new ObjectId(countryId), "universityList.universityName": universityName.toUpperCase() },
+            { $pull: { "universityList.$.subjects": { subjectName } } }
+        );
+
+        if (!result.acknowledged) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Failed to delete subject!!!"
+            });
+        }
+
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Subject deleted successfully!",
+        });
+
+    } catch (error) {
+        console.error("Error deleting subject:", error);
+        res.status(400).json({
+            success: false,
+            message: "Internal Server Error",
+            error,
+        });
+    }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 module.exports = {
     createSubject,
     editSubject,
@@ -364,5 +664,14 @@ module.exports = {
     getSingleSubjects,
     deleteSubjects,
     getSubjectOrigin,
-    getSubjectsByCountry
+    getSubjectsByCountry,
+
+
+
+
+
+    deleteSubject,
+    updateSubject,
+    addSubject,
+    getSubject
 }

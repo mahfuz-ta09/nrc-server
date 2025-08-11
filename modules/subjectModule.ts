@@ -2,7 +2,8 @@ import { fileUploadHelper } from "../helper/fileUploadHealper"
 
 const express = require('express')
 const router = express.Router()
-const { getSubjectOrigin , getSubjectsByCountry , getAllSubjects , getSingleSubjects , createSubject , editSubject , deleteSubjects } = require('../controllers/subject/subjectController')
+const { getSubjectOrigin , getSubjectsByCountry , getAllSubjects , getSingleSubjects , createSubject , editSubject , deleteSubjects 
+    ,deleteSubject,updateSubject,addSubject,getSubject} = require('../controllers/subject/subjectController')
 const verifyUser = require('../middleware/verifyUser')
 
 
@@ -31,6 +32,20 @@ router.get('/sub-area',
     
 router.get('/all/:country', 
     getSubjectsByCountry)
-    
 
+
+
+router.get('/all', 
+    getSubject)
+
+router.post('/create',  
+    verifyUser,
+    addSubject)
+
+
+router.delete('/delete/:id', 
+    verifyUser,
+    updateSubject)
+
+    
 export const subjectModule = router

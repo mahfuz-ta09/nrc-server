@@ -51,7 +51,7 @@ const getAllCountryBase = async( req:AuthenticatedRequest, res:Response) => {
         const collection = db.collection("country-uni");
         
         
-        const countryBase = await collection.find({},{projection: {universityList : 0,famousFile_Id:0,countryFlag_Id:0}}).toArray()
+        const countryBase = await collection.find({},{projection: {universityList : 0,famousFile_Id:0,countryFlag_Id:0}}).sort({serial: 1}).toArray()
         const countBaseCount = await collection.countDocuments()
         
         
@@ -105,7 +105,7 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
 
         
         const id = req.params.id;
-        const { country, serial, countryFull } = req.body;
+        const { country, serial, countryFull , currency } = req.body;
         const files: any = req.files;
 
 
@@ -114,7 +114,8 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
             !serial &&
             !countryFull &&
             !files["countryFlag"]?.[0] &&
-            !files["famousFile"]?.[0]
+            !files["famousFile"]?.[0] &&
+            !currency
         ) {
             return sendResponse(res, {
                 statusCode: 400,
@@ -156,6 +157,7 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
         const insertedObject = {
             country: country ? country.toUpperCase() : countryObj.country,
             countryFull: countryFull ? countryFull.toLowerCase() : countryObj.countryFull,
+            currency: currency ? currency : countryObj.currency,
             serial: serial ? Number(serial) : Number(countryObj.serial),
 
             countryFlag_url: uploadedFlag?.url ?? countryObj.countryFlag_url,
@@ -214,10 +216,10 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
             })
         }
 
-        const { country , serial , countryFull } = req.body
+        const { country , serial , countryFull , currency } = req.body
         const files:any = req.files
 
-        if(!country || !serial || !countryFull || !files["countryFlag"]?.[0] || !files["famousFile"]?.[0]){
+        if(!country || !serial || !countryFull || !files["countryFlag"]?.[0] || !files["famousFile"]?.[0] || !currency){
             return sendResponse( res, {
                 statusCode: 400,
                 success: false,
@@ -248,6 +250,7 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
         const insertedObject = {
             country : country.toUpperCase(),
             countryFull : countryFull.toLowerCase(),
+            currency:currency,
             serial : Number(serial),
 
             countryFlag_url : local_country.url,
