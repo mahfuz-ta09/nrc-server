@@ -9,6 +9,7 @@ type IApiReponse<T> = {
     page?: number
     limit?: number
     total?: number
+    totalCount?: number
     totalPages?: number
     accessToken?: string
     refreshToken?: string

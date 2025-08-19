@@ -529,12 +529,13 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
             message: "Inserted successfully!!!",
             data: result,
         })
-    }catch(error){
-        console.error("Error fetching universities:", error)
-        res.status(400).json({
+    }catch(err){
+        console.log(err)
+        sendResponse(res,{
+            statusCode: 400,
             success: false,
-            message: "Internal Server Error",
-            error,
+            message: 'Internel server error',
+            data: err
         })
     }
 }
@@ -631,8 +632,8 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
         const db = getDb();
         const collection = db.collection("country-uni");
 
-        const { all, country, page: pageParam, total: totalParam } = req.query;
-    
+        const { all, country, page: pageParam, total: totalParam, uniName } = req.query;
+
         const page = pageParam ? Number(pageParam) : undefined;
         const total = totalParam ? Number(totalParam) : undefined;
 
@@ -641,16 +642,31 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
             matchStage.country = (country as string).toUpperCase();
         }
 
+        
         if (all === "all") {
             const countries = await collection.find(matchStage).toArray();
-            const allUniversities = countries.flatMap((c:any) => c.universityList || []);
-            return res.json({
+            let allUniversities = countries.flatMap((c: any) => c.universityList || []);
+
+        
+            if (uniName) {
+                const uniNameLower = (uniName as string).toLowerCase();
+                    allUniversities = allUniversities.filter((u: any) =>
+                    u.universityName?.toLowerCase().includes(uniNameLower)
+                );
+            }
+
+            return sendResponse(res, {
+                statusCode: 200,
                 success: true,
-                total: allUniversities.length,
+                meta: {
+                    page,
+                    totalCount:allUniversities.length,
+                },
                 data: allUniversities
             });
         }
 
+        
         if (!page || !total) {
             return res.status(400).json({
                 success: false,
@@ -663,26 +679,44 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
             { $unwind: "$universityList" },
             {
                 $addFields: {
-                "universityList.countryId": "$_id" // attach country id to university object
+                "universityList.countryId": "$_id"
                 }
             },
             { $replaceRoot: { newRoot: "$universityList" } },
-            { $skip: (page - 1) * total },
-            { $limit: total }
         ];
 
+        
+        if (uniName) {
+            const regex = new RegExp(uniName as string, "i")
+            pipeline.push({ $match: { universityName: regex } });
+        }
+
+        
+        pipeline.push({ $skip: (page - 1) * total });
+        pipeline.push({ $limit: total });
+
         const universities = await collection.aggregate(pipeline).toArray();
+
 
         const countPipeline: any[] = [
             { $match: matchStage },
             { $unwind: "$universityList" },
-            { $count: "count" }
         ];
+
+        if (uniName) {
+            const regex = new RegExp(uniName as string, "i");
+            countPipeline.push({ $match: { "universityList.universityName": regex } });
+        }
+
+        countPipeline.push({ $count: "count" });
+
         const countResult = await collection.aggregate(countPipeline).toArray();
         const totalCount = countResult[0]?.count || 0;
 
-        res.json({
+        sendResponse(res, {
+            statusCode: 200,
             success: true,
+            message: "Updated successfully!!!",
             meta: {
                 page,
                 total,
@@ -690,13 +724,14 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
             },
             data: universities
         });
-    } catch (error) {
-        console.error(error);
-        res.status(400).json({
+    } catch (err) {
+        console.log(err)
+        sendResponse(res,{
+            statusCode: 400,
             success: false,
-            message: "Internal Server Error",
-            error,
-        });
+            message: 'Internel server error',
+            data: err
+        })
     }
 };
 
@@ -856,13 +891,14 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
             message: "Updated successfully!!!",
             data: result
         });
-    } catch (error) {
-        console.error("Error updating university:", error);
-        res.status(400).json({
-        success: false,
-        message: "Internal Server Error",
-        error
-        });
+    } catch (err) {
+        console.log(err)
+        sendResponse(res,{
+            statusCode: 400,
+            success: false,
+            message: 'Internel server error',
+            data: err
+        })
     }
 };
 
