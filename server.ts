@@ -6,7 +6,7 @@ const corsOption = require('./config/corsOption')
 const cookieParser = require('cookie-parser')
 const { connectDb } = require('./config/connectDB')
 const routes = require('./routes/app')
-const port = process.env.PORT || 7373
+const port = process.env.PORT || 7374
 
 
 connectDb()

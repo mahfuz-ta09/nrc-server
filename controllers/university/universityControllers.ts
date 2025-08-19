@@ -470,11 +470,11 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
         const files:any = req.files
 
         
-        if( !englishProf || !qualifications || !universityName || !scholarship || !initialDeposite || !aboutUni){
+        if( !englishProf || !qualifications || !universityName  || !initialDeposite || !aboutUni || !files["universityImage"]?.[0]){
             return sendResponse( res, {
                 statusCode: 400,
                 success: false,
-                message: 'missing field is not allowed!!!',
+                message: `missing field is not allowed!`,
             })
         }
 
@@ -495,7 +495,7 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
             universityName:universityName.toUpperCase(),
             lowFee:lowFee,
             highFee:highFee,
-            scholarship:scholarship,
+            scholarship:scholarship?scholarship:'-',
             initialDeposite:initialDeposite,
             aboutUni:aboutUni,
             subjects:  [],
@@ -540,7 +540,7 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
 }
 
 
-    const deleteUniversityFromCountry = async (req: AuthenticatedRequest, res: Response) => {
+const deleteUniversityFromCountry = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const db = getDb();
         const collection = db.collection('country-uni');
@@ -737,7 +737,7 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
             aboutUni
         } = req.body;
 
-
+        
         const files: any = req.files;
 
         const existingDoc = await collection.findOne(
@@ -777,18 +777,56 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
             };
         }
 
+
+        const DELETE_MARKER = '-1'
+
+        function mergeWithDelete<T extends Record<string, any>>(
+                oldObj: T,
+                newObj: Partial<T>,
+                deleteMarker: any = DELETE_MARKER
+            ): T {
+                const result: T = { ...oldObj };
+                
+                for (const key in newObj) {
+                    const typedKey = key as keyof T;
+                    const value = newObj[typedKey];
+
+                    if (value === deleteMarker) {
+                        delete result[typedKey];
+                    } else if (value !== undefined) {
+                    result[typedKey] = value as T[keyof T];
+                    }
+                }
+
+            return result;
+        }
+
+
         const updatedUniversity = {
-            englishProf: englishProf ? englishProf : currentUni.englishProf,
-            qualifications: qualifications ? qualifications : currentUni.qualifications,
-            universityName: universityName ? universityName.toUpperCase() : currentUni.universityName,
-            lowFee: lowFee ? lowFee : currentUni.lowFee,
-            highFee: highFee ? highFee : currentUni.highFee,
-            scholarship: scholarship ? scholarship : currentUni.scholarship,
-            initialDeposite: initialDeposite ? initialDeposite : currentUni.initialDeposite,
-            aboutUni: aboutUni ? aboutUni : currentUni.aboutUni,
-            subjects: currentUni.subjects ? currentUni.subjects : [],
-            universityImage: newImageData ? newImageData : currentUni.universityImage
+            englishProf: englishProf
+                ? mergeWithDelete(currentUni.englishProf, englishProf, "-1")
+                : currentUni.englishProf,
+
+            qualifications: qualifications
+                ? mergeWithDelete(currentUni.qualifications, qualifications, "-1")
+                : currentUni.qualifications,
+
+            universityName: universityName
+                ? universityName.toUpperCase()
+                : currentUni.universityName,
+
+            lowFee: lowFee ?? currentUni.lowFee,
+            highFee: highFee ?? currentUni.highFee,
+            scholarship: scholarship ?? currentUni.scholarship,
+            initialDeposite: initialDeposite ?? currentUni.initialDeposite,
+            aboutUni: aboutUni ?? currentUni.aboutUni,
+
+            subjects: currentUni.subjects ?? [],
+
+            universityImage: newImageData ?? currentUni.universityImage,
         };
+
+
 
         
         const result = await collection.updateOne(
