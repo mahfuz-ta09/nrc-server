@@ -44,9 +44,9 @@ router.post('/add/:countryId/:universityName',
     verifyUser,
     addSubject)
 
-router.delete('/delete/:id', 
+router.delete('/remove/:id/:countryID/:countryName', 
     verifyUser,
-    updateSubject)
+    deleteSubject)
 
     
 export const subjectModule = router

@@ -493,9 +493,17 @@ const addSubject = async (req: AuthenticatedRequest, res: Response) => {
             });
         }
 
-        
         const countryId = req.params.countryId;
         const universityName = req.params.universityName;
+
+        if (!countryId || !universityName) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Missing country ID or university name!!!",
+            });
+        }
+
         const {
             qualifications ,
             subjectName ,
@@ -510,7 +518,8 @@ const addSubject = async (req: AuthenticatedRequest, res: Response) => {
             applicationDeadline,
             description ,
             careerOpportunities,
-            accreditation
+            accreditation,
+            placement
         } = req.body;
 
         if (!countryId || !universityName) {
@@ -521,20 +530,8 @@ const addSubject = async (req: AuthenticatedRequest, res: Response) => {
             });
         }
         
-        if (subjectName == null || 
-            programType == null || 
-            faculty == null || 
-            credits == null || 
-            modeOfStudy == null || 
-            language == null || 
-            intakes == null || 
-            cost == null || 
-            duration == null || 
-            applicationDeadline == null || 
-            description == null || 
-            careerOpportunities == null || 
-            accreditation == null ||
-            qualifications == null) {
+        if (subjectName == null || programType == null || faculty == null || credits == null || modeOfStudy == null || language == null || intakes == null || placement == null ||
+            cost == null || duration == null || applicationDeadline == null || description == null || careerOpportunities == null) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -543,6 +540,7 @@ const addSubject = async (req: AuthenticatedRequest, res: Response) => {
         }
 
         const newSubject = {
+            _id: new ObjectId(),
             qualifications,
             subjectName,
             programType,
@@ -557,6 +555,7 @@ const addSubject = async (req: AuthenticatedRequest, res: Response) => {
             description,
             careerOpportunities,
             accreditation,
+            placement,
         };
 
 
@@ -674,14 +673,24 @@ const deleteSubject = async (req: AuthenticatedRequest, res: Response) => {
             });
         }
 
-        const { countryId, universityName, subjectName } = req.params;
+        const { id, countryID , countryName } = req.params;
+        console.log(id, countryID , countryName)
+
+        if (!id || !countryID || !countryName) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Missing required parameters!!!",
+            })
+        }
 
         const result = await collection.updateOne(
-            { _id: new ObjectId(countryId), "universityList.universityName": universityName.toUpperCase() },
-            { $pull: { "universityList.$.subjects": { subjectName } } }
+            { _id: new ObjectId(countryID), "universityList.universityName": countryName.toUpperCase() },
+            { $pull: { "universityList.$.subjects": { _id:new ObjectId(id) } }}
         );
 
-        if (!result.acknowledged) {
+        
+        if (result?.modifiedCount===0) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -693,8 +702,8 @@ const deleteSubject = async (req: AuthenticatedRequest, res: Response) => {
             statusCode: 200,
             success: true,
             message: "Subject deleted successfully!",
+            data:result
         });
-
     } catch (error) {
         console.error("Error deleting subject:", error);
         res.status(400).json({
