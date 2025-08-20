@@ -386,38 +386,30 @@ const getSubjectsByCountry = async( req: Request , res: Response) =>{
 
 
 
-
 const getSubject = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const db = getDb();
         const collection = db.collection('country-uni');
-        const usersCollection = db.collection('users');
+        
 
-        const tEmail = req.user?.email || null;
-        const tRole = req.user?.role || null;
-        const tStatus = req.user?.status || null;
-        const user1 = await usersCollection.findOne({ email: tEmail, status: tStatus, role: tRole });
+        const { all, country, page, total, uniName } = req.query as {
+            all?: string;
+            country?: string;
+            page?: string;
+            total?: string;
+            uniName?: string;
+        };
 
-        if (!user1) {
-            return sendResponse(res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            });
-        }
-        const countryIdRaw = req.params.countryId;
-        const universityNameRaw = req.body.universityName;
 
-        // Validate and cast countryId
-        if (!countryIdRaw || typeof countryIdRaw !== "string") {
+        if (!country || typeof country !== "string") {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: "Invalid or missing country ID",
+                message: "Invalid or missing country name",
             });
         }
 
-        if (!universityNameRaw || typeof universityNameRaw !== "string") {
+        if (!uniName || typeof uniName !== "string") {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -425,15 +417,15 @@ const getSubject = async (req: AuthenticatedRequest, res: Response) => {
             });
         }
 
-        const countryId = new ObjectId(countryIdRaw);
-        const universityName = universityNameRaw.toUpperCase();
+        const universityName = uniName.toUpperCase();
 
-        // Now safe to use
+        
         const exist = await collection.findOne({
-            _id: countryId,
+            _id: new ObjectId(country),
             "universityList.universityName": universityName
         });
-        if (!exist || !exist.universityList?.[0]) {
+
+        if (!exist) {
             return sendResponse(res, {
                 statusCode: 404,
                 success: false,
@@ -441,22 +433,44 @@ const getSubject = async (req: AuthenticatedRequest, res: Response) => {
             });
         }
 
+        
+        const university = exist.universityList.find(
+            (u: any) => u.universityName === universityName
+        );
+
+        if (!university) {
+            return sendResponse(res, {
+                statusCode: 404,
+                success: false,
+                message: "University not found in the list!!!"
+            });
+        }
+
+        
+        let subjects = university.subjects || [];
+        const pageNum = parseInt(page || "1", 10);
+        const totalNum = parseInt(total || "10", 10);
+        const start = (pageNum - 1) * totalNum;
+        const end = start + totalNum;
+        subjects = subjects.slice(start, end);
+
         sendResponse(res, {
             statusCode: 200,
             success: true,
             message: "Subjects fetched successfully!",
-            data: exist.universityList[0].subjects || []
+            data: subjects
         });
 
     } catch (error) {
         console.error("Error fetching subjects:", error);
-        res.status(400).json({
+        res.status(500).json({
             success: false,
             message: "Internal Server Error",
             error,
         });
     }
 };
+
 
 
 
@@ -479,10 +493,48 @@ const addSubject = async (req: AuthenticatedRequest, res: Response) => {
             });
         }
 
-        const { countryId, universityName } = req.params;
-        const { subjectName, cost, duration, description } = req.body;
+        
+        const countryId = req.params.countryId;
+        const universityName = req.params.universityName;
+        const {
+            qualifications ,
+            subjectName ,
+            programType ,
+            faculty ,
+            credits ,
+            modeOfStudy ,
+            language ,
+            intakes ,
+            cost,
+            duration ,
+            applicationDeadline,
+            description ,
+            careerOpportunities,
+            accreditation
+        } = req.body;
 
-        if (!subjectName || !cost || !duration) {
+        if (!countryId || !universityName) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Missing country ID or university name!!!",
+            });
+        }
+        
+        if (subjectName == null || 
+            programType == null || 
+            faculty == null || 
+            credits == null || 
+            modeOfStudy == null || 
+            language == null || 
+            intakes == null || 
+            cost == null || 
+            duration == null || 
+            applicationDeadline == null || 
+            description == null || 
+            careerOpportunities == null || 
+            accreditation == null ||
+            qualifications == null) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -491,32 +543,42 @@ const addSubject = async (req: AuthenticatedRequest, res: Response) => {
         }
 
         const newSubject = {
+            qualifications,
             subjectName,
-            cost,
-            duration,
-            description: description || "",
-            createdAt: new Date()
+            programType,
+            faculty,
+            credits: Number(credits),
+            modeOfStudy,
+            language,
+            intakes,
+            cost: Number(cost),
+            duration: Number(duration),
+            applicationDeadline,
+            description,
+            careerOpportunities,
+            accreditation,
         };
+
 
         const result = await collection.updateOne(
             { _id: new ObjectId(countryId), "universityList.universityName": universityName.toUpperCase() },
             { $push: { "universityList.$.subjects": newSubject } }
         );
 
-        if (!result.acknowledged) {
+        if (result.modifiedCount===0) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
                 message: "Failed to add subject!!!"
             });
         }
-
+        
         sendResponse(res, {
             statusCode: 200,
             success: true,
             message: "Subject added successfully!",
+            data:result
         });
-
     } catch (error) {
         console.error("Error adding subject:", error);
         res.status(400).json({

@@ -644,7 +644,9 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
 
         
         if (all === "all") {
-            const countries = await collection.find(matchStage).toArray();
+            const countries = await collection.find(
+                matchStage
+            ).toArray();
             let allUniversities = countries.flatMap((c: any) => c.universityList || []);
 
         
@@ -675,7 +677,7 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
         }
 
         const pipeline: any[] = [
-            { $match: matchStage },
+        { $match: matchStage },
             { $unwind: "$universityList" },
             {
                 $addFields: {
@@ -683,7 +685,9 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
                 }
             },
             { $replaceRoot: { newRoot: "$universityList" } },
+            { $project: { subjects: 0 } } // 🚀 exclude subjects field here
         ];
+
 
         
         if (uniName) {

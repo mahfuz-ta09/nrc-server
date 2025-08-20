@@ -35,13 +35,14 @@ router.get('/all/:country',
 
 
 
-router.get('/all', 
+
+
+router.get('/', 
     getSubject)
 
-router.post('/create',  
+router.post('/add/:countryId/:universityName',
     verifyUser,
     addSubject)
-
 
 router.delete('/delete/:id', 
     verifyUser,
