@@ -2,6 +2,7 @@ import { Request , Response } from "express"
 import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
 import { fileUploadHelper } from "../../helper/fileUploadHealper"
+import authChecker from "../../helper/authChecker"
 const { getDb } = require('../../config/connectDB')
 
 
@@ -15,20 +16,8 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
-        const usersCollection = db.collection('users')
+        await authChecker(req, res, ["admin","super_admin"]);
 
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        
-        if(!user1){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
 
         const { name, country, tuitionFee, requardQualification, 
             initialDepossit , englishTest , SCHOLARSHIP } = req.body        
@@ -114,26 +103,11 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     }
 }
 
-
 const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
-        const usersCollection = db.collection('users')
-
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        
-        if(!user1){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
-
+        await authChecker(req, res, ["admin","super_admin"]);
 
         const id  = req.params.id
         const query = { _id : new ObjectId(id) }
@@ -185,20 +159,7 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
-        const usersCollection = db.collection('users')
-
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        if(!user1){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
-
+        await authChecker(req, res, ["admin","super_admin"]);
 
         const id = req.params.id
         const { name , country, tuitionFee, requardQualification, initialDepossit , 
@@ -278,20 +239,9 @@ const getAllUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
-        const usersCollection = db.collection('users')
+        await authChecker(req, res, ["admin","super_admin"])
 
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        if(!user1){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
-
+        
         const university = await collection.find({}).sort({"_id": -1}).toArray()
         const countCourse     = await collection.countDocuments()
 
@@ -449,20 +399,7 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
     try{
         const db = getDb()
         const collection = db.collection('country-uni')
-        const usersCollection = db.collection('users')
-
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        
-        if(!user1){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
+        await authChecker(req, res, ["admin","super_admin"]);
 
         const id = req.params.id
 
@@ -545,21 +482,7 @@ const deleteUniversityFromCountry = async (req: AuthenticatedRequest, res: Respo
     try {
         const db = getDb();
         const collection = db.collection('country-uni');
-        const usersCollection = db.collection('users');
-
-        const tEmail = req.user?.email || null;
-        const tRole = req.user?.role || null;
-        const tStatus = req.user?.status || null;
-
-        const user1 = await usersCollection.findOne({ email: tEmail, status: tStatus, role: tRole });
-
-        if (!user1) {
-            return sendResponse(res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            });
-        }
+        await authChecker(req, res, ["admin","super_admin"]);
 
         const id = req.params.id;
         const university = req.params.university;
@@ -685,7 +608,7 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
                 }
             },
             { $replaceRoot: { newRoot: "$universityList" } },
-            { $project: { subjects: 0 } } // 🚀 exclude subjects field here
+            { $project: { subjects: 0 } }
         ];
 
 
@@ -743,24 +666,7 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
     try {
         const db = getDb();
         const collection = db.collection("country-uni");
-        const usersCollection = db.collection("users");
-
-        const tEmail = req.user?.email || null;
-        const tRole = req.user?.role || null;
-        const tStatus = req.user?.status || null;
-        const user1 = await usersCollection.findOne({
-            email: tEmail,
-            status: tStatus,
-            role: tRole
-        });
-
-        if (!user1) {
-            return sendResponse(res, {
-                statusCode: 411,
-                success: false,
-                message: "Unauthorized!!!"
-            });
-        }
+        await authChecker(req, res, ["admin","super_admin"]);
 
         const id = req.params.id;
         const UniversityName  = req.params.universityName;

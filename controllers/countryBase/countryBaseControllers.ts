@@ -1,7 +1,8 @@
-import { Request , Response } from "express"
+import e, { Request , Response } from "express"
 import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
 import { fileUploadHelper } from "../../helper/fileUploadHealper"
+import authChecker from "../../helper/authChecker"
 const { getDb } = require('../../config/connectDB')
 
 
@@ -86,37 +87,16 @@ const getAllCountryBase = async( req:AuthenticatedRequest, res:Response) => {
 
 const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const db = getDb();
-        const collection = db.collection('country-uni');
-        const usersCollection = db.collection('users');
+        const db = getDb()
+        const collection = db.collection('country-uni')
+        await authChecker(req,res,["admin","super_admin"])
 
-        const tEmail = req.user?.email || null;
-        const tRole = req.user?.role || null;
-        const tStatus = req.user?.status || null;
-
-        const user1 = await usersCollection.findOne({ email: tEmail, status: tStatus, role: tRole });
-        if (!user1) {
-            return sendResponse(res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            });
-        }
-
-        
         const id = req.params.id;
         const { country, serial, countryFull , currency } = req.body;
         const files: any = req.files;
 
 
-        if (
-            !country &&
-            !serial &&
-            !countryFull &&
-            !files["countryFlag"]?.[0] &&
-            !files["famousFile"]?.[0] &&
-            !currency
-        ) {
+        if (!country &&!serial &&!countryFull &&!files["countryFlag"]?.[0] &&!files["famousFile"]?.[0] &&!currency) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -194,28 +174,14 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
             error,
         });
     }
-};
+}
 
 const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
     try{
         const db = getDb()
         const collection = db.collection('country-uni')
-        const usersCollection = db.collection('users')
-
+        await authChecker(req,res,["admin","super_admin"])
         
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        
-        if(!user1){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
-
         const { country , serial , countryFull , currency } = req.body
         const files:any = req.files
 
@@ -293,20 +259,9 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
     try{
         const db = getDb()
         const collection = db.collection('country-uni')
-        const usersCollection = db.collection('users')
+        await authChecker(req, res, ["admin","super_admin"]);
 
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user1 = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        
-        if(!user1){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
+
         const id = req.params.id;
         
         if ( !id ){
@@ -361,11 +316,12 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
         })
     }catch(error){
         console.error(error);
-        res.status(400).json({
-            success: false,
-            message: 'Internal Server Error',
-            error,
-        });
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: "Successfully deleted!!!",
+            data: error,
+        })
     }
 }
 

@@ -37,6 +37,8 @@ router.get('/all/:country',
 
 
 
+
+// new part 
 router.get('/', 
     getSubject)
 
@@ -48,5 +50,4 @@ router.delete('/remove/:id/:countryID/:countryName',
     verifyUser,
     deleteSubject)
 
-    
 export const subjectModule = router

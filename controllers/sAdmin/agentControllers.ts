@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb"
 import { format } from "date-fns"
 import { fileUploadHelper } from "../../helper/fileUploadHealper"
 import sendEmail from "../../helper/sendEmail"
+import authChecker from "../../helper/authChecker"
 const bcrypt = require("bcrypt")
 const { getDb } = require('../../config/connectDB')
 
@@ -26,6 +27,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
             license_number,tax_id,criminal_record,referral
         } = req.body
 
+        await authChecker(req, res, ["admin","super_admin"])
         
         if(role==='admin' || role==='super_admin'){
             return sendResponse(res, {
