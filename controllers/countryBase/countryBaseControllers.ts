@@ -1,4 +1,4 @@
-import e, { Request , Response } from "express"
+import { Request , Response } from "express"
 import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
 import { fileUploadHelper } from "../../helper/fileUploadHealper"
@@ -259,7 +259,7 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
     try{
         const db = getDb()
         const collection = db.collection('country-uni')
-        await authChecker(req, res, ["admin","super_admin"]);
+        await authChecker(req, res, ["admin","super_admin"])
 
 
         const id = req.params.id;

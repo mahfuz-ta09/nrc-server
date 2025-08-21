@@ -2,6 +2,7 @@ import { Request, Response } from "express"
 import sendResponse from "../../helper/sendResponse"
 import { ObjectId } from "mongodb"
 import { format } from "date-fns"
+import authChecker from "../../helper/authChecker"
 const bcrypt = require("bcrypt")
 const { getDb } = require('../../config/connectDB')
 
@@ -42,26 +43,17 @@ const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
             })
         }
         
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user1 = await collection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        if(!user1){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
+        
+        await authChecker(req, res, ["super_admin"]);
         
         const query = { email: email }
-        
         const user = await collection.findOne(query)
+        
         if(user){
             return sendResponse( res, {
                 statusCode: 400,
                 success: false,
-                message: 'User already exist!!!, Please login.',
+                message: 'an admin already exist!',
             })
         }
 
@@ -96,82 +88,116 @@ const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
 }
 
 
-const getAllAdmin = async(req: AuthenticatedRequest , res: Response) =>{
+const getAllAdmin = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const db = getDb()
-        const collection = db.collection('users')
+        const db = getDb();
+        const collection = db.collection("users")
 
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user = await collection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        if(!user){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
-        
-        const admins = await collection.find({role: "admin"},{
-            projection: {password:0}
-        }).sort({"_id": -1}).toArray()
-        sendResponse(res,{
+        // Role check
+        await authChecker(req, res, ["super_admin"])
+
+        // Pagination params
+        const page = parseInt(req.query.page as string) || 1
+        const limit = parseInt(req.query.limit as string) || 10
+        const skip = (page - 1) * limit
+
+        // Filters
+        const { name, email, status } = req.query
+
+        const filter: any = { role: "admin" }
+
+        if (name) filter.name = { $regex: name as string, $options: "i" } // case-insensitive search
+        if (email) filter.email = { $regex: email as string, $options: "i" }
+        if (status) filter.status = status; // e.g. "active" | "inactive"
+
+        // Count total documents for pagination
+        const totalDocs = await collection.countDocuments(filter)
+
+        // Fetch paginated & filtered data
+        const admins = await collection
+            .find(filter, { projection: { password: 0 } })
+            .sort({ _id: -1 })
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+
+        sendResponse(res, {
             statusCode: 200,
             success: true,
-            message: 'successful!!!',
+            message: "Successful!!!",
             data: admins,
-        })
+            meta: {
+                total: totalDocs,
+                page,
+                limit,
+                totalPages: Math.ceil(totalDocs / limit),
+            },
+        });
     } catch (err) {
-        console.log(err)
-        sendResponse(res,{
+        console.error(err);
+        sendResponse(res, {
             statusCode: 400,
             success: false,
-            message: 'Internel server error',
-            data: err
-        })
+            message: "Internal server error",
+            data: err,
+        });
     }
-}
+};
 
 
-const getAllUsers = async(req: AuthenticatedRequest , res: Response) =>{
-    try {
-        const db = getDb()
-        const collection = db.collection('users')
-        
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user = await collection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        if(!user){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
-        
-        const users = await collection.find(
-            { role: { $nin: ["admin", "super_admin","agent"]}},
-            { projection: { password: 0 } }
-        ).sort({ _id: -1 }).toArray()
+const getAllUsers = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const db = getDb();
+    const collection = db.collection("users");
 
-        sendResponse(res,{
-            statusCode: 200,
-            success: true,
-            message: 'successful!!!',
-            data: users,
-        })
-    } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
-            success: false,
-            message: 'Internel server error',
-            data: err
-        })
-    }
-}
+    await authChecker(req, res, ["super_admin"]);
+
+
+    const { email, name, status } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.total as string) || 10;
+    const skip = (page - 1) * limit;
+    
+   
+    const filter: any = { role: { $nin: ["admin", "super_admin", "agent"] } };
+
+    if (name) filter.name = { $regex: name as string, $options: "i" };
+    if (email) filter.email = { $regex: email as string, $options: "i" };
+    if (status) filter.status = status;
+
+    // Query
+    const users = await collection
+      .find(filter, { projection: { password: 0 } })
+      .skip(skip)
+      .limit(limit)
+      .sort({ _id: -1 })
+      .toArray();
+
+    const totalCount = await collection.countDocuments(filter);
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "successful!!!",
+      meta: {
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+      data: users,
+    });
+  } catch (err) {
+    console.log(err);
+    sendResponse(res, {
+      statusCode: 400,
+      success: false,
+      message: "Internal server error",
+      data: err,
+    });
+  }
+};
+
 
 
 const updateAdminStatus = async(req: AuthenticatedRequest , res: Response) =>{
@@ -190,21 +216,13 @@ const updateAdminStatus = async(req: AuthenticatedRequest , res: Response) =>{
             })
         }
 
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user = await collection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        if(!user){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
+        
+        // Role check
+        await authChecker(req, res, ["super_admin"])
         
         const query = { _id : new ObjectId(id) }
         const exist = await collection.findOne(query)
-        console.log(exist)
+        
         if(!exist){
             return sendResponse(res,{
                 statusCode: 400,
@@ -240,9 +258,68 @@ const updateAdminStatus = async(req: AuthenticatedRequest , res: Response) =>{
 }
 
 
+const updateUserRole = async(req: AuthenticatedRequest , res: Response) =>{
+    try {
+        const db = getDb()
+        const collection = db.collection('users')
+
+        const id = req.params.id
+        const role = req.params.role
+        
+        if(!id){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: 'Id required',
+            })
+        }
+
+        
+        // Role check
+        await authChecker(req, res, ["super_admin"])
+        
+        const query = { _id : new ObjectId(id) }
+        const exist = await collection.findOne(query)
+        
+        if(!exist){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: 'No data found!'
+            })
+        }
+
+        const options = { upsert: true }
+        const doc = {
+            $set: {
+                role:role,
+            }
+        }
+
+        const admins = await collection.updateOne(query, doc, options)
+        
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: 'successful!!!',
+            data: admins,
+        })
+    } catch (err) {
+        console.log(err)
+        sendResponse(res,{
+            statusCode: 400,
+            success: false,
+            message: 'Internel server error',
+            data: err
+        })
+    }
+}
+
+
 module.exports = {
     createAdmin,
     getAllAdmin,
     getAllUsers,
-    updateAdminStatus
+    updateAdminStatus,
+    updateUserRole
 }

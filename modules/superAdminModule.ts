@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const { createAdmin , getAllAdmin , getAllUsers , updateAdminStatus } = require('../controllers/sAdmin/superAdminControllers')
+const { createAdmin , getAllAdmin , getAllUsers , updateAdminStatus , updateUserRole } = require('../controllers/sAdmin/superAdminControllers')
 const verifyUser = require('../middleware/verifyUser')
 
 
@@ -19,5 +19,9 @@ router.get('/users/all',
 router.patch('/update/:id/:status',
     verifyUser,
     updateAdminStatus)
+
+router.patch('/update/role/:id/:role',
+    verifyUser,
+    updateUserRole)
 
 export const superAdminModule = router
