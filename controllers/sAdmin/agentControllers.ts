@@ -27,7 +27,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
             license_number,tax_id,criminal_record,referral
         } = req.body
 
-        await authChecker(req, res, ["admin","super_admin"])
+        await authChecker(req, res, ["user"])
         
         if(role==='admin' || role==='super_admin'){
             return sendResponse(res, {
