@@ -185,7 +185,7 @@ const signUp = async(req: Request, res: Response) => {
         const userObject:UserObject = {
             email:email,
             password:hashedPassword,
-            role: '',
+            role: 'user',
             status: randomToken,
             image:'',
             publicid:'',
