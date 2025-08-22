@@ -8,7 +8,9 @@ router.post('/create',
     verifyUser,
     fileUploadHelper.upload.fields([
         { name: "license_document", maxCount: 1 },
-        { name: "background_check", maxCount: 1 }
+        { name: "background_check", maxCount: 1 },
+        { name: "proof_of_address", maxCount: 1 },
+        { name: "id_document", maxCount: 1 }
     ]),
     createAgentRequest)
 
