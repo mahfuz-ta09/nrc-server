@@ -38,9 +38,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
         }
 
         
-        if( !name || !email || !mobile_number || !alternate_mobile || !dob || !address || !nationality
-            || !passport_number || !agency_name || !agency_address || !agency_website || !experience || !services
-            || !partner_universities || !license_number || !tax_id || !criminal_record || !referral){
+        if( !email ){
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -77,7 +75,7 @@ const createAgentRequest = async(req: Request, res: Response) => {
             license_document_pId:'',
             background_check:'',
             background_check_pId:'',
-            role:"agent",
+            role:"pending_agent",
             status:"initial",
             createdAt:format(new Date(), "MM/dd/yyyy"),
         }
@@ -135,11 +133,11 @@ const createAgentRequest = async(req: Request, res: Response) => {
         `
 
 
-        const emailResponse = await sendEmail(
-            "info@nrcedu-uk.com",
-            "New Enquiry Submission",
-            htmlContent
-        )
+        // const emailResponse = await sendEmail(
+        //     "info@nrcedu-uk.com",
+        //     "New Enquiry Submission",
+        //     htmlContent
+        // )
 
         
         const result = await collection.insertOne(userObject)
