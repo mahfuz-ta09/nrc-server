@@ -22,7 +22,7 @@ router.get('/all',
     verifyUser,
     getAllAgents)
 
-router.patch('/update/:id/:status',
+router.patch('/update/:id/:applicationStat/:docStat',
     verifyUser,
     updateAgentStatus)
 
