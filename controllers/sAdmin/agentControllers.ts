@@ -448,19 +448,37 @@ const getAllAgentReq = async(req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('agents')
+        await authChecker(req, res, ["super_admin"])
+        
+        const applicationStat = req.query.applicationStat as string;
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+        let filter: any = {}
 
-        
-        await authChecker(req, res, ["super_admin"]);
+        if (applicationStat === "all") {
+        filter.applicationStat = { $ne: "approved" }
+        } else {
+        filter.applicationStat = applicationStat
+        }
 
-        
-        const agents = await collection.find(
-            { applicationStat:{ $ne: "approved"}}).sort({ _id: -1 }).toArray()
-        
+        if (req.query.email) filter.email = { $regex: new RegExp(req.query.email as string, 'i') };
+
+        const totalCount = await collection.countDocuments(filter);
+        const agents = await collection.find(filter)
+            .sort({ _id: -1 })
+            .skip(skip)
+            .limit(limit)
+            .toArray()
+
+
         sendResponse(res,{
             statusCode: 200,
             success: true,
-            message: 'successful!!!',
             data: agents,
+            meta:{
+                total: totalCount
+            }
         })
     } catch (err) {
         console.log(err)
@@ -478,30 +496,18 @@ const getAllAgents = async(req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('agents')
-        const usersCollection = db.collection('users')
         
+        await authChecker(req, res, ["super_admin"])
 
-        const tEmail = req.user?.email || null
-        const tRole = req.user?.role || null
-        const tStatus = req.user?.status || null
-        const user = await usersCollection.findOne({ email: tEmail , status: tStatus , role: tRole })
-        if(!user){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
-
-        const users = await collection.find(
-            { status : "accepted" }
+        const agents = await collection.find(
+            { status : "approved" }
         ).sort({ _id: -1 }).toArray()
 
         sendResponse(res,{
             statusCode: 200,
             success: true,
             message: 'successful!!!',
-            data: users,
+            data: agents,
         })
     } catch (err) {
         console.log(err)
@@ -549,8 +555,8 @@ const updateAgentStatus = async (req: AuthenticatedRequest, res: Response) => {
         
         
         const agentUpdate = await collection.updateOne(query, { $set: { 
-            applicationStat: applicationStat || exist.applicationStat,
-            docStat: docStat || exist.docStat,
+            applicationStat: applicationStat ?? exist.applicationStat,
+            docStat: docStat ?? exist.docStat,
         }})
         
         if (agentUpdate.modifiedCount === 1 && applicationStat === "approved") {
