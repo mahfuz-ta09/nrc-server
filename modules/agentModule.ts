@@ -1,7 +1,7 @@
 import { fileUploadHelper } from "../helper/fileUploadHealper"
 const express = require('express')
 const router = express.Router()
-const { createAgentRequest , getAllAgentReq , getAllAgents , updateAgentStatus } = require('../controllers/sAdmin/agentControllers')
+const { createAgentRequest , getAllAgentReq , getAllAgents , updateAgentStatus , deleteAgent } = require('../controllers/sAdmin/agentControllers')
 const verifyUser = require('../middleware/verifyUser')
 
 router.post('/create',
@@ -22,8 +22,12 @@ router.get('/all',
     verifyUser,
     getAllAgents)
 
-router.patch('/update/:id/:applicationStat/:docStat',
+router.patch('/update/:id',
     verifyUser,
     updateAgentStatus)
+
+router.delete('/delete/:id',
+    verifyUser,
+    deleteAgent)
 
 export const agentModule = router

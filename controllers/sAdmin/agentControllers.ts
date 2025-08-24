@@ -527,10 +527,12 @@ const updateAgentStatus = async (req: AuthenticatedRequest, res: Response) => {
         const collection = db.collection('agents')
         const userCollection = db.collection('users')
 
-        const id = req.params.id;
-        const applicationStat = req.params.applicationStat;
-        const docStat = req.params.docStat;
+        await authChecker(req, res, ["super_admin"])
 
+        const id = req.params.id;
+        const applicationStat = req.body.applicationStat;
+        const docStat = req.body.docStat;
+        
         if (!id) {
             return sendResponse(res, {
                 statusCode: 400,
@@ -538,11 +540,9 @@ const updateAgentStatus = async (req: AuthenticatedRequest, res: Response) => {
                 message: 'Id required',
             })
         }
-
-        await authChecker(req, res, ["super_admin"]);
         
-        const query = { _id: new ObjectId(id) };
-        const exist = await collection.findOne(query);
+        const query = { _id: new ObjectId(id) }
+        const exist = await collection.findOne(query)
 
         if (!exist) {
             return sendResponse(res, {
@@ -553,11 +553,13 @@ const updateAgentStatus = async (req: AuthenticatedRequest, res: Response) => {
         }
 
         
-        
-        const agentUpdate = await collection.updateOne(query, { $set: { 
-            applicationStat: applicationStat ?? exist.applicationStat,
-            docStat: docStat ?? exist.docStat,
-        }})
+        const agentUpdate = await collection.updateOne(query, {
+            $set: {
+                applicationStat: applicationStat ? applicationStat : exist.applicationStat,
+                docStat: docStat ? docStat : exist.docStat,
+            }
+        });
+
         
         if (agentUpdate.modifiedCount === 1 && applicationStat === "approved") {
             const userQuery = { email: exist.email }
@@ -591,11 +593,66 @@ const updateAgentStatus = async (req: AuthenticatedRequest, res: Response) => {
     }
 }
 
+const deleteAgent = async( req: AuthenticatedRequest , res: Response) => {
+    try{
+        const db = getDb()
+        const collection = db.collection('agents')
 
+        await authChecker(req, res, ["super_admin"])
+
+        const id = req.params.id
+        if(!id){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: 'id missing'
+            })
+        }
+        
+        
+        const query = {_id : new ObjectId(id)}
+        const exist = await collection.findOne(query)
+
+        
+        if(exist){
+            if(exist?.license_document)await fileUploadHelper.deleteFromCloud(exist?.license_document?.public_id)
+            if(exist?.background_check)await fileUploadHelper.deleteFromCloud(exist?.background_check?.public_id)
+            if(exist?.proof_of_address)await fileUploadHelper.deleteFromCloud(exist?.proof_of_address?.public_id)
+            if(exist?.id_document)await fileUploadHelper.deleteFromCloud(exist?.id_document?.public_id)
+        }
+
+        const result = await collection.deleteOne(query)
+        console.log(result)
+        if(!result?.deleteCount){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: 'No agent exist with this id.'
+            })
+        }
+
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: 'Successfully deleted!',
+            data: result
+        })
+
+    }catch(err){
+        console.log(err)
+        sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: 'Internal server error',
+            data: err,
+        })
+    }
+}
 
 module.exports = {
-    createAgentRequest,
-    getAllAgentReq,
+    deleteAgent,
     getAllAgents,
+    getAllAgentReq,
+    createAgentRequest,
     updateAgentStatus
 }

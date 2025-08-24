@@ -93,10 +93,8 @@ const getAllAdmin = async (req: AuthenticatedRequest, res: Response) => {
         const db = getDb();
         const collection = db.collection("users")
 
-        // Role check
         await authChecker(req, res, ["super_admin"])
 
-        // Pagination params
         const page = parseInt(req.query.page as string) || 1
         const limit = parseInt(req.query.limit as string) || 10
         const skip = (page - 1) * limit
