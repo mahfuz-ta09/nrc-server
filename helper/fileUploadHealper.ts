@@ -30,14 +30,26 @@ const upload = multer({ storage })
 
 const uploadToCloud = async(file:any)  =>{
   return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload(file.path,
+    cloudinary.uploader.upload(
+        file.path,
+        { resource_type: "auto" },
         (error: Error, result: any) => {
             fs.unlinkSync(file.path);
             if (error) {
                 reject(error)
             }
             else {
-                resolve(result)
+                const inlineUrl = cloudinary.url(result.public_id + ".pdf", {
+                    resource_type: "auto",
+                    secure: true,
+                    flags: "attachment:false",
+                })
+
+                resolve({
+                    public_id: result.public_id,
+                    secure_url: result.secure_url,
+                    inline_url: inlineUrl,
+                })
             }
         })
   })

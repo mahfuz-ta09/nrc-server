@@ -163,7 +163,7 @@ const getAllUsers = async (req: AuthenticatedRequest, res: Response) => {
     if (email) filter.email = { $regex: email as string, $options: "i" };
     if (status) filter.status = status;
 
-    // Query
+
     const users = await collection
       .find(filter, { projection: { password: 0 } })
       .skip(skip)

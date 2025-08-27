@@ -1,13 +1,13 @@
 import e, { Request , Response } from "express"
 import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
+import { format } from "date-fns"
 const { getDb } = require('../../config/connectDB')
 
 
 interface AuthenticatedRequest extends Request {
     user?: any
 }
-
 
 
 const createReview = async (req: Request, res: Response) => {
@@ -24,10 +24,7 @@ const createReview = async (req: Request, res: Response) => {
             });
         }
 
-
         const user = await collection.findOne({ email })
-
-
         if (!user) {
             return sendResponse(res, {
                 statusCode: 404,
@@ -48,7 +45,7 @@ const createReview = async (req: Request, res: Response) => {
 
         const result = await collection.updateOne(
             { email },
-            { $set: { review: comment } }
+            { $set: { review: comment , date:  format(new Date(), "MM/dd/yyyy") } }
         )
 
         if (!result.modifiedCount) {
@@ -139,33 +136,41 @@ const deleteReview = async( req: AuthenticatedRequest , res: Response) =>{
         })
     }
 }
-
-
 const getAllReview = async (req: Request, res: Response) => {
     try {
         const db = getDb();
-        const collection = db.collection("users")
+        const collection = db.collection("users");
 
-        const review = await collection.find({ 
+        
+        const pageNum = parseInt(req.query.page as string, 10);
+        const limitNum = parseInt(req.query.limit as string, 10);
+
+        
+        const filter: any = {
             $and: [
-                { review: { $exists: true } }, 
-                { review: { $ne: "" } }, 
-                { review: { $ne: null } }
-            ] 
-        })
-        .sort({ "_id": -1 })
+                { review: { $exists: true } },
+                { review: { $ne: "" } },
+                { review: { $ne: null } },
+            ],
+        };
+
+        if (req.query.email) filter.email = req.query.email;
+        if (req.query.name) filter.name = { $regex: req.query.name, $options: "i" };
+
+        
+        const review = await collection
+        .find(filter)
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum)
         .toArray();
 
-        const countReviews = await collection.countDocuments({ 
-            $and: [
-                { review: { $exists: true } }, 
-                { review: { $ne: "" } }, 
-                { review: { $ne: null } }
-            ] 
-        });
+        const countReviews = await collection.countDocuments(filter);
 
         const metaData = {
             total: countReviews,
+            page: pageNum,
+            limit: limitNum,
+            totalPages: Math.ceil(countReviews / limitNum)
         };
 
         sendResponse(res, {
@@ -185,7 +190,6 @@ const getAllReview = async (req: Request, res: Response) => {
         });
     }
 };
-
 
 
 

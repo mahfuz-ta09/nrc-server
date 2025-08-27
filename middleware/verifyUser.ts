@@ -37,4 +37,5 @@ const verifyUser = (req:AuthenticatedRequest, res: AuthenticatedResponse, next:N
     }
 }
 
+
 module.exports = verifyUser

@@ -91,9 +91,9 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
         const collection = db.collection('country-uni')
         await authChecker(req,res,["admin","super_admin"])
 
-        const id = req.params.id;
-        const { country, serial, countryFull , currency } = req.body;
-        const files: any = req.files;
+        const id = req.params.id
+        const { country, serial, countryFull , currency } = req.body
+        const files: any = req.files
 
 
         if (!country &&!serial &&!countryFull &&!files["countryFlag"]?.[0] &&!files["famousFile"]?.[0] &&!currency) {
@@ -107,7 +107,7 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
         
 
         const query = { _id: new ObjectId(id) };
-        const countryObj = await collection.findOne(query);
+        const countryObj = await collection.findOne(query)
 
         if (!countryObj) {
             return sendResponse(res, {
@@ -117,22 +117,21 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
             });
         }
 
-        let uploadedFlag: any = null;
-        let uploadedFamous: any = null;
+        let uploadedFlag: any = null
+        let uploadedFamous: any = null
 
         
         if (files["countryFlag"]?.[0]) {
             uploadedFlag = await fileUploadHelper.uploadToCloud(files["countryFlag"]?.[0]);
-            const ss = await fileUploadHelper.deleteFromCloud(countryObj.countryFlag_Id);
-            console.log(ss)
+            await fileUploadHelper.deleteFromCloud(countryObj.countryFlg?.publicId);
         }
 
         
         if (files["famousFile"]?.[0]) {
             uploadedFamous = await fileUploadHelper.uploadToCloud(files["famousFile"]?.[0]);
-            const ss = await fileUploadHelper.deleteFromCloud(countryObj.famousFile_Id);
-            console.log(ss)
+            await fileUploadHelper.deleteFromCloud(countryObj?.famousFile?.publicId);
         }
+
 
         const insertedObject = {
             country: country ? country.toUpperCase() : countryObj.country,
@@ -140,12 +139,17 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
             currency: currency ? currency : countryObj.currency,
             serial: serial ? Number(serial) : Number(countryObj.serial),
 
-            countryFlag_url: uploadedFlag?.url ?? countryObj.countryFlag_url,
-            countryFlag_Id: uploadedFlag?.public_id ?? countryObj.countryFlag_Id,
+            countryFlg:{
+                url : uploadedFlag?.secure_url ?? countryObj.countryFlg.url,
+                publicId : uploadedFlag?.public_id ?? countryObj.countryFlg.publicId,
+            },
 
-            famousFile_url: uploadedFamous?.url ?? countryObj.famousFile_url,
-            famousFile_Id: uploadedFamous?.public_id ?? countryObj.famousFile_Id,
-
+            famousFile:{
+                url : uploadedFamous?.secure_url ?? countryObj.countryFlg.url,
+                publicId : uploadedFamous?.public_id ?? countryObj.countryFlg.publicId,
+            },
+            createdAt: countryObj.createdAt,
+            updatedAt: new Date(),
             universityList: countryObj.universityList
         };
 
@@ -218,12 +222,18 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
             countryFull : countryFull.toLowerCase(),
             currency:currency,
             serial : Number(serial),
+            
+            countryFlg:{
+                url : local_country?.secure_url,
+                publicId : local_country?.public_id,
+            },
 
-            countryFlag_url : local_country.url,
-            countryFlag_Id : local_country.public_id,
-
-            famousFile_url : local_flag.url,
-            famousFile_Id : local_flag.public_id,
+            famousFile:{
+                url : local_flag?.secure_url,
+                publicId : local_flag?.public_id,
+            },
+            createdAt: new Date(),
+            updatedAt: new Date(),
             
             universityList: []
         }
@@ -292,11 +302,9 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
         }
 
 
-
-        if(countryObj?.countryFlag_Id) await fileUploadHelper.deleteFromCloud(countryObj.countryFlag_Id)
-        if(countryObj?.famousFile_Id) await fileUploadHelper.deleteFromCloud(countryObj.famousFile_Id)
+        if(countryObj?.countryFlg?.publicId) await fileUploadHelper.deleteFromCloud(countryObj?.countryFlg?.publicId)
+        if(countryObj?.famousFile?.publicId) await fileUploadHelper.deleteFromCloud(countryObj?.famousFile?.publicId)
         
-
         
         const result = await collection.deleteOne(query)
         if(!result.acknowledged){

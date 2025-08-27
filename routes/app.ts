@@ -7,6 +7,7 @@ import { superAdminModule } from "../modules/superAdminModule"
 import { agentModule } from "../modules/agentModule"
 import { profileModule } from "../modules/profileModule"
 import { countryBaseModule } from "../modules/countryBaseModule"
+import { bannerModule } from "../modules/bannerModule"
 
 
 
@@ -50,6 +51,10 @@ const allRoutes = [
     {
         path: '/profile',
         route: profileModule
+    },
+    {
+        path: '/banner',
+        route: bannerModule
     },
 ]
 
