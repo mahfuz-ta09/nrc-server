@@ -57,30 +57,38 @@ export const createBanner = async (req: Request, res: Response) => {
     }
 }
 
-
 export const getAllBanners = async (req: Request, res: Response) => {
     try {
         const db = getDb()
         const collection = db.collection("banners")
+        const status = req.params.status
 
-        const banners = await collection.find({}).sort({ createdAt: -1 }).toArray()
+        const filter = {
+        ...(status ==='all' ? {} : { status })
+        }
+        
+
+        const banners = await collection.find(filter).sort({ serial: 1 }).toArray()
+        const totalBanner = await collection.countDocuments(filter)
+        
 
         sendResponse(res, {
-            statusCode: 200,
-            success: true,
-            message: "Banners retrieved successfully",
-            data: banners,
+        statusCode: 200,
+        success: true,
+        data: banners,
+        meta: {
+            total: totalBanner
+        }
         })
     } catch (error) {
         sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "Failed to fetch banners",
-            data: error,
+        statusCode: 400,
+        success: false,
+        message: "Failed to fetch banners",
+        data: error,
         })
     }
 }
-
 
 export const getBannerById = async (req: Request, res: Response) => {
   try {

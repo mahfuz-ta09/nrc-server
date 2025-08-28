@@ -19,7 +19,7 @@ router.post("/create",
 
 
 
-router.get("/all", getAllBanners)
+router.get("/all/:status", getAllBanners)
 router.get("/:id", getBannerById)
 
 router.put("/update/:id",  
