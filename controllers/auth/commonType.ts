@@ -4,8 +4,10 @@ export type UserObject = {
     password:string
     role:string
     status:string
-    image:string
-    publicid:string
+    image:{
+        url:string,
+        publicId:string
+    }
     phone: number | null
     country: string
     dob: string

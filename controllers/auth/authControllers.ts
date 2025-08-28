@@ -187,8 +187,10 @@ const signUp = async(req: Request, res: Response) => {
             password:hashedPassword,
             role: 'user',
             status: randomToken,
-            image:'',
-            publicid:'',
+            image:{
+                url:'',
+                publicId:''
+            },
             name:name,
             phone: null,
             dob:'',

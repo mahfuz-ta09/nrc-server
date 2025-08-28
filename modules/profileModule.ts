@@ -13,6 +13,7 @@ router.patch('/update/:id',
     fileUploadHelper.upload.single('file'),
     updateSingleUser)
 
+    
 router.post('/email-contact',
         verifyUser,
         emailContact)

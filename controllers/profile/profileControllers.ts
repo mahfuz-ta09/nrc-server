@@ -73,6 +73,7 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
             })
         }
 
+
         if(password && password?.length < 6){
             return sendResponse( res, {
                 statusCode: 400,
@@ -97,8 +98,10 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
         }
         const updateDoc = {
             name: name || user.name,
-            image: user.image,
-            publicid:user.publicid,
+            image: {
+                url: user.image.url,
+                publicId: user.image.publicId
+            },
             phone: phone || user.phone,
             country: country || user.country,
             review: review || user.review,
@@ -109,20 +112,27 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
         if(req?.file){
             const uploaded:any = await fileUploadHelper.uploadToCloud(req?.file)
             
-
-            if(uploaded?.url){
-                updateDoc.image = uploaded?.url 
-                updateDoc.publicid = uploaded?.public_id
-                if(user?.publicid) await fileUploadHelper.deleteFromCloud(user?.publicid)
+            if(uploaded?.secure_url){
+                updateDoc.image.url = uploaded?.secure_url 
+                updateDoc.image.publicId = uploaded?.public_id
+                if(user?.image?.publicId) await fileUploadHelper.deleteFromCloud(user?.image?.publicId)
             }
         }
-
+        
         const doc = {
             $set: updateDoc
         }
 
         const response = await collection.updateOne(query, doc)
 
+        if(!response?.modifiedCount){
+            sendResponse(res,{
+                statusCode: 400,
+                success: true,
+                message: 'Failed to update!',
+                data: response,
+            })
+        }
         sendResponse(res,{
             statusCode: 200,
             success: true,
@@ -131,6 +141,12 @@ const updateSingleUser = async(req: AuthenticatedRequest, res: Response) => {
         })
     }catch(err){
         console.log(err)
+        sendResponse(res,{
+            statusCode: 400,
+            success: true,
+            message: 'User successful!!!',
+            data: err,
+        })
     }
 }
 
