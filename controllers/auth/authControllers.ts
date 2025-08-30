@@ -89,7 +89,7 @@ const logIn = async(req: Request, res: Response) => {
             secure: true,
             sameSite: "none",
             signed: false,
-            domain: "www.nrcedu-uk.com"
+            // domain: "www.nrcedu-uk.com"
         })
 
         res.cookie("nrc_ref", refreshToken, {
@@ -98,7 +98,7 @@ const logIn = async(req: Request, res: Response) => {
             secure: true,
             sameSite: "none",
             signed: true,
-            domain: "www.nrcedu-uk.com"
+            // domain: "www.nrcedu-uk.com"
         })
         const userObj = {
             email: user.email,
@@ -404,7 +404,7 @@ const getAccessToken = async(req: Request, res: Response) => {
             secure: true,
             sameSite: "none",
             signed: false,
-            domain: "www.nrcedu-uk.com"
+            // domain: "www.nrcedu-uk.com"
         })
         const userObj = {
             email: user.email,
