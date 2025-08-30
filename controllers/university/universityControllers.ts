@@ -426,6 +426,7 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
         }       
         const file:any = await fileUploadHelper.uploadToCloud(files["universityImage"]?.[0])
 
+        console.log(file)
         const insertedObject = {
             englishProf:englishProf,
             qualifications:qualifications,
@@ -437,8 +438,8 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
             aboutUni:aboutUni,
             subjects:  [],
             universityImage: {
-                url: file?.url,
-                public_id: file?.public_id
+                url: file?.secure_url,
+                publicId: file?.public_id
             }
         }
         
@@ -514,8 +515,8 @@ const deleteUniversityFromCountry = async (req: AuthenticatedRequest, res: Respo
             (u:any) => u.universityName === university.toUpperCase()
         );
 
-        if (uniData?.universityImage?.public_id) {
-            await fileUploadHelper.deleteFromCloud(uniData.universityImage.public_id);
+        if (uniData?.universityImage?.publicId) {
+            await fileUploadHelper.deleteFromCloud(uniData.universityImage.publicId);
         }
         
         

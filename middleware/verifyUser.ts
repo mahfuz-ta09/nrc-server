@@ -12,11 +12,11 @@ interface AuthenticatedResponse extends Response {
 
 
 const verifyUser = (req:AuthenticatedRequest, res: AuthenticatedResponse, next:NextFunction ) => {
-    const token = req.headers.authorization
+    const token = req.signedCookies?.nrc_acc
     
     if (!token) {
         return sendResponse( res, {
-            statusCode: 500,
+            statusCode: 401,
             success: false,
             message: 'Unauthorized access!!!',
         })
@@ -26,13 +26,13 @@ const verifyUser = (req:AuthenticatedRequest, res: AuthenticatedResponse, next:N
         const secretKey = process.env.ACCESSTOKEN
         const decoded = jwt.verify(token, secretKey)
         req.user = decoded
-
+        
         next()
     } catch (error) {
         return sendResponse( res, {
-            statusCode: 500,
+            statusCode: 401,
             success: false,
-            message: 'Invalid token ,please login!!!',
+            message: 'Invalid or expired token!!!',
         })
     }
 }

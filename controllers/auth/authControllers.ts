@@ -3,12 +3,14 @@ import { UserObject } from "./commonType"
 import sendResponse from "../../helper/sendResponse"
 import { format } from "date-fns"
 import sendEmail from "../../helper/sendEmail"
+import authChecker from "../../helper/authChecker"
 const { getDb } = require('../../config/connectDB')
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 
 
-const emaiReg = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+
+const emaiReg = /^(([^<>()[\]\\.,:\s@"]+(\.[^<>()[\]\\.,:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 
 
 const logIn = async(req: Request, res: Response) => {
@@ -78,28 +80,45 @@ const logIn = async(req: Request, res: Response) => {
         const refreshToken = jwt.sign(
             userData, 
             process.env.REFRESHTOKEN,{ 
-            expiresIn: "30d" 
+            expiresIn: "7d" 
         })
 
-        res.cookie("refreshToken", 
-            refreshToken, {
+        res.cookie("nrc_acc", accessToken, {
             httpOnly: true,
-            signed: true,
             path: "/",
             secure: true,
             sameSite: "none",
+            signed: false,
+            domain: "www.nrcedu-uk.com"
         })
+
+        res.cookie("nrc_ref", refreshToken, {
+            httpOnly: true,
+            path: "/",
+            secure: true,
+            sameSite: "none",
+            signed: true,
+            domain: "www.nrcedu-uk.com"
+        })
+        const userObj = {
+            email: user.email,
+            role: user.role,
+        }
 
         sendResponse(res,{
             statusCode: 200,
             success: true,
             message: "Login successful!!!",
-            meta: {
-                accessToken:accessToken,
-            }
+            data: userObj,
         })
     }catch(err){
         console.log(err)
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: "Login successful!!!",
+            data: err,
+        })
     }
 }
 
@@ -218,27 +237,16 @@ const signUp = async(req: Request, res: Response) => {
 
 const logOut = async(req: Request, res: Response) => {
     try{
-        res.clearCookie(
-            "refreshToken",{ 
-                httpOnly: true,
-                signed: true,
-                path: "/", 
-                secure: true, 
-                sameSite: "none"
-        })
 
-        res.clearCookie("accessToken",{ 
-            httpOnly: true,
-            signed: true,
-            path: "/",
-            secure: true,
-            sameSite: "none",
-        })
+        await authChecker(req,res,[req.body?.role])
         
+        res.clearCookie('nrc_ref')
+        res.clearCookie('nrc_acc')
+
         sendResponse(res,{
             statusCode: 200,
             success: true,
-            message: "Logout successful!!!",
+            message: "User logged out!",
         })
     }catch(err){
         console.log(err)
@@ -295,16 +303,25 @@ const successResponse = async(req: Request, res: Response) => {
             const refreshToken = jwt.sign(
                 userData, 
                 process.env.REFRESHTOKEN,{ 
-                expiresIn: "30d" 
+                expiresIn: "7d" 
             })
 
-            res.cookie("refreshToken", 
-                refreshToken, {
+            res.cookie("nrc_acc", accessToken, {
                 httpOnly: true,
-                signed: true,
-                secure: true,
                 path: "/",
+                secure: true,
                 sameSite: "none",
+                signed: false,
+                domain: "www.nrcedu-uk.com"
+            })
+
+            res.cookie("nrc_ref", refreshToken, {
+                httpOnly: true,
+                path: "/",
+                secure: true,
+                sameSite: "none",
+                signed: true,
+                domain: "www.nrcedu-uk.com"
             })
 
             sendResponse(res,{
@@ -328,43 +345,87 @@ const successResponse = async(req: Request, res: Response) => {
 }
 
 const getAccessToken = async(req: Request, res: Response) => {
-    try{
-        const token = req.signedCookies?.refreshToken
-        if(token){
-            const db = await getDb()
-            const collection = db.collection('users')
-            const decoded = await jwt.verify(token, process.env.REFRESHTOKEN)
-            
-            const query = { email: decoded?.email }
-            const user = await collection.findOne(query)
-            if(user.status === "active" && user.role === decoded.role){
-                const userData = {
-                    id: user._id,
-                    email: user.email,
-                    role: user.role,
-                    status:user.status
-                }
+    try {
+        const token = req.signedCookies?.nrc_ref
         
-                const accessToken = jwt.sign(
-                    userData, 
-                    process.env.ACCESSTOKEN, { 
-                    expiresIn: "5m" 
-                })
-                
-                sendResponse(res,{
-                    statusCode: 200,
-                    success: true,
-                    message: "Logout successful!!!",
-                    meta: {
-                        accessToken:accessToken,
-                    }
-                })
+        if (!token) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "No refresh token provided"
+            })
+        }
 
+        let decoded
+        try {
+            decoded = await jwt.verify(token, process.env.REFRESHTOKEN)
+        } catch (jwtError: any) {
+            if (jwtError.name === 'TokenExpiredError') {
+                res.clearCookie('nrc_ref')
+                res.clearCookie('nrc_acc')
+                return sendResponse(res, {
+                    statusCode: 400,
+                    success: false,
+                    message: "Refresh token expired. Please login again."
+                })
             }
+            throw jwtError
         }
         
-    }catch(err){
+        const db = await getDb()
+        const collection = db.collection('users')
+        
+        const user = await collection.findOne({ email: decoded?.email })
+
+        if (!user || user.status !== "active" || user.role !== decoded.role) {
+            res.clearCookie('nrc_ref')
+            res.clearCookie('nrc_acc')
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Invalid user or permissions. Please login again."
+            })
+        }
+
+        const userData = {
+                id: user._id,
+                email: user.email,
+                role: user.role,
+                status: user.status
+        }
+
+        const accessToken = jwt.sign(userData, process.env.ACCESSTOKEN, {
+            expiresIn: "5m"
+        })
+
+        res.cookie("nrc_acc", accessToken, {
+            httpOnly: true,
+            path: "/",
+            secure: true,
+            sameSite: "none",
+            signed: false,
+            domain: "www.nrcedu-uk.com"
+        })
+        const userObj = {
+            email: user.email,
+            role: user.role,
+        }
+
+        
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            data: userObj,
+        })
+    } catch (err) {
+        console.error("Error in getAccessTokenWithRotation:", err)
         console.log(err)
+        return sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: "Internal server error",
+            data: err
+        })
     }
 }
 
@@ -414,17 +475,17 @@ const resetPassword  = async(req: Request, res: Response) => {
         }
 
         const content = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
-                <h2 style="background-color: #002c3a; color: white; padding: 15px; text-align: center; border-radius: 5px 5px 0 0;">
+            <div style="font-family: Arial, sans-serif max-width: 600px margin: 0 auto padding: 20px border: 1px solid #ddd border-radius: 8px background-color: #f9f9f9">
+                <h2 style="background-color: #002c3a color: white padding: 15px text-align: center border-radius: 5px 5px 0 0">
                     NRC-london
                 </h2>
-                <div style="padding: 20px; background-color: white; border-radius: 0 0 5px 5px;">
+                <div style="padding: 20px background-color: white border-radius: 0 0 5px 5px">
                     <p><strong>Name:</strong> ${user?.name}</p>
                     <p><strong>Email:</strong> ${email}</p>
                     <p><strong>Password:</strong></p>
-                    <p style="background-color: #f1f1f1; padding: 10px; border-radius: 5px;">${randomToken}</p>
+                    <p style="background-color: #f1f1f1 padding: 10px border-radius: 5px">${randomToken}</p>
                 </div>
-                <p style="text-align: center; font-size: 12px; color: red;">
+                <p style="text-align: center font-size: 12px color: red">
                     Please change your password from your profile.
                 </p>
             </div>

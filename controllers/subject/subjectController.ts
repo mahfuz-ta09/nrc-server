@@ -396,7 +396,6 @@ const getSubject = async (req: AuthenticatedRequest, res: Response) => {
                 message: "University not found!!!"
             });
         }
-
         
         const university = exist.universityList.find(
             (u: any) => u.universityName === universityName

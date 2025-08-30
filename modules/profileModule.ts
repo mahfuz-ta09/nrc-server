@@ -4,7 +4,7 @@ const router = express.Router()
 const { getSingleUserById , updateSingleUser , emailContact} = require('../controllers/profile/profileControllers')
 const verifyUser = require('../middleware/verifyUser')
 
-router.get('/:id',
+router.get('/:email',
     verifyUser,
     getSingleUserById)
 

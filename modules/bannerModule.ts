@@ -12,15 +12,15 @@ import { fileUploadHelper } from "../helper/fileUploadHealper"
 
 
 
-router.post("/create",  
-    verifyUser,
-    fileUploadHelper.upload.fields([{ name: "bannerImg", maxCount: 1 }]),
-    createBanner)
-
 
 
 router.get("/all/:status", getAllBanners)
 router.get("/:id", getBannerById)
+
+router.post("/create",  
+    verifyUser,
+    fileUploadHelper.upload.fields([{ name: "bannerImg", maxCount: 1 }]),
+    createBanner)
 
 router.put("/update/:id",  
     verifyUser,

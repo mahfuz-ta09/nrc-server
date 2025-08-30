@@ -1,10 +1,10 @@
 import { Request , Response } from "express"
 import sendResponse from "../../helper/sendResponse"
 const bcrypt = require("bcrypt")
-import { format } from "date-fns"
 import { ObjectId } from "mongodb"
 import sendEmail from "../../helper/sendEmail"
 import { fileUploadHelper } from "../../helper/fileUploadHealper"
+import authChecker from "../../helper/authChecker"
 const { getDb } = require('../../config/connectDB')
 
 
@@ -17,8 +17,10 @@ const getSingleUserById = async(req: AuthenticatedRequest, res: Response) => {
         const db = await getDb()
         const collection = db.collection('users')
 
-        const id  = req.params.id
-        const query = { _id: new ObjectId(id) }
+        await authChecker(req,res,["user","student","agent","admin","super_admin"])
+
+        const email  = req.params.email
+        const query = { email: email }
     
         const user = await collection.findOne(query, { projection: { password: 0 } })
         
@@ -30,17 +32,6 @@ const getSingleUserById = async(req: AuthenticatedRequest, res: Response) => {
                 data: user,
             })
         }
-
-        const { email , role , status } = req?.user
-
-        if(user.email !== email || role !== user?.role || status !== 'active'){
-            return sendResponse( res, {
-                statusCode: 400,
-                success: false,
-                message: 'Forbidden access!!!',
-            })
-        }
-
 
         sendResponse(res,{
             statusCode: 200,

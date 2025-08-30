@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import sendResponse from "./sendResponse";
-const { getDb } = require('../config/connectDB');
+const { getDb } = require('../config/connectDB')
 
 interface AuthenticatedRequest extends Request {
     user?: { email?: string; role?: string; status?: string };
@@ -9,13 +9,13 @@ interface AuthenticatedRequest extends Request {
 
 const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole: any)=> {
     try {
-        const db = getDb();
-        const usersCollection = db.collection('users');
+        const db = getDb()
+        const usersCollection = db.collection('users')
 
         const tEmail = req.user?.email;
         const tRole = req.user?.role;
         const tStatus = req.user?.status;
-        const user = await usersCollection.findOne({ email: tEmail });
+        const user = await usersCollection.findOne({ email: tEmail })
 
 
         if(!user) {
@@ -23,24 +23,24 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
                 statusCode: 400,
                 success: false,
                 message: 'User not found or not authorized',
-            });
+            })
         }
 
 
         if(!tEmail || !tRole || !tStatus) {
             return sendResponse(res, {
-                statusCode: 401,
+                statusCode: 400,
                 success: false,
                 message: 'Unauthorized access',
-            });
+            })
         }
 
         if(!user || user.email !== tEmail || user.role !== tRole || user.status !== tStatus) {
             return sendResponse(res, {
-                statusCode: 401,
+                statusCode: 400,
                 success: false,
                 message: 'Unauthorized access',
-            });
+            })
         }
 
 
@@ -49,7 +49,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
                 statusCode: 403,
                 success: false,
                 message: 'You do not have permission to perform this action',
-            });
+            })
         }
 
 
@@ -58,17 +58,17 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
                 statusCode: 403,
                 success: false,
                 message: 'Your account is not active',
-            });
+            })
         }
 
     }catch(err) {
-        console.error(err);
+        console.error(err)
         return sendResponse(res, {
             statusCode: 500,
             success: false,
             message: 'Internal server error',
             data: err,
-        });
+        })
     }
 };
 
