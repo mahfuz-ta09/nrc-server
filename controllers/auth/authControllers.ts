@@ -86,8 +86,8 @@ const logIn = async(req: Request, res: Response) => {
         res.cookie("nrc_acc", accessToken, {
             httpOnly: true,
             path: "/",
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "none",
+            // secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
             signed: false,     // must be false so middleware can read
         })
 
@@ -95,8 +95,8 @@ const logIn = async(req: Request, res: Response) => {
         res.cookie("nrc_ref", refreshToken, {
             httpOnly: true,
             path: "/",
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "none",
+            // secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
             signed: false,     // ✅ make this false too, Next middleware can’t decode signed
         })
 
