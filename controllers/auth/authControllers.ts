@@ -18,8 +18,8 @@ const setCookie = (res: Response,name: string,value: string,maxAge: number) => {
     res.cookie(name, value, {
         httpOnly: true,
         secure: isProd,
-        sameSite: isProd ? "none" : "lax",
-        domain: isProd ? ".nrcedu-uk.com" : undefined,
+        sameSite: "lax",
+        domain:  ".nrcedu-uk.com",
         path: "/",
         maxAge,
     })
@@ -29,8 +29,8 @@ const clearAuthCookies = (res: Response) => {
     const opts:any = {
         httpOnly: true,
         secure: isProd,
-        sameSite: isProd ? "none" : "lax",
-        domain: isProd ? ".nrcedu-uk.com" : undefined,
+        sameSite: "lax",
+        domain: "nrcedu-uk.com", 
         path: "/",
     }
     res.clearCookie("nrc_ref", opts)
