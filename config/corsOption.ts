@@ -1,7 +1,9 @@
 const urlList = [
   "http://localhost:3000",
   "https://nrc-london.vercel.app",
+  "https://nrcedu-uk.com",
   "https://www.nrcedu-uk.com",
+  "https://nrc-api.up.railway.app"  // <-- if your API lives here
 ]
 
 const corsOption = {
