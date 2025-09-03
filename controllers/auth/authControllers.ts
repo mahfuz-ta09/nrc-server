@@ -346,7 +346,6 @@ const getAccessToken = async(req: Request, res: Response) => {
         } catch (jwtError: any) {
             if (jwtError.name === 'TokenExpiredError') {
                 res.clearCookie('nrc_ref')
-                res.clearCookie('nrc_acc')
                 return sendResponse(res, {
                     statusCode: 400,
                     success: false,
@@ -363,7 +362,6 @@ const getAccessToken = async(req: Request, res: Response) => {
 
         if (!user || user.status !== "active" || user.role !== decoded.role) {
             res.clearCookie('nrc_ref')
-            res.clearCookie('nrc_acc')
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
