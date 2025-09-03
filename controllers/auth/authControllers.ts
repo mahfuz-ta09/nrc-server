@@ -88,7 +88,7 @@ const logIn = async(req: Request, res: Response) => {
             httpOnly: true,
             path: "/",
             secure: true,
-            sameSite: "lax",
+            sameSite: "none",
             signed: true,
         })
 
