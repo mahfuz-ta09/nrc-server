@@ -225,8 +225,13 @@ const signUp = async(req: Request, res: Response) => {
 
 const logOut = async(req: Request, res: Response) => {
     try{
-        res.clearCookie('nrc_ref')
-        res.clearCookie('nrc_acc')
+        res.clearCookie('nrc_ref',{
+            httpOnly: true,
+            path: "/",
+            secure: true,
+            sameSite: "none",
+            signed: true,
+        })
 
         sendResponse(res,{
             statusCode: 200,
@@ -290,31 +295,20 @@ const successResponse = async(req: Request, res: Response) => {
                 process.env.REFRESHTOKEN,{ 
                 expiresIn: "7d" 
             })
-  
-            res.cookie("nrc_acc", accessToken, {
-                httpOnly: true,
-                path: "/",
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "none",
-                signed: false,     // must be false so middleware can read
-            })
-
-            // Refresh token - your backend can still read this
+            
             res.cookie("nrc_ref", refreshToken, {
                 httpOnly: true,
                 path: "/",
-                secure: process.env.NODE_ENV === "production",
+                secure: true,
                 sameSite: "none",
-                signed: false,     // ✅ make this false too, Next middleware can’t decode signed
+                signed: true,
             })
 
             sendResponse(res,{
                 statusCode: 200,
                 success: true,
                 message: 'Signup successfully!!',
-                meta:{
-                    accessToken: accessToken
-                }
+                data: accessToken
             })
         }else{
             return sendResponse(res,{

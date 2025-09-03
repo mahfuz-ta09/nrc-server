@@ -13,8 +13,6 @@ interface AuthenticatedResponse extends Response {
 
 const verifyUser = (req:AuthenticatedRequest, res: AuthenticatedResponse, next:NextFunction ) => {
     const token = req.headers.authorization
-
-    console.log(token)
     
     if (!token) {
         return sendResponse( res, {
