@@ -34,6 +34,7 @@ router.get('/uni-area',
     getUniOriginName)
 
 router.get('/all/:country', 
+    verifyUser,
     getUniversityByCountry)
 
 

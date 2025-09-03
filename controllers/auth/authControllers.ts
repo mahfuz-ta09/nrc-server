@@ -83,13 +83,24 @@ const logIn = async(req: Request, res: Response) => {
             expiresIn: "7d" 
         })
         
-        
+        const isProd = process.env.NODE_ENV === "production"
+
         res.cookie("nrc_ref", refreshToken, {
             httpOnly: true,
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
+            domain: isProd ? ".nrcedu-uk.com" : undefined,
             path: "/",
-            secure: true,
-            sameSite: "none",
-            signed: true,
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        })
+
+        res.cookie("nrc_acc", accessToken, {
+            httpOnly: true,
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
+            domain: isProd ? ".nrcedu-uk.com" : undefined,
+            path: "/",
+            maxAge: 5 * 60 * 1000,
         })
 
 
@@ -225,13 +236,10 @@ const signUp = async(req: Request, res: Response) => {
 
 const logOut = async(req: Request, res: Response) => {
     try{
-        res.clearCookie('nrc_ref',{
-            httpOnly: true,
-            path: "/",
-            secure: true,
-            sameSite: "none",
-            signed: true,
-        })
+        const isProd = process.env.NODE_ENV === "production"
+
+        res.clearCookie("nrc_ref")
+        res.clearCookie("nrc_acc")
 
         sendResponse(res,{
             statusCode: 200,
@@ -324,8 +332,8 @@ const successResponse = async(req: Request, res: Response) => {
 
 const getAccessToken = async(req: Request, res: Response) => {
     try {
-        const token = req.signedCookies?.nrc_ref
-        
+        const token = req.cookies?.nrc_ref
+        console.log(token)
         if (!token) {
             return sendResponse(res, {
                 statusCode: 400,
@@ -372,6 +380,17 @@ const getAccessToken = async(req: Request, res: Response) => {
 
         const accessToken = jwt.sign(userData, process.env.ACCESSTOKEN, {
             expiresIn: "5m"
+        })
+
+        const isProd = process.env.NODE_ENV === "production"
+
+        res.cookie("nrc_acc", accessToken, {
+            httpOnly: true,
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
+            domain: isProd ? ".nrcedu-uk.com" : undefined,
+            path: "/",
+            maxAge: 5 * 60 * 1000,
         })
 
         

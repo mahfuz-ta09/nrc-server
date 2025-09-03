@@ -3,7 +3,7 @@ const urlList = [
   "https://nrc-london.vercel.app",
   "https://nrcedu-uk.com",
   "https://www.nrcedu-uk.com",
-  "https://nrc-api.up.railway.app"  // <-- if your API lives here
+  "https://api.nrcedu-uk.com",
 ]
 
 const corsOption = {
