@@ -1,344 +1,342 @@
-import { Request , Response } from "express"
+import { Request, Response } from "express"
 import { UserObject } from "./commonType"
 import sendResponse from "../../helper/sendResponse"
 import { format } from "date-fns"
 import sendEmail from "../../helper/sendEmail"
 import authChecker from "../../helper/authChecker"
-const { getDb } = require('../../config/connectDB')
+const { getDb } = require("../../config/connectDB")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 
+const emaiReg =
+  /^(([^<>()[\]\\.,:\s@"]+(\.[^<>()[\]\\.,:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+
+const isProd = process.env.NODE_ENV === "production"
 
 
-const emaiReg = /^(([^<>()[\]\\.,:\s@"]+(\.[^<>()[\]\\.,:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+const setCookie = (res: Response,name: string,value: string,maxAge: number) => {
+    res.cookie(name, value, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        domain: isProd ? ".nrcedu-uk.com" : undefined,
+        path: "/",
+        maxAge,
+    })
+}
+
+const clearAuthCookies = (res: Response) => {
+    const opts:any = {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        domain: isProd ? ".nrcedu-uk.com" : undefined,
+        path: "/",
+    }
+    res.clearCookie("nrc_ref", opts)
+    res.clearCookie("nrc_acc", opts)
+}
 
 
-const logIn = async(req: Request, res: Response) => {
-    try{
+const logIn = async (req: Request, res: Response) => {
+    try {
         const db = await getDb()
-        const collection = db.collection('users')
+        const collection = db.collection("users")
 
-        const { email , password } = req.body
+        const { email, password } = req.body
 
-        if(!email || !password){
-            return sendResponse( res, {
-                statusCode: 400,
-                success: false,
-                message: 'No empty field allowed!!!',
-            })
+        if (!email || !password) {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "No empty field allowed!!!",
+        })
         }
 
-        if(emaiReg.test(email) === false){
-            return sendResponse( res, {
-                statusCode: 400,
-                success: false,
-                message: 'Invalid email format!!!',
-            })
+        if (emaiReg.test(email) === false) {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "Invalid email format!!!",
+        })
         }
 
-        if(password.length < 6){
-            return sendResponse( res, {
-                statusCode: 400,
-                success: false,
-                message: 'Password is to short!!!',
-            })
+        if (password.length < 6) {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "Password is too short!!!",
+        })
         }
-        const query = { email: email }
-        
-        const user = await collection.findOne(query)
 
-        if(!user || user.status !== 'active'){
-            return sendResponse( res, {
-                statusCode: 400,
-                success: false,
-                message: 'No user exist with this email!!!',
-            })
+        const user = await collection.findOne({ email })
+
+        if (!user || user.status !== "active") {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "No user exists with this email!!!",
+        })
         }
 
         const pass = await bcrypt.compare(password, user.password)
-        if(!pass){
-            return sendResponse( res, {
-                statusCode: 400,
-                success: false,
-                message: 'Invalid password!!!',
-            })
+        if (!pass) {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "Invalid password!!!",
+        })
         }
 
         const userData = {
             id: user._id,
             email: email,
             role: user.role,
-            status:user.status
+            status: user.status,
         }
 
-        const accessToken = jwt.sign(
-            userData, 
-            process.env.ACCESSTOKEN, { 
-            expiresIn: "5m" 
+        const accessToken = jwt.sign(userData, process.env.ACCESSTOKEN, {
+            expiresIn: "5m",
         })
 
-        const refreshToken = jwt.sign(
-            userData, 
-            process.env.REFRESHTOKEN,{ 
-            expiresIn: "7d" 
+        const refreshToken = jwt.sign(userData, process.env.REFRESHTOKEN, {
+            expiresIn: "7d",
         })
+
         
-        const isProd = process.env.NODE_ENV === "production"
+        setCookie(res, "nrc_ref", refreshToken, 7 * 24 * 60 * 60 * 1000)
+        setCookie(res, "nrc_acc", accessToken, 5 * 60 * 1000)
 
-        res.cookie("nrc_ref", refreshToken, {
-            httpOnly: true,
-            secure: isProd,
-            sameSite: isProd ? "none" : "lax",
-            domain: isProd ? ".nrcedu-uk.com" : undefined,
-            path: "/",
-            maxAge: 7 * 24 * 60 * 60 * 1000,
-        })
-
-        res.cookie("nrc_acc", accessToken, {
-            httpOnly: true,
-            secure: isProd,
-            sameSite: isProd ? "none" : "lax",
-            domain: isProd ? ".nrcedu-uk.com" : undefined,
-            path: "/",
-            maxAge: 5 * 60 * 1000,
-        })
-
-
-        sendResponse(res,{
+        sendResponse(res, {
             statusCode: 200,
             success: true,
             message: "Login successful!!!",
-            data: accessToken,
+            data: { user: userData }, // no token exposed
         })
-    }catch(err){
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 200,
-            success: true,
-            message: "Login successful!!!",
+    } catch (err) {
+        console.error(err)
+        sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: "Login failed",
             data: err,
         })
     }
 }
 
-const signUp = async(req: Request, res: Response) => {
-    try{
+const signUp = async (req: Request, res: Response) => {
+    try {
         const db = await getDb()
-        const collection = db.collection('users')
-        const { name , email , password } = req.body
-        
+        const collection = db.collection("users")
+        const { name, email, password } = req.body
 
-        if(!email || !password || !name){
-            return sendResponse( res, {
-                statusCode: 400,
-                success: false,
-                message: 'No empty field allowed!!!',
-            })
+        if (!email || !password || !name) {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "No empty field allowed!!!",
+        })
         }
 
-
-        if(emaiReg.test(email) === false){
-            return sendResponse( res, {
-                statusCode: 400,
-                success: false,
-                message: "Invalid email format"
-            })
+        if (emaiReg.test(email) === false) {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "Invalid email format",
+        })
         }
 
-        if(password.length < 6){
-            return sendResponse( res, {
+        if (password.length < 6) {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'Password is to short!!!',
+                message: "Password is too short!!!",
             })
         }
-        
 
         const query = { email: email }
         const user = await collection.findOne(query)
 
-        
-        if(user?.status=='active' || user?.status=='inactive' || user?.status=='banned'){
-            return sendResponse( res, {
+        if (user?.status == "active" || user?.status == "inactive" || user?.status == "banned") {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'Error signing in!!!',
+                message: "Error signing in!!!",
             })
         }
 
         const randomToken = Math.floor(100000 + Math.random() * 900000).toString()
 
         const sendVerificationEmail = async (userEmail: string, code: string) => {
-            const subject = "Your Verification Code"
-            const htmlContent = `
+        const subject = "Your Verification Code"
+        const htmlContent = `
                 <h2>Email Verification</h2>
                 <p>Your 6-digit verification code is: <strong>${code}</strong></p>
                 <p>Enter this code on the website to verify your email.</p>
                 <p>Never share this code.</p>
             `
-        
             return await sendEmail(userEmail, subject, htmlContent)
         }
-        
-        sendVerificationEmail(email,randomToken)
-        if(user){
-            await collection.updateOne(query,{ 
-                $set: {
-                     status: randomToken
-                }}
-            )
 
-            return sendResponse( res, {
-                statusCode: 200,
-                success: true,
-                data:{
-                    id:user?._id
-                },
-                message: 'Check email for verification code',
-            })
+        sendVerificationEmail(email, randomToken)
+
+        if (user) {
+            await collection.updateOne(query, {
+                $set: {
+                status: randomToken,
+            },
+        })
+
+        return sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            data: {
+            id: user?._id,
+            },
+            message: "Check email for verification code",
+        })
         }
 
-        const hashedPassword = await bcrypt.hash(password,10)
-        
-        const userObject:UserObject = {
-            email:email,
-            password:hashedPassword,
-            role: 'user',
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        const userObject: UserObject = {
+            email: email,
+            password: hashedPassword,
+            role: "user",
             status: randomToken,
-            image:{
-                url:'',
-                publicId:''
+            image: {
+                url: "",
+                publicId: "",
             },
-            name:name,
+            name: name,
             phone: null,
-            dob:'',
-            country:'',
-            review: '',
-            createdAt:format(new Date(), "MM/dd/yyyy")
+            dob: "",
+            country: "",
+            review: "",
+            createdAt: format(new Date(), "MM/dd/yyyy"),
         }
 
         const result = await collection.insertOne(userObject)
-        
-        sendResponse( res, {
+
+        sendResponse(res, {
             statusCode: 200,
             success: true,
-            message: 'Check your email for verification code',
-            data:{
-                id:result?.insertedId
-            }
+            message: "Check your email for verification code",
+            data: {
+                id: result?.insertedId,
+            },
         })
-
-    }catch(err){
-        console.log(err)
+    } catch (err) {
+        console.error(err)
+        sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: "Signup failed",
+            data: err,
+        })
     }
 }
 
-
-const logOut = async(req: Request, res: Response) => {
-    try{
-        const isProd = process.env.NODE_ENV === "production"
-
-        res.clearCookie("nrc_ref")
-        res.clearCookie("nrc_acc")
-
-        sendResponse(res,{
+const logOut = async (req: Request, res: Response) => {
+    try {
+        clearAuthCookies(res)
+            sendResponse(res, {
             statusCode: 200,
             success: true,
             message: "User logged out!",
         })
-    }catch(err){
-        console.log(err)
+    } catch (err) {
+        console.error(err)
+        sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: "Logout failed",
+            data: err,
+        })
     }
 }
 
-const successResponse = async(req: Request, res: Response) => {
-    try{
+const successResponse = async (req: Request, res: Response) => {
+    try {
         const db = await getDb()
-        const collection = db.collection('users')
-        
-        const { email , id , code } = req.body
+        const collection = db.collection("users")
 
-        if(!email  || !code || !id){
-            return sendResponse(res,{
+        const { email, id, code } = req.body
+
+        if (!email || !code || !id) {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'Email or id missing',
-            })
-        }
-        const query = { email : email }
-        const user = await collection.findOne(query)
-        
-        if(!user){
-            return sendResponse(res,{
-                statusCode: 400,
-                success: false,
-                message: 'No user found, try again',
+                message: "Email or id missing",
             })
         }
 
-        if(user.status === code){
-            const updateField = {
-                $set:{
-                    status:'active'
-                }
-            }
+        const user = await collection.findOne({ email })
 
-            const verified = await collection.updateOne(query,updateField)
-
-            const userData = {
-                id: user._id,
-                email: email,
-                role: '',
-                status:'active',
-            }
-
-            const accessToken = jwt.sign(
-                userData, 
-                process.env.ACCESSTOKEN, { 
-                expiresIn: "5m" 
-            })
-
-            const refreshToken = jwt.sign(
-                userData, 
-                process.env.REFRESHTOKEN,{ 
-                expiresIn: "7d" 
-            })
-            
-            res.cookie("nrc_ref", refreshToken, {
-                httpOnly: true,
-                path: "/",
-                secure: true,
-                sameSite: "none",
-                signed: true,
-            })
-
-            sendResponse(res,{
-                statusCode: 200,
-                success: true,
-                message: 'Signup successfully!!',
-                data: accessToken
-            })
-        }else{
-            return sendResponse(res,{
+        if (!user) {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'Failed to verify, try again',
+                message: "No user found, try again",
             })
         }
-    }catch(err){
-        console.log(err)
+
+        if (user.status === code) {
+            await collection.updateOne(
+                { email },
+                { $set: { status: "active" } }
+        )
+
+        const userData = {
+            id: user._id,
+            email: email,
+            role: user.role,
+            status: "active",
+        }
+
+        const accessToken = jwt.sign(userData, process.env.ACCESSTOKEN, {
+            expiresIn: "5m",
+        })
+
+        const refreshToken = jwt.sign(userData, process.env.REFRESHTOKEN, {
+            expiresIn: "7d",
+        })
+
+        setCookie(res, "nrc_ref", refreshToken, 7 * 24 * 60 * 60 * 1000)
+        setCookie(res, "nrc_acc", accessToken, 5 * 60 * 1000)
+
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Signup successful!!",
+            data: { user: userData },
+        })
+        } else {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "Failed to verify, try again",
+        })
+        }
+    } catch (err) {
+        console.error(err)
+        sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: "Verification failed",
+            data: err,
+        })
     }
 }
 
-const getAccessToken = async(req: Request, res: Response) => {
+const getAccessToken = async (req: Request, res: Response) => {
     try {
         const token = req.cookies?.nrc_ref
-        console.log(token)
         if (!token) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: "No refresh token provided"
+                message: "No refresh token provided",
             })
         }
 
@@ -346,149 +344,132 @@ const getAccessToken = async(req: Request, res: Response) => {
         try {
             decoded = await jwt.verify(token, process.env.REFRESHTOKEN)
         } catch (jwtError: any) {
-            if (jwtError.name === 'TokenExpiredError') {
-                res.clearCookie('nrc_ref')
-                return sendResponse(res, {
-                    statusCode: 400,
-                    success: false,
-                    message: "Refresh token expired. Please login again."
-                })
-            }
-            throw jwtError
-        }
-        
-        const db = await getDb()
-        const collection = db.collection('users')
-        
-        const user = await collection.findOne({ email: decoded?.email })
-
-        if (!user || user.status !== "active" || user.role !== decoded.role) {
-            res.clearCookie('nrc_ref')
+        if (jwtError.name === "TokenExpiredError") {
+            clearAuthCookies(res)
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: "Invalid user or permissions. Please login again."
+                message: "Refresh token expired. Please login again.",
+            })
+        }
+        throw jwtError
+        }
+
+        const db = await getDb()
+        const collection = db.collection("users")
+
+        const user = await collection.findOne({ email: decoded?.email })
+
+        if (!user || user.status !== "active" || user.role !== decoded.role) {
+            clearAuthCookies(res)
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Invalid user or permissions. Please login again.",
             })
         }
 
         const userData = {
-                id: user._id,
-                email: user.email,
-                role: user.role,
-                status: user.status
+            id: user._id,
+            email: user.email,
+            role: user.role,
+            status: user.status,
         }
 
         const accessToken = jwt.sign(userData, process.env.ACCESSTOKEN, {
-            expiresIn: "5m"
+            expiresIn: "5m",
         })
 
-        const isProd = process.env.NODE_ENV === "production"
+        setCookie(res, "nrc_acc", accessToken, 5 * 60 * 1000)
 
-        res.cookie("nrc_acc", accessToken, {
-            httpOnly: true,
-            secure: isProd,
-            sameSite: isProd ? "none" : "lax",
-            domain: isProd ? ".nrcedu-uk.com" : undefined,
-            path: "/",
-            maxAge: 5 * 60 * 1000,
-        })
-
-        
-        sendResponse(res,{
+        sendResponse(res, {
             statusCode: 200,
             success: true,
-            data: accessToken,
+            data: { user: userData },
         })
     } catch (err) {
-        console.error("Error in getAccessTokenWithRotation:", err)
-        console.log(err)
+        console.error("Error in getAccessToken:", err)
         return sendResponse(res, {
             statusCode: 500,
             success: false,
             message: "Internal server error",
-            data: err
+            data: err,
         })
     }
 }
 
-
-const resetPassword  = async(req: Request, res: Response) => {
-    try{
+const resetPassword = async (req: Request, res: Response) => {
+    try {
         const db = await getDb()
-        const collection = db.collection('users')
+        const collection = db.collection("users")
         const { email } = req.body
 
-        if(!email){
-            return sendResponse(res,{
+        if (!email) {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'Email requard to reset password',
+                message: "Email required to reset password",
             })
         }
 
-        const query = { email: email }
-        const user = await collection.findOne(query)
-
-        if(!user){
-            return sendResponse(res,{
+        const user = await collection.findOne({ email })
+        if (!user) {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'No user exist with this email',
+                message: "No user exist with this email",
             })
         }
 
         const randomToken = Math.floor(100000 + Math.random() * 900000).toString()
-        const hashedPassword = await bcrypt.hash(randomToken,10)
+        const hashedPassword = await bcrypt.hash(randomToken, 10)
 
-        const updatedDoc = {
-            $set:{
-                password: hashedPassword,
-            }
-        }
+        const changed = await collection.updateOne(
+            { email },
+            { $set: { password: hashedPassword } }
+        )
 
-        const changed = await collection.updateOne(query,updatedDoc)
-        
-        if(changed?.modifiedCount===0){
-            return sendResponse(res,{
+        if (changed?.modifiedCount === 0) {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'Failed to reset. Try again',
+                message: "Failed to reset. Try again",
             })
         }
 
         const content = `
-            <div style="font-family: Arial, sans-serif max-width: 600px margin: 0 auto padding: 20px border: 1px solid #ddd border-radius: 8px background-color: #f9f9f9">
-                <h2 style="background-color: #002c3a color: white padding: 15px text-align: center border-radius: 5px 5px 0 0">
-                    NRC-london
-                </h2>
-                <div style="padding: 20px background-color: white border-radius: 0 0 5px 5px">
-                    <p><strong>Name:</strong> ${user?.name}</p>
-                    <p><strong>Email:</strong> ${email}</p>
-                    <p><strong>Password:</strong></p>
-                    <p style="background-color: #f1f1f1 padding: 10px border-radius: 5px">${randomToken}</p>
-                </div>
-                <p style="text-align: center font-size: 12px color: red">
-                    Please change your password from your profile.
-                </p>
+            <div>
+                <h2>NRC-london</h2>
+                <p><strong>Name:</strong> ${user?.name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>New Password:</strong></p>
+                <p>${randomToken}</p>
+                <p style="color:red">Please change your password from your profile.</p>
             </div>
         `
-        sendEmail(email,"Reset password request",content)
-        
-        sendResponse(res,{
+        sendEmail(email, "Reset password request", content)
+
+        sendResponse(res, {
             statusCode: 200,
             success: true,
-            message: 'Successfull. Check your email',
+            message: "Successful. Check your email",
         })
-    }catch(err){
-        console.log(err)
+    } catch (err) {
+        console.error(err)
+        sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: "Password reset failed",
+            data: err,
+        })
     }
 }
 
-module.exports  = {
-    logIn,
-    signUp,
-    logOut,
-    getAccessToken,
-    successResponse,
-    resetPassword
-} 
+module.exports = {
+  logIn,
+  signUp,
+  logOut,
+  getAccessToken,
+  successResponse,
+  resetPassword,
+}
