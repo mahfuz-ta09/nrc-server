@@ -6,13 +6,7 @@ const urlList = [
     'https://api.nrcedu-uk.com',
 ]
 const corsOption = {    
-    origin: function (origin: any, callback: any) {
-        if (!origin || urlList.includes(origin)) {
-          callback(null, true)
-        } else {
-          callback(new Error("Not allowed by CORS"))
-        }
-    },
+    origin: 'https://www.nrcedu-uk.com',
     credentials: true,
     methods: 'GET,POST,PUT,DELETE,OPTIONS,PATCH',
     allowedHeaders: ["Content-Type", "Authorization","authorization"],

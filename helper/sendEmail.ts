@@ -12,7 +12,7 @@ const sendEmail = async (to: string, subject: string, htmlContent: string) => {
                 pass: process.env.EMAIL_PASS,
             },
             tls: {
-                rejectUnauthorized: false, // allow self-signed locally
+                rejectUnauthorized: false,
             },
         })
 
