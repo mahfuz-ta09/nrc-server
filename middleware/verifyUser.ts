@@ -13,7 +13,6 @@ interface AuthenticatedResponse extends Response {
 
 const verifyUser = (req:AuthenticatedRequest, res: AuthenticatedResponse, next:NextFunction ) => {
     const token = req?.cookies?.nrc_acc
-    // console.log("token-------------------------------",token)
     // console.log("req?.signedCookies-------------------------------",req?.signedCookies)
     
     if (!token) {

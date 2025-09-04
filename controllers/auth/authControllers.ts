@@ -14,14 +14,23 @@ const emaiReg =
 const isProd = process.env.NODE_ENV === "production"
 
 
-const setCookie = (res: Response,name: string,value: string,maxAge: number) => {
-    res.cookie(name, value, {
+const setCookie = (res: Response,name: string,value: string,maxAge?: number) => {
+    
+    if(name==='nrc_ref') res.cookie(name, value, {
         httpOnly: true,
         secure: isProd,
         sameSite: "lax",
         domain:  ".nrcedu-uk.com",
         path: "/",
         maxAge,
+    })
+    
+    if(name==='nrc_acc') res.cookie(name, value, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: "lax",
+        domain:  ".nrcedu-uk.com",
+        path: "/",
     })
 }
 
@@ -30,7 +39,7 @@ const clearAuthCookies = (res: Response) => {
         httpOnly: true,
         secure: isProd,
         sameSite: "lax",
-        domain: "nrcedu-uk.com", 
+        // domain: "nrcedu-uk.com", 
         path: "/",
     }
     res.clearCookie("nrc_ref", opts)
@@ -105,13 +114,13 @@ const logIn = async (req: Request, res: Response) => {
 
         
         setCookie(res, "nrc_ref", refreshToken, 7 * 24 * 60 * 60 * 1000)
-        setCookie(res, "nrc_acc", accessToken, 5 * 60 * 1000)
+        setCookie(res, "nrc_acc", accessToken)
 
         sendResponse(res, {
             statusCode: 200,
             success: true,
             message: "Login successful!!!",
-            data: { user: userData }, // no token exposed
+            data: { user: userData }, 
         })
     } catch (err) {
         console.error(err)
@@ -303,7 +312,7 @@ const successResponse = async (req: Request, res: Response) => {
         })
 
         setCookie(res, "nrc_ref", refreshToken, 7 * 24 * 60 * 60 * 1000)
-        setCookie(res, "nrc_acc", accessToken, 5 * 60 * 1000)
+        setCookie(res, "nrc_acc", accessToken)
 
         sendResponse(res, {
             statusCode: 200,
@@ -332,6 +341,7 @@ const successResponse = async (req: Request, res: Response) => {
 const getAccessToken = async (req: Request, res: Response) => {
     try {
         const token = req.cookies?.nrc_ref
+        
         if (!token) {
             return sendResponse(res, {
                 statusCode: 400,
@@ -380,7 +390,7 @@ const getAccessToken = async (req: Request, res: Response) => {
             expiresIn: "5m",
         })
 
-        setCookie(res, "nrc_acc", accessToken, 5 * 60 * 1000)
+        setCookie(res, "nrc_acc", accessToken)
 
         sendResponse(res, {
             statusCode: 200,
