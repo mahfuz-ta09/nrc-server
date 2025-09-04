@@ -11,14 +11,13 @@ const jwt = require("jsonwebtoken")
 const emaiReg =
   /^(([^<>()[\]\\.,:\s@"]+(\.[^<>()[\]\\.,:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 
-const isProd = process.env.NODE_ENV === "production"
 
 
 const setCookie = (res: Response,name: string,value: string,maxAge?: number) => {
     
     if(name==='nrc_ref') res.cookie(name, value, {
         httpOnly: true,
-        secure: isProd,
+        secure: true,
         sameSite: "lax",
         domain:  ".nrcedu-uk.com",
         path: "/",
@@ -27,7 +26,7 @@ const setCookie = (res: Response,name: string,value: string,maxAge?: number) => 
     
     if(name==='nrc_acc') res.cookie(name, value, {
         httpOnly: true,
-        secure: isProd,
+        secure: true,
         sameSite: "lax",
         domain:  ".nrcedu-uk.com",
         path: "/",
@@ -37,9 +36,9 @@ const setCookie = (res: Response,name: string,value: string,maxAge?: number) => 
 const clearAuthCookies = (res: Response) => {
     const opts:any = {
         httpOnly: true,
-        secure: isProd,
+        secure: true,
         sameSite: "lax",
-        // domain: "nrcedu-uk.com", 
+        domain: "nrcedu-uk.com", 
         path: "/",
     }
     res.clearCookie("nrc_ref", opts)
