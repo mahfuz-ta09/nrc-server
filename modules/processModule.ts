@@ -27,6 +27,18 @@ router.post('/create',
     ]),
     createProceed)
 
+// router.post('/file',  
+//     verifyUser,
+//     fileUploadHelper.upload.fields([
+//         { name: "en_result", maxCount: 1 },
+//         { name: "ssc_result", maxCount: 1 },
+//         { name: "hsc_result", maxCount: 1 },
+//         { name: "bachelor_result", maxCount: 1 },
+//         { name: "masters_result", maxCount: 1 },
+//         { name: "other_result", maxCount: 1 }
+//     ]),
+//     post)
+
 router.patch('/update/:id',
     verifyUser, 
     editProcessData)

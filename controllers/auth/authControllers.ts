@@ -19,7 +19,7 @@ const setCookie = (res: Response,name: string,value: string,maxAge?: number) => 
         httpOnly: true,
         secure: true,
         sameSite: "lax",
-        // domain:  ".nrcedu-uk.com",
+        domain: process.env.NODE_ENV === 'PRODUCTION' ? ".nrcedu-uk.com" : '',
         path: "/",
         maxAge,
     })
@@ -28,7 +28,7 @@ const setCookie = (res: Response,name: string,value: string,maxAge?: number) => 
         httpOnly: true,
         secure: true,
         sameSite: "lax",
-        // domain:  ".nrcedu-uk.com",
+        domain: process.env.NODE_ENV === 'PRODUCTION' ? ".nrcedu-uk.com" : '',
         path: "/",
     })
 }
@@ -38,7 +38,7 @@ const clearAuthCookies = (res: Response) => {
         httpOnly: true,
         secure: true,
         sameSite: "lax",
-        // domain: "nrcedu-uk.com", 
+        domain: process.env.NODE_ENV === 'PRODUCTION' ? ".nrcedu-uk.com" : '', 
         path: "/",
     }
     res.clearCookie("nrc_ref", opts)
