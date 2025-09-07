@@ -1,10 +1,10 @@
-import { Request , Response } from "express"
-import { ObjectId } from "mongodb"
-import sendResponse from "../../helper/sendResponse"
 import { format } from "date-fns"
+import { ObjectId } from "mongodb"
+import { Request , Response } from "express"
 import sendEmail from "../../helper/sendEmail"
-import { fileUploadHelper } from "../../helper/fileUploadHealper"
 const { getDb } = require('../../config/connectDB')
+import sendResponse from "../../helper/sendResponse"
+import { fileUploadHelper } from "../../helper/fileUploadHealper"
 
 
 interface AuthenticatedRequest extends Request {
@@ -62,7 +62,7 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
             referral,
             refused,
             country_name
-         } = req.body
+        } = req.body
         
         if(!email){
             return sendResponse(res,{

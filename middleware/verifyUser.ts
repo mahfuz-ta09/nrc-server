@@ -1,6 +1,6 @@
-import { Request , Response , NextFunction } from "express"
-import sendResponse from "../helper/sendResponse";
 const jwt = require('jsonwebtoken')
+import sendResponse from "../helper/sendResponse"
+import { Request , Response , NextFunction } from "express"
 
 interface AuthenticatedRequest extends Request {
     user?: any
@@ -13,7 +13,6 @@ interface AuthenticatedResponse extends Response {
 
 const verifyUser = (req:AuthenticatedRequest, res: AuthenticatedResponse, next:NextFunction ) => {
     const token = req?.cookies?.nrc_acc
-    // console.log("req?.signedCookies-------------------------------",req?.signedCookies)
     
     if (!token) {
         return sendResponse( res, {

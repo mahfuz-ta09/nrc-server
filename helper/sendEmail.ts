@@ -1,35 +1,26 @@
-import nodemailer from "nodemailer"
+import { Resend } from 'resend'
 
+const resend = new Resend(process.env.EMAIL_API_KEY)
 
 const sendEmail = async (to: string, subject: string, htmlContent: string) => {
     try {
-        const transporter = nodemailer.createTransport({
-            host: "mail.privateemail.com",
-            port: 587,
-            secure: false,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-            tls: {
-                rejectUnauthorized: false,
-            },
+        const { data, error } = await resend.emails.send({
+            from: 'NRC Edu <info@nrcedu-uk.com>',
+            to: Array.isArray(to) ? to : [to],
+            subject: subject,
+            html: htmlContent,
         })
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to,
-            subject,
-            html: htmlContent,
+        if (error) {
+            console.error("Resend API Error:", error)
+            return { success: false, message: error.message || "Failed to send email" }
         }
 
-        const emailRes = await transporter.sendMail(mailOptions)
-        
-        return emailRes
-    } catch (error) {
-        console.error("Error sending email: ", error)
-        return { success: false, message: "Failed to send email" }
+        return { success: true, data }
+    } catch (err) {
+        console.error("Error sending email:", err)
+        return { success: false, message: "Unexpected error sending email" }
     }
-};
+}
 
-export default sendEmail;
+export default sendEmail
