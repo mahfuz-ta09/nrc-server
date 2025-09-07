@@ -13,10 +13,10 @@ export const createBanner = async (req: Request, res: Response) => {
         
         await authChecker(req, res, ["super_admin",'admin'])  
         
-        const { serial ,title, description, status } = req.body
+        const { serial , title , additional_title, description, status } = req.body
         const imgFile:any = req.files 
         
-        if(!serial || !title || !description || !status || !imgFile["bannerImg"]){
+        if(!serial || !title || !additional_title || !description || !status || !imgFile["bannerImg"]){
             return sendResponse( res, {
                 statusCode: 400,
                 success: false,
@@ -29,6 +29,7 @@ export const createBanner = async (req: Request, res: Response) => {
         const banner = {
             serial:Number(serial),
             title,
+            additional_title,
             description,
             imageUrl:{
                 url: uploadRes.secure_url,
@@ -132,7 +133,7 @@ export const updateBanner = async (req: Request, res: Response) => {
         await authChecker(req, res, ["super_admin",'admin'])
         
         const { id } = req.params  
-        const { serial ,title, description, status } = req.body
+        const { serial ,title , additional_title , description, status } = req.body
         
 
         const query = { _id: new ObjectId(id) } 
@@ -157,6 +158,7 @@ export const updateBanner = async (req: Request, res: Response) => {
 
         const updateData = {
             title: title ? title : exist.title,
+            additional_title: additional_title ? additional_title : exist?.additional_title,
             serial: serial ? Number(serial) : Number(exist.serial),
             description: description ? description : exist.description,
             status: status ? status : exist.status,
