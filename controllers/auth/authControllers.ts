@@ -138,15 +138,15 @@ const signUp = async (req: Request, res: Response) => {
         const collection = db.collection("users")
         const { name, email, password } = req.body
 
-        if (!email || !password || !name) {
-        return sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "No empty field allowed!!!",
-        })
+        if (!name || !email || !password) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "All fields are required",
+            })
         }
 
-        if (emaiReg.test(email) === false) {
+        if (!emaiReg.test(email)) {
         return sendResponse(res, {
             statusCode: 400,
             success: false,
@@ -155,68 +155,60 @@ const signUp = async (req: Request, res: Response) => {
         }
 
         if (password.length < 6) {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "Password must be at least 6 characters long",
+        })
+        }
+
+        const existingUser = await collection.findOne({ email })
+
+        if (existingUser && existingUser.status === "active") {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: "Password is too short!!!",
+                message: "Email already registered",
             })
         }
 
-        const query = { email: email }
-        const user = await collection.findOne(query)
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
 
-        if (user?.status == "active" || user?.status == "inactive" || user?.status == "banned") {
-            return sendResponse(res, {
-                statusCode: 400,
-                success: false,
-                message: "Error signing in!!!",
-            })
-        }
-
-        const randomToken = Math.floor(100000 + Math.random() * 900000).toString()
-
-        const sendVerificationEmail = async (userEmail: string, code: string) => {
-        const subject = "Your Verification Code"
-        const htmlContent = `
+        await sendEmail(
+            email,
+            "Your Verification Code",
+            `
                 <h2>Email Verification</h2>
-                <p>Your 6-digit verification code is: <strong>${code}</strong></p>
+                <p>Your 6-digit verification code is: <strong>${verificationCode}</strong></p>
                 <p>Enter this code on the website to verify your email.</p>
                 <p>Never share this code.</p>
             `
-            return await sendEmail(userEmail, subject, htmlContent)
-        }
+        )
 
-        sendVerificationEmail(email, randomToken)
-
-        if (user) {
-            await collection.updateOne(query, {
-                $set: {
-                status: randomToken,
-            },
-        })
+        if (existingUser) {
+            await collection.updateOne(
+                { email },
+                { $set: { status: verificationCode } }
+        )
 
         return sendResponse(res, {
-            statusCode: 200,
-            success: true,
-            data: {
-            id: user?._id,
-            },
-            message: "Check email for verification code",
-        })
+                statusCode: 200,
+                success: true,
+                message: "Verification code resent to your email",
+                data: { id: existingUser._id },
+            })
         }
 
+        // Create new user
         const hashedPassword = await bcrypt.hash(password, 10)
 
-        const userObject: UserObject = {
-            email: email,
+        const userObject = {
+            name,
+            email,
             password: hashedPassword,
             role: "user",
-            status: randomToken,
-            image: {
-                url: "",
-                publicId: "",
-            },
-            name: name,
+            status: verificationCode,
+            image: { url: "", publicId: "" },
             phone: null,
             dob: "",
             country: "",
@@ -226,17 +218,15 @@ const signUp = async (req: Request, res: Response) => {
 
         const result = await collection.insertOne(userObject)
 
-        sendResponse(res, {
+        return sendResponse(res, {
             statusCode: 200,
             success: true,
             message: "Check your email for verification code",
-            data: {
-                id: result?.insertedId,
-            },
+            data: { id: result.insertedId },
         })
     } catch (err) {
         console.error(err)
-        sendResponse(res, {
+        return sendResponse(res, {
             statusCode: 500,
             success: false,
             message: "Signup failed",
@@ -245,6 +235,76 @@ const signUp = async (req: Request, res: Response) => {
     }
 }
 
+const successResponse = async (req: Request, res: Response) => {
+    try {
+        const db = await getDb()
+        const collection = db.collection("users")
+
+        const { email, id, code } = req.body
+
+        if (!email || !id || !code) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Missing email, id or verification code",
+            })
+        }
+
+        const user = await collection.findOne({ email })
+
+        if (!user) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "No user found with this email",
+            })
+        }
+
+        if (user.status !== code) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Invalid verification code",
+            })
+        }
+
+        
+        await collection.updateOne({ email }, { $set: { status: "active" } })
+
+        const userData = {
+            id: user._id,
+            email: user.email,
+            role: user.role,
+            status: "active",
+        }
+
+        const accessToken = jwt.sign(userData, process.env.ACCESSTOKEN, {
+            expiresIn: "5m",
+        })
+
+        const refreshToken = jwt.sign(userData, process.env.REFRESHTOKEN as string, {
+            expiresIn: "7d",
+        })
+
+        setCookie(res, "nrc_ref", refreshToken, 7 * 24 * 60 * 60 * 1000)
+        setCookie(res, "nrc_acc", accessToken)
+
+        return sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Signup successful! Account verified",
+            data: { user: userData },
+        })
+    } catch (err) {
+        console.error(err)
+        return sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: "Verification failed",
+            data: err,
+        })
+    }
+}
 const logOut = async (req: Request, res: Response) => {
     try {
         clearAuthCookies(res)
@@ -264,78 +324,6 @@ const logOut = async (req: Request, res: Response) => {
     }
 }
 
-const successResponse = async (req: Request, res: Response) => {
-    try {
-        const db = await getDb()
-        const collection = db.collection("users")
-
-        const { email, id, code } = req.body
-
-        if (!email || !code || !id) {
-            return sendResponse(res, {
-                statusCode: 400,
-                success: false,
-                message: "Email or id missing",
-            })
-        }
-
-        const user = await collection.findOne({ email })
-
-        if (!user) {
-            return sendResponse(res, {
-                statusCode: 400,
-                success: false,
-                message: "No user found, try again",
-            })
-        }
-
-        if (user.status === code) {
-            await collection.updateOne(
-                { email },
-                { $set: { status: "active" } }
-        )
-
-        const userData = {
-            id: user._id,
-            email: email,
-            role: user.role,
-            status: "active",
-        }
-
-        const accessToken = jwt.sign(userData, process.env.ACCESSTOKEN, {
-            expiresIn: "5m",
-        })
-
-        const refreshToken = jwt.sign(userData, process.env.REFRESHTOKEN, {
-            expiresIn: "7d",
-        })
-
-        setCookie(res, "nrc_ref", refreshToken, 7 * 24 * 60 * 60 * 1000)
-        setCookie(res, "nrc_acc", accessToken)
-
-        sendResponse(res, {
-            statusCode: 200,
-            success: true,
-            message: "Signup successful!!",
-            data: { user: userData },
-        })
-        } else {
-        return sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "Failed to verify, try again",
-        })
-        }
-    } catch (err) {
-        console.error(err)
-        sendResponse(res, {
-            statusCode: 500,
-            success: false,
-            message: "Verification failed",
-            data: err,
-        })
-    }
-}
 
 const getAccessToken = async (req: Request, res: Response) => {
     try {
