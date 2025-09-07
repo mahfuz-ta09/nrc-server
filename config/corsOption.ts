@@ -5,8 +5,12 @@ const urlList = [
     "https://www.nrcedu-uk.com",
     'https://api.nrcedu-uk.com',
 ]
+
+const url = process.env.NODE_ENV === 'PRODUCTION' ? 'https://www.nrcedu-uk.com':'http://localhost:3000'
+
+console.log(process.env.NODE_ENV)
 const corsOption = {    
-    origin: 'https://www.nrcedu-uk.com',
+    origin: url,
     credentials: true,
     methods: 'GET,POST,PUT,DELETE,OPTIONS,PATCH',
     allowedHeaders: ["Content-Type", "Authorization","authorization"],
