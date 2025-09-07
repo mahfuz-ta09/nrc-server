@@ -178,10 +178,22 @@ const signUp = async (req: Request, res: Response) => {
             email,
             "Your Verification Code",
             `
-                <h2>Email Verification</h2>
-                <p>Your 6-digit verification code is: <strong>${verificationCode}</strong></p>
-                <p>Enter this code on the website to verify your email.</p>
-                <p>Never share this code.</p>
+            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <h2 style="color: #2c3e50;">🔐 Email Verification</h2>
+                <p>Hello,</p>
+                <p>Thank you for signing up with <strong>NRC Educational Consultants Ltd.</strong>. To complete your registration, please use the verification code below:</p>
+                
+                <div style="background: #f4f4f4; padding: 12px 20px; display: inline-block; border-radius: 6px; margin: 15px 0; font-size: 18px; font-weight: bold; letter-spacing: 3px; color: #2c3e50;">
+                    ${verificationCode}
+                </div>
+                
+                <p>Simply enter this 6-digit code on our website to verify your email address.</p>
+                <p style="color: #e74c3c; font-weight: bold;">⚠️ For your security, do not share this code with anyone.</p>
+                
+                <p>If you did not request this verification, please ignore this email.</p>
+                
+                <p style="margin-top: 20px;">Best regards,<br/><strong>NRC Educational Consultants Ltd. Team</strong></p>
+            </div>
             `
         )
 
@@ -199,7 +211,7 @@ const signUp = async (req: Request, res: Response) => {
             })
         }
 
-        // Create new user
+        
         const hashedPassword = await bcrypt.hash(password, 10)
 
         const userObject = {
@@ -435,14 +447,22 @@ const resetPassword = async (req: Request, res: Response) => {
         }
 
         const content = `
-            <div>
-                <h2>NRC-london</h2>
-                <p><strong>Name:</strong> ${user?.name}</p>
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>New Password:</strong></p>
-                <p>${randomToken}</p>
-                <p style="color:red">Please change your password from your profile.</p>
+            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                <h2 style="color: #2c3e50;">🔑 NRC Educational Consultants Ltd. - Password Reset</h2>
+
+                <p>Hello <strong>${user?.name}</strong>,</p>
+                <p>You requested to reset the password for your account associated with <strong>${email}</strong>.</p>
+                
+                <p>Your new temporary password is:</p>
+                
+                <div style="background: #f4f4f4; padding: 12px 20px; display: inline-block; border-radius: 6px; margin: 15px 0; font-size: 18px; font-weight: bold; letter-spacing: 2px; color: #2c3e50;">
+                    ${randomToken}
+                </div>
+                <p style="color:#e67e22;"><strong>⚠️ Important:</strong> Please log in using this password and update it immediately from your profile for security reasons.</p>
+                <p>If you did not request a password reset, please ignore this email or contact our support team right away.</p>
+                <p style="margin-top: 20px;">Best regards,<br/><strong>NRC Educational Consultants Ltd. Support Team</strong></p>
             </div>
+
         `
         sendEmail(email, "Reset password request", content)
 
