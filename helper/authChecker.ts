@@ -7,6 +7,18 @@ interface AuthenticatedRequest extends Request {
 }
 
 
+const clearAuthCookies = (res: Response) => {
+    const opts:any = {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        domain: process.env.NODE_ENV === 'PRODUCTION' ? ".nrcedu-uk.com" : '', 
+        path: "/",
+    }
+    res.clearCookie("nrc_ref", opts)
+    res.clearCookie("nrc_acc", opts)
+}
+
 const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole: any)=> {
     try {
         const db = getDb()
@@ -28,6 +40,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
 
 
         if(!tEmail || !tRole || !tStatus) {
+            clearAuthCookies(res)
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -36,6 +49,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
         }
 
         if(!user || user.email !== tEmail || user.role !== tRole || user.status !== tStatus) {
+            clearAuthCookies(res)
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -45,6 +59,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
 
 
         if(!requiredRole.includes(user.role)) {
+            clearAuthCookies(res)
             return sendResponse(res, {
                 statusCode: 403,
                 success: false,
@@ -54,6 +69,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
 
 
         if(user.status !== 'active') {
+            clearAuthCookies(res)
             return sendResponse(res, {
                 statusCode: 403,
                 success: false,
@@ -63,6 +79,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
 
     }catch(err) {
         console.error(err)
+        clearAuthCookies(res)
         return sendResponse(res, {
             statusCode: 500,
             success: false,
