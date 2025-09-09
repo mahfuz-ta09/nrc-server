@@ -219,6 +219,7 @@ const signUp = async (req: Request, res: Response) => {
             email,
             password: hashedPassword,
             role: "user",
+            requiredPassChange: false,
             status: verificationCode,
             image: { url: "", publicId: "" },
             phone: null,
@@ -462,7 +463,6 @@ const resetPassword = async (req: Request, res: Response) => {
                 <p>If you did not request a password reset, please ignore this email or contact our support team right away.</p>
                 <p style="margin-top: 20px;">Best regards,<br/><strong>NRC Educational Consultants Ltd. Support Team</strong></p>
             </div>
-
         `
         sendEmail(email, "Reset password request", content)
 
