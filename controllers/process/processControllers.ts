@@ -5,6 +5,7 @@ import sendEmail from "../../helper/sendEmail"
 const { getDb } = require('../../config/connectDB')
 import sendResponse from "../../helper/sendResponse"
 import { fileUploadHelper } from "../../helper/fileUploadHealper"
+import authChecker from "../../helper/authChecker"
 
 
 interface AuthenticatedRequest extends Request {
@@ -53,15 +54,15 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
             email,
             role,
             name,
-            mobile_number,
-            emergency_number,
+            phone,
+            ulternative_phone,
             dob,
-            en_proficiency,
-            exam_taken_time,
-            prefered_country,
+            testName,
+            examTakenTime,
+            destinationCountry,
             referral,
             refused,
-            country_name
+            refusedCountry
         } = req.body
         
         if(!email){
@@ -84,19 +85,7 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
         const exist = await collection.findOne(query)
 
 
-        const tEmail = req.user?.email || null;
-        const tRole = req.user?.role || null;
-        const tStatus = req.user?.status || null;
-
-        const user = await usersCollection.findOne({ email: tEmail , status: tStatus })
-
-        if(!user){
-            return sendResponse( res, {
-                statusCode: 411,
-                success: false,
-                message: 'Unauthorized!!!',
-            })
-        }
+        await authChecker(req, res, ["user"])
 
         if(exist){
             return sendResponse(res,{
@@ -108,12 +97,12 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
         }
 
         const files = req.files as MulterFiles
-        const engRes = files["en_result"]?.[0]
-        const sscRes = files["ssc_result"]?.[0]
-        const hscRes = files["hsc_result"]?.[0]
-        const bacRes = files["bachelor_result"]?.[0]
-        const masRes = files["masters_result"]?.[0]
-        const othRes = files["other_result"]?.[0]
+        const engRes = files["proficiencyCirtificate"]?.[0]
+        const sscRes = files["ssc"]?.[0]
+        const hscRes = files["hsc"]?.[0]
+        const bacRes = files["bachelor"]?.[0]
+        const masRes = files["master"]?.[0]
+        const othRes = files["other"]?.[0]
 
         let engResF:any , sscResF:any , hscResF:any , bacResF:any , masResF:any , othResF:any
         if(engRes) engResF = await fileUploadHelper.uploadToCloud(engRes) 
@@ -124,31 +113,93 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
         if(othRes) othResF = await fileUploadHelper.uploadToCloud(othRes) 
         
         
-        const insertedObject:any = {
-            email:email,
-            name:name,
-            mobile_number:mobile_number,
-            emergency_number:emergency_number,
-            dob:dob,
-            en_proficiency:en_proficiency,
-            en_result:{url:engResF?.secure_url, public_id:engResF?.public_id},
-            ssc_result:{url:sscResF?.secure_url, public_id:sscResF?.public_id},
-            hsc_result:{url:hscResF?.secure_url, public_id:hscResF?.public_id},
-            bachelor_result:{url:bacResF?.secure_url, public_id:bacResF?.public_id},
-            masters_result:{url:masResF?.secure_url, public_id:masResF?.public_id},
-            other_result:{url:othResF?.secure_url, public_id:othResF?.public_id},
-            exam_taken_time:exam_taken_time,
-            prefered_country:prefered_country,
-            referral:referral,
-            refused:refused,
-            country_name:country_name,
-            condition:"initial",
-            updated:0,
-            last_updated:"initial",
-            data_added: format(new Date(), "MM/dd/yyyy"),
-        }
+        const fileToInsert = {
+        personalInfo: {
+            name,
+            email,
+            phone,
+            ulternative_phone,
+            dob,
+            passportNo: "",
+            currentAddress: "",
+            countryCitizen: "",
+            refused,
+            refusedCountry,
+            allowEditPermission: false,
+        },
+        englishProficiency: {
+            testName,
+            listening: "",
+            reading: "",
+            writing: "",
+            speaking: "",
+            overall: "",
+            examTakenTime,
+            allowEditPermission: false,
+        },
+        prefferedUniversities:[
+            {}
+        ],
+        assignedUniversities: [
+            {
+                schoolership: "", 
+                intake: "",
+                program: "",
+                destinationCountry,
+                feePaid: false,
+                uniName: "",
+                courseStartDate: "",
+                preferedSubjects: [],
+                allowEditPermission: false,
+            },
+        ],
+        studentsFile: {
+            permission: false,
+            ssc: { url: sscResF?.secure_url || "", publicId: sscResF?.public_id || "" },
+            hsc: { url: hscResF?.secure_url || "", publicId: hscResF?.public_id || "" },
+            bachelor: {
+                url: bacResF?.secure_url || "",
+                publicId: bacResF?.public_id || "",
+            },
+            master: {
+                url: masResF?.secure_url || "",
+                publicId: masResF?.public_id || "",
+            },
+            other: {
+                url: othResF?.secure_url || "",
+                publicId: othResF?.public_id || "",
+            },
+            sourceOfFund: { url: "", publicId: "" },
+            sponsorAffidavit: { url: "", publicId: "" },
+            ministryAttestation: { url: "", publicId: "" },
+            accommodationConfirmation: { url: "", publicId: "" },
+            proficiencyCirtificate: { url: engResF?.secure_url || "", publicId: engResF?.public_id || "" },
+            editHistoryByStudent: [],
+        },
+        fileEditActivity: [
+            {
+                type: "create",
+                creatorName:name,
+                creatorId:"",
+                creatorEmail:email,
+                creatorRole:"student",
+                creatorUnder:"self",
+                createdAt: format(new Date(), "MM/dd/yyyy"),
+            },
+        ],
+        applicationState: {
+            file: { requiredSubmitted: false, requiredVerified: false },
+            personalData: { requiredSubmitted: false, requiredVerified: false },
+            englishProfData: { requiredSubmitted: false, requiredVerified: false },
+            englishTest: { requiredSubmitted: false, requiredVerified: false },
+            universityAssigned: { requiredSubmitted: false, requiredVerified: false },
+            applicationFinished: { finished: false, archived: false },
+        },
+        createdAt: format(new Date(), "MM/dd/yyyy"),
+        referral,
+        };
 
-        const result = await collection.insertOne(insertedObject)
+        const result = await collection.insertOne(fileToInsert)
 
         if(!result.acknowledged){
             return sendResponse(res,{
@@ -168,12 +219,12 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
                 <h3>Personal Information</h3>
                 <p><strong>Name:</strong> ${name}</p>
                 <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Mobile Number:</strong> ${mobile_number}</p>
-                <p><strong>Emergency Number:</strong> ${emergency_number}</p>
+                <p><strong>Mobile Number:</strong> ${phone}</p>
+                <p><strong>Emergency Number:</strong> ${ulternative_phone}</p>
                 <p><strong>Date of Birth:</strong> ${dob}</p>
 
                 <h3>English Proficiency</h3>
-                <p><strong>Test Type:</strong> ${en_proficiency}</p>
+                <p><strong>Test Type:</strong> ${testName}</p>
                 <p><strong>Result link:</strong> ${engResF?.secure_url}</p>
                 
 
@@ -185,10 +236,10 @@ const createProceed = async( req: AuthenticatedRequest , res: Response) =>{
                 <p><strong>Other Result:</strong>      ${othResF?.secure_url}</p>
 
                 <h3>Preferences</h3>
-                <p><strong>Preferred Country:</strong> ${prefered_country}</p>
+                <p><strong>Preferred Country:</strong> ${destinationCountry}</p>
                 <p><strong>Referral Source:</strong> ${referral}</p>
                 <p><strong>Previously Refused Entry:</strong> ${refused}</p>
-                <p><strong>Refused Country (if any):</strong> ${country_name}</p>
+                <p><strong>Refused Country (if any):</strong> ${refusedCountry}</p>
                 </div>
 
                 <p style="text-align: center; font-size: 12px; color: #777; margin-top: 20px;">

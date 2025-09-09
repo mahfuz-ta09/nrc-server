@@ -18,12 +18,12 @@ router.get('/single/:id',
 router.post('/create',  
     verifyUser,
     fileUploadHelper.upload.fields([
-        { name: "en_result", maxCount: 1 },
-        { name: "ssc_result", maxCount: 1 },
-        { name: "hsc_result", maxCount: 1 },
-        { name: "bachelor_result", maxCount: 1 },
-        { name: "masters_result", maxCount: 1 },
-        { name: "other_result", maxCount: 1 }
+        { name: "proficiencyCirtificate", maxCount: 1 },
+        { name: "ssc", maxCount: 1 },
+        { name: "hsc", maxCount: 1 },
+        { name: "bachelor", maxCount: 1 },
+        { name: "master", maxCount: 1 },
+        { name: "other", maxCount: 1 }
     ]),
     createProceed)
 

@@ -45,7 +45,11 @@ export const postStudentFile = async (req: Request, res: Response) => {
           creatorEmail,
           creatorRole,
           creatorUnder,
-          permission
+          permission,
+          refused,
+          refusedCountry,
+          examTakenTime,
+
         } = req.body
       
         if (!email || !name || !phone || !dob|| !passportNo || !countryCitizen || !testName || !overall || !destinationCountry || !program) {
@@ -86,6 +90,9 @@ export const postStudentFile = async (req: Request, res: Response) => {
             passportNo,
             currentAddress,
             countryCitizen,
+            refused,
+            refusedCountry,
+            allowEditPermission: false,
           },
           englishProficiency: {
             testName,
@@ -94,7 +101,12 @@ export const postStudentFile = async (req: Request, res: Response) => {
             writing,
             speaking,
             overall,
+            examTakenTime,
+            allowEditPermission: false,
           },
+          prefferedUniversities:[
+              {}
+          ],
           assignedUniversities: [
             {
               schoolership ,
@@ -105,6 +117,7 @@ export const postStudentFile = async (req: Request, res: Response) => {
               uniName ,
               courseStartDate ,
               preferedSubjects: [] ,
+              allowEditPermission: false,
             },
           ],
           studentsFile: {
@@ -118,6 +131,8 @@ export const postStudentFile = async (req: Request, res: Response) => {
             sponsorAffidavit: { url: "", publicId: "" },
             ministryAttestation: { url: "", publicId: "" },
             accommodationConfirmation: { url: "", publicId: "" },
+            proficiencyCirtificate: { url: "", publicId: "" },
+            editHistoryByStudent:[]
           },
           fileEditActivity: [
             {
@@ -142,6 +157,7 @@ export const postStudentFile = async (req: Request, res: Response) => {
             applicationFinished: { finished: false, archived: false },
           },
           createdAt: format(new Date(), "MM/dd/yyyy"),
+          referral:''
         }
 
       
