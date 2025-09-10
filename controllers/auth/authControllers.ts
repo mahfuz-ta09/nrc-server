@@ -219,6 +219,7 @@ const signUp = async (req: Request, res: Response) => {
             email,
             password: hashedPassword,
             role: "user",
+            roleData:{},
             requiredPassChange: false,
             status: verificationCode,
             image: { url: "", publicId: "" },

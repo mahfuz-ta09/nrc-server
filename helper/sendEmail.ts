@@ -15,7 +15,7 @@ const sendEmail = async (to: string, subject: string, htmlContent: string) => {
             console.error("Resend API Error:", error)
             return { success: false, message: error.message || "Failed to send email" }
         }
-        console.log(data)
+        
         return { success: true, data }
     } catch (err) {
         console.error("Error sending email:", err)

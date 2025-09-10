@@ -8,6 +8,7 @@ import { agentModule } from "../modules/agentModule"
 import { profileModule } from "../modules/profileModule"
 import { countryBaseModule } from "../modules/countryBaseModule"
 import { bannerModule } from "../modules/bannerModule"
+import { blogsModule } from "../modules/blogsModule"
 
 
 
@@ -55,6 +56,10 @@ const allRoutes = [
     {
         path: '/banner',
         route: bannerModule
+    },
+    {
+        path: '/blog',
+        route: blogsModule
     },
 ]
 

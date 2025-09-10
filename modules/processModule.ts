@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-import { postStudentFile } from "../controllers/process/studentFileControllers"
+import { getStudentFileState, postStudentFile } from "../controllers/process/studentFileControllers"
 import { fileUploadHelper } from "../helper/fileUploadHealper"
 const verifyUser = require('../middleware/verifyUser')
 const { getAllData , createProceed , editProcessData , deleteProcessData , getSingleData } = require('../controllers/process/processControllers')
@@ -45,6 +45,12 @@ router.delete('/delete/:id',
 router.post('/file',  
     verifyUser,
     postStudentFile)
+
+
+    
+router.get('/stat',  
+    verifyUser,
+    getStudentFileState)
 
 
 

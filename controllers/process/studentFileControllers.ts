@@ -8,6 +8,10 @@ const bcrypt = require("bcrypt")
 const { getDb } = require("../../config/connectDB")
 
 
+interface AuthenticatedRequest extends Request {
+    user?: any
+}
+
 const emaiReg =
   /^(([^<>()[\]\\.,:\s@"]+(\.[^<>()[\]\\.,:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 
@@ -20,36 +24,10 @@ export const postStudentFile = async (req: Request, res: Response) => {
         await authChecker(req, res, ["super_admin", "admin", "agent", "sub_agent"])
 
         const {
-          name,
-          email,
-          phone,
-          ulternative_phone,
-          dob,
-          passportNo,
-          currentAddress,
-          countryCitizen,
-          testName,
-          listening,
-          reading,
-          writing,
-          speaking,
-          overall,
-          schoolership,
-          intake,
-          destinationCountry,
-          program,
-          uniName,
-          courseStartDate,
-          creatorName,
-          creatorId,
-          creatorEmail,
-          creatorRole,
-          creatorUnder,
-          permission,
-          refused,
-          refusedCountry,
-          examTakenTime,
-
+          name,email,phone,ulternative_phone,dob,passportNo,currentAddress,countryCitizen,testName,
+          listening,reading,writing,speaking,overall,schoolership,intake,destinationCountry,
+          program,uniName,courseStartDate,creatorName,creatorId,creatorEmail,creatorRole,creatorUnder,permission,refused,
+          refusedCountry,examTakenTime,
         } = req.body
       
         if (!email || !name || !phone || !dob|| !passportNo || !countryCitizen || !testName || !overall || !destinationCountry || !program) {
@@ -172,6 +150,7 @@ export const postStudentFile = async (req: Request, res: Response) => {
           email,
           password: hashedPassword,
           role: "student",
+          roleData:{},
           requiredPassChange: true,
           status: "active",
           image: { url: "", publicId: "" },
@@ -224,27 +203,48 @@ export const postStudentFile = async (req: Request, res: Response) => {
     }
 }
 
+
+export const getStudentFileState = async(req: AuthenticatedRequest,res: Response) =>{
+    try{
+      const db = getDb()
+      const filesCollection = db.collection('application')
+      await authChecker(req,res,["super_admin","admin","agent","sub_agent"])
+
+      const requestedBy = req?.user
+
+      const queryForUser = {
+        // email
+      }
+      console.log(requestedBy)
+    }catch(err){
+      console.error(err)
+      sendResponse(res, {
+        message: "Something went wrong!",
+        success: false,
+        statusCode: 500,
+      })
+    }
+}
+
 export const getAllStudentFiles = async (req: Request, res: Response) => {
-  try {
-    const db = getDb()
-    const applicationsCollection = db.collection("application")
-
-    const files = await applicationsCollection.find({}).toArray()
-
-    sendResponse(res, {
-      message: "All student files retrieved",
-      success: true,
-      statusCode: 200,
-      data: files,
-    })
-  } catch (err) {
-    console.error(err)
-    sendResponse(res, {
-      message: "Failed to fetch student files",
-      success: false,
-      statusCode: 500,
-    })
-  }
+    try {
+        const db = getDb()
+        const applicationsCollection = db.collection("application")
+        const files = await applicationsCollection.find({}).toArray()
+        sendResponse(res, {
+          message: "All student files retrieved",
+          success: true,
+          statusCode: 200,
+          data: files,
+      })
+    } catch (err) {
+        console.error(err)
+        sendResponse(res, {
+          message: "Failed to fetch student files",
+          success: false,
+          statusCode: 500,
+        })
+    }
 }
 
 
