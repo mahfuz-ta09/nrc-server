@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb"
 import { Request, Response } from "express"
 import authChecker from "../../helper/authChecker"
 import sendResponse from "../../helper/sendResponse"
-
+const { getDb } = require('../../config/connectDB')
 
 interface AuthenticatedRequest extends Request {
     user?: any
@@ -14,7 +14,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         const collection = db.collection("blogs")
 
         await authChecker(req,res,["super_admin","admin"])
-
+        console.log(req.body,req.files)
         const blog = {
             title: req.body.title,
             slug: req.body.slug.toLowerCase().replace(/\s+/g, "-"),

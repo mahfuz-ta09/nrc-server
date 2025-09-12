@@ -5,8 +5,11 @@ const verifyUser = require('../middleware/verifyUser')
 const { createBlog , getBlogs , getBlogBySlug , updateBlog , deleteBlog} = require('../controllers/blogs/blogsControllers')
 
 
-router.post("/", 
+router.post("/create", 
     verifyUser,
+    fileUploadHelper.upload.fields([
+        { name: "images", maxCount: 10 },
+    ]),
     createBlog)
 
 router.get("/",
