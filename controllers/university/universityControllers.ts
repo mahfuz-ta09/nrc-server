@@ -16,7 +16,7 @@ const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
-        await authChecker(req, res, ["admin","super_admin"]);
+        await authChecker(req, res, ["admin","super_admin"])
 
 
         const { name, country, tuitionFee, requardQualification, 
@@ -107,7 +107,7 @@ const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
-        await authChecker(req, res, ["admin","super_admin"]);
+        await authChecker(req, res, ["admin","super_admin"])
 
         const id  = req.params.id
         const query = { _id : new ObjectId(id) }
@@ -159,7 +159,7 @@ const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
-        await authChecker(req, res, ["admin","super_admin"]);
+        await authChecker(req, res, ["admin","super_admin"])
 
         const id = req.params.id
         const { name , country, tuitionFee, requardQualification, initialDepossit , 
@@ -307,8 +307,8 @@ const getSingleUniversity = async( req: Request , res: Response) =>{
 
 const getUniOriginName = async (req: Request, res: Response) => {
     try {
-        const db = getDb();
-        const collection = db.collection('university');
+        const db = getDb()
+        const collection = db.collection('university')
 
         const country = await collection.aggregate([
             {
@@ -340,7 +340,7 @@ const getUniOriginName = async (req: Request, res: Response) => {
             meta: {
                 total: totalUniqueCountries
             }
-        });
+        })
     } catch (err) {
         console.log(err)
         sendResponse(res, {
@@ -355,12 +355,12 @@ const getUniOriginName = async (req: Request, res: Response) => {
 
 const getUniversityByCountry = async( req: Request , res: Response) =>{
     try {
-        const db = getDb();
-        const collection = db.collection("university");
+        const db = getDb()
+        const collection = db.collection("university")
 
-        const country = req.params.country;
+        const country = req.params.country
         
-        const universities = await collection.find({ country: country }).toArray();
+        const universities = await collection.find({ country: country }).toArray()
         
         if (universities.length === 0) {
             return res.status(404).json({
@@ -399,7 +399,7 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
     try{
         const db = getDb()
         const collection = db.collection('country-uni')
-        await authChecker(req, res, ["admin","super_admin"]);
+        await authChecker(req, res, ["admin","super_admin"])
 
         const id = req.params.id
 
@@ -481,56 +481,56 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
 
 const deleteUniversityFromCountry = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const db = getDb();
-        const collection = db.collection('country-uni');
-        await authChecker(req, res, ["admin","super_admin"]);
+        const db = getDb()
+        const collection = db.collection('country-uni')
+        await authChecker(req, res, ["admin","super_admin"])
 
-        const id = req.params.id;
-        const university = req.params.university;
+        const id = req.params.id
+        const university = req.params.university
 
         if (!id || !university) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
                 message: 'Id or university name missing!!!',
-            });
+            })
         }
 
         
         const countryObj = await collection.findOne({
             _id: new ObjectId(id),
             'universityList.universityName': university.toUpperCase()
-        });
+        })
 
         if (!countryObj) {
             return sendResponse(res, {
                 statusCode: 404,
                 success: false,
                 message: 'No matching university found!!!',
-            });
+            })
         }
 
         
         const uniData = countryObj.universityList.find(
             (u:any) => u.universityName === university.toUpperCase()
-        );
+        )
 
         if (uniData?.universityImage?.publicId) {
-            await fileUploadHelper.deleteFromCloud(uniData.universityImage.publicId);
+            await fileUploadHelper.deleteFromCloud(uniData.universityImage.publicId)
         }
         
         
         const result = await collection.updateOne(
             { _id: new ObjectId(id) },
             { $pull: { universityList: { universityName: university.toUpperCase() } } }
-        );
+        )
 
         if (result.modifiedCount === 0) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
                 message: 'Failed to delete university!!!',
-            });
+            })
         }
 
         return sendResponse(res, {
@@ -538,47 +538,47 @@ const deleteUniversityFromCountry = async (req: AuthenticatedRequest, res: Respo
             success: true,
             message: 'University deleted successfully!!!',
             data: result,
-        });
+        })
 
     } catch (error) {
-        console.error(error);
+        console.error(error)
         res.status(500).json({
             success: false,
             message: 'Internal Server Error',
             error,
-        });
+        })
     }
-};
+}
 
 
 const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const db = getDb();
-        const collection = db.collection("country-uni");
+        const db = getDb()
+        const collection = db.collection("country-uni")
 
-        const { all, country, page: pageParam, total: totalParam, uniName } = req.query;
+        const { all, country, page: pageParam, total: totalParam, uniName } = req.query
 
-        const page = pageParam ? Number(pageParam) : undefined;
-        const total = totalParam ? Number(totalParam) : undefined;
+        const page = pageParam ? Number(pageParam) : undefined
+        const total = totalParam ? Number(totalParam) : undefined
 
-        let matchStage: any = {};
+        let matchStage: any = {}
         if (country) {
-            matchStage.country = (country as string).toUpperCase();
+            matchStage.country = (country as string).toUpperCase()
         }
 
         
         if (all === "all") {
             const countries = await collection.find(
                 matchStage
-            ).toArray();
-            let allUniversities = countries.flatMap((c: any) => c.universityList || []);
+            ).toArray()
+            let allUniversities = countries.flatMap((c: any) => c.universityList || [])
 
         
             if (uniName) {
-                const uniNameLower = (uniName as string).toLowerCase();
+                const uniNameLower = (uniName as string).toLowerCase()
                     allUniversities = allUniversities.filter((u: any) =>
                     u.universityName?.toLowerCase().includes(uniNameLower)
-                );
+                )
             }
 
             return sendResponse(res, {
@@ -589,7 +589,7 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
                     totalCount:allUniversities.length,
                 },
                 data: allUniversities
-            });
+            })
         }
 
         
@@ -597,7 +597,7 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
             return res.status(400).json({
                 success: false,
                 message: "For paginated results, provide 'page' and 'total'."
-            });
+            })
         }
 
         const pipeline: any[] = [
@@ -610,36 +610,36 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
             },
             { $replaceRoot: { newRoot: "$universityList" } },
             { $project: { subjects: 0 } }
-        ];
+        ]
 
 
         
         if (uniName) {
             const regex = new RegExp(uniName as string, "i")
-            pipeline.push({ $match: { universityName: regex } });
+            pipeline.push({ $match: { universityName: regex } })
         }
 
         
-        pipeline.push({ $skip: (page - 1) * total });
-        pipeline.push({ $limit: total });
+        pipeline.push({ $skip: (page - 1) * total })
+        pipeline.push({ $limit: total })
 
-        const universities = await collection.aggregate(pipeline).toArray();
+        const universities = await collection.aggregate(pipeline).toArray()
 
 
         const countPipeline: any[] = [
             { $match: matchStage },
             { $unwind: "$universityList" },
-        ];
+        ]
 
         if (uniName) {
-            const regex = new RegExp(uniName as string, "i");
-            countPipeline.push({ $match: { "universityList.universityName": regex } });
+            const regex = new RegExp(uniName as string, "i")
+            countPipeline.push({ $match: { "universityList.universityName": regex } })
         }
 
-        countPipeline.push({ $count: "count" });
+        countPipeline.push({ $count: "count" })
 
-        const countResult = await collection.aggregate(countPipeline).toArray();
-        const totalCount = countResult[0]?.count || 0;
+        const countResult = await collection.aggregate(countPipeline).toArray()
+        const totalCount = countResult[0]?.count || 0
 
         sendResponse(res, {
             statusCode: 200,
@@ -651,7 +651,7 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
                 totalCount
             },
             data: universities
-        });
+        })
     } catch (err) {
         console.log(err)
         sendResponse(res,{
@@ -661,16 +661,16 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
             data: err
         })
     }
-};
+}
 
 const editUniversityField = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const db = getDb();
-        const collection = db.collection("country-uni");
-        await authChecker(req, res, ["admin","super_admin"]);
+        const db = getDb()
+        const collection = db.collection("country-uni")
+        await authChecker(req, res, ["admin","super_admin"])
 
-        const id = req.params.id;
-        const UniversityName  = req.params.universityName;
+        const id = req.params.id
+        const UniversityName  = req.params.universityName
 
         const {
             englishProf,
@@ -681,10 +681,10 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
             scholarship,
             initialDeposite,
             aboutUni
-        } = req.body;
+        } = req.body
 
         
-        const files: any = req.files;
+        const files: any = req.files
 
         const existingDoc = await collection.findOne(
             {
@@ -694,33 +694,33 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
             { 
                 projection: { "universityList.$": 1 } 
             }
-        );
+        )
 
         if (!existingDoc || !existingDoc.universityList?.[0]) {
             return sendResponse(res, {
                 statusCode: 404,
                 success: false,
                 message: "University not found!!!"
-            });
+            })
         }
 
-        const currentUni = existingDoc.universityList[0];
+        const currentUni = existingDoc.universityList[0]
 
         
-        let newImageData = currentUni.universityImage;
+        let newImageData = currentUni.universityImage
         if (files?.["universityImage"]?.[0]) {
             if (currentUni?.universityImage?.public_id) {
                 await fileUploadHelper.deleteFromCloud(
                 currentUni.universityImage.public_id
-                );
+                )
             }
             const uploaded:any = await fileUploadHelper.uploadToCloud(
                 files["universityImage"][0]
-            );
+            )
             newImageData = {
                 url: uploaded.url,
                 public_id: uploaded.public_id
-            };
+            }
         }
 
 
@@ -731,20 +731,20 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
                 newObj: Partial<T>,
                 deleteMarker: any = DELETE_MARKER
             ): T {
-                const result: T = { ...oldObj };
+                const result: T = { ...oldObj }
                 
                 for (const key in newObj) {
-                    const typedKey = key as keyof T;
-                    const value = newObj[typedKey];
+                    const typedKey = key as keyof T
+                    const value = newObj[typedKey]
 
                     if (value === deleteMarker) {
-                        delete result[typedKey];
+                        delete result[typedKey]
                     } else if (value !== undefined) {
-                    result[typedKey] = value as T[keyof T];
+                    result[typedKey] = value as T[keyof T]
                     }
                 }
 
-            return result;
+            return result
         }
 
 
@@ -770,7 +770,7 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
             subjects: currentUni.subjects ?? [],
 
             universityImage: newImageData ?? currentUni.universityImage,
-        };
+        }
 
 
 
@@ -785,7 +785,7 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
                 "universityList.$": updatedUniversity
                 }
             }
-        );
+        )
 
         if (!result.modifiedCount) {
             return sendResponse(res, {
@@ -793,7 +793,7 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
                 success: false,
                 message: "Update failed!!!",
                 data: result
-            });
+            })
         }
 
         sendResponse(res, {
@@ -801,7 +801,7 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
             success: true,
             message: "Updated successfully!!!",
             data: result
-        });
+        })
     } catch (err) {
         console.log(err)
         sendResponse(res,{
@@ -811,7 +811,7 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
             data: err
         })
     }
-};
+}
 
 
 module.exports = {

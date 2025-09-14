@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb"
 import { Request, Response } from "express"
 import authChecker from "../../helper/authChecker"
 import sendResponse from "../../helper/sendResponse"
+import { fileUploadHelper } from "../../helper/fileUploadHealper"
 const { getDb } = require('../../config/connectDB')
 
 interface AuthenticatedRequest extends Request {
@@ -14,16 +15,34 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         const collection = db.collection("blogs")
 
         await authChecker(req,res,["super_admin","admin"])
-        console.log(req.body,req.files)
+
+        if(!req.body.title || !req.body.slug || !req.body.content || !req.body.author){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: 'Title, slug, content and author are required',
+            })
+        }
+
+        const existingBlog = await collection.findOne({ slug: req.body.slug.toLowerCase().replace(/\s+/g, "-") })
+        if (existingBlog) {
+            return sendResponse(res, { 
+                message: "Blog with this slug already exists",
+                statusCode: 400,
+                success: false,
+                data: null
+             })
+        }
+        
+        
         const blog = {
             title: req.body.title,
             slug: req.body.slug.toLowerCase().replace(/\s+/g, "-"),
-            meta: req.body.meta || {
-                description: "",
-                keywords: [],
-                ogTitle: "",
-                ogDescription: "",
-                ogImage: { url: "", publicId: "" },
+            meta:{
+                keywords: req.body.tags || [],
+                ogTitle: req.body.title || "",
+                ogDescription: req.body?.description || "",
+                ogImage: { url:'' , publicID:''},
             },
             content: req.body.content || { summary: "", body: "", sections: [] },
             categories: req.body.categories || [],
@@ -48,8 +67,17 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             ],
         }
 
+        const imga:any = req.files
+        if(imga['header_image']?.[0]){
+            const headerImage:any = await fileUploadHelper.uploadToCloud(imga['header_image']?.[0])
+            blog.images.push({url:headerImage.secure_url, publicID:headerImage.public_id})
+            blog.meta.ogImage = {url:headerImage.secure_url, publicID:headerImage.public_id}
+        }
+        
+        
         const result = await collection.insertOne(blog)
-
+        
+        
         if(!result.insertedId){
             return sendResponse(res,{
                 statusCode: 400,
@@ -82,24 +110,68 @@ const getBlogs = async (req: Request, res: Response) => {
     try {
         const db = getDb()
         const collection = db.collection("blogs")
-        const blogs = await collection.find().sort({ "createHistory.date": -1 }).toArray()
+
+        const query: any = {}
+
+        if (req.query.status) query.status = req.query.status
+        if (req.query.category) query.categories = { $in: [req.query.category] }
+        if (req.query.isFeatured) query.isFeatured = req.query.isFeatured === "true"
+
         
-        sendResponse(res,{
-            message:'',
+        const page = Number(req.query.page) || 1
+        const limit = Number(req.query.limit) || 10
+        const skip = (page - 1) * limit
+        const projection = {
+            slug: 1,
+            tags: 1,
+            images: 1,
+            title: 1,
+            author: 1,
+            categories: 1,
+            stats: 1,
+            isFeatured: 1,
+            status: 1,
+            publishedAt: 1,
+            createHistory: 1,
+            content: 0,
+            meta: 0,
+            updatedAt: 0,
+            comments: 0,
+        }
+        
+        const blogs = await collection
+            .find(query,projection)
+            .sort({ "createHistory.date": -1 })
+            .skip(skip)
+            .limit(limit)
+            .toArray()
+        // console.log(blogs)
+
+        const total = await collection.countDocuments(query)
+
+        sendResponse(res, {
+            message: "Blogs fetched successfully",
             statusCode: 200,
             success: true,
-            data: blogs
+            data: blogs,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
         })
     } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
-            success: false,
-            message: 'Internel server error',
-            data: err
+        console.error(err)
+        sendResponse(res, {
+        statusCode: 500,
+        success: false,
+        message: "Internal server error",
+        data: err,
         })
     }
 }
+
 
 
 const getBlogBySlug = async (req: Request, res: Response) => {

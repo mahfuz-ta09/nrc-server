@@ -9,6 +9,7 @@ import { profileModule } from "../modules/profileModule"
 import { countryBaseModule } from "../modules/countryBaseModule"
 import { bannerModule } from "../modules/bannerModule"
 import { blogsModule } from "../modules/blogsModule"
+import { fileUploader } from "../modules/fileUploader"
 
 
 
@@ -60,6 +61,10 @@ const allRoutes = [
     {
         path: '/blog',
         route: blogsModule
+    },
+    {
+        path: '/file',
+        route: fileUploader
     },
 ]
 

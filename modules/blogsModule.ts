@@ -8,11 +8,11 @@ const { createBlog , getBlogs , getBlogBySlug , updateBlog , deleteBlog} = requi
 router.post("/create", 
     verifyUser,
     fileUploadHelper.upload.fields([
-        { name: "images", maxCount: 10 },
+        { name: "header_image", maxCount: 1 },
     ]),
     createBlog)
 
-router.get("/",
+router.get("/all",
     getBlogs)
 
 router.get("/:slug", 
