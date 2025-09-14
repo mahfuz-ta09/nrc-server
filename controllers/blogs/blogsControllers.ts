@@ -105,72 +105,70 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
 }
 
 
-
 const getBlogs = async (req: Request, res: Response) => {
-    try {
-        const db = getDb()
-        const collection = db.collection("blogs")
+  try {
+    const db = getDb();
+    const collection = db.collection("blogs");
 
-        const query: any = {}
+    const query: any = {};
 
-        if (req.query.status) query.status = req.query.status
-        if (req.query.category) query.categories = { $in: [req.query.category] }
-        if (req.query.isFeatured) query.isFeatured = req.query.isFeatured === "true"
+    if (req.query.status) query.status = req.query.status;
+    if (req.query.category) query.categories = { $in: [req.query.category] };
+    if (req.query.isFeatured) query.isFeatured = req.query.isFeatured === "true";
 
-        
-        const page = Number(req.query.page) || 1
-        const limit = Number(req.query.limit) || 10
-        const skip = (page - 1) * limit
-        const projection = {
-            slug: 1,
-            tags: 1,
-            images: 1,
-            title: 1,
-            author: 1,
-            categories: 1,
-            stats: 1,
-            isFeatured: 1,
-            status: 1,
-            publishedAt: 1,
-            createHistory: 1,
-            content: 0,
-            meta: 0,
-            updatedAt: 0,
-            comments: 0,
-        }
-        
-        const blogs = await collection
-            .find(query,projection)
-            .sort({ "createHistory.date": -1 })
-            .skip(skip)
-            .limit(limit)
-            .toArray()
-        // console.log(blogs)
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-        const total = await collection.countDocuments(query)
+    const projection = {
+      slug: 1,
+      tags: 1,
+      images: 1,
+      title: 1,
+      author: 1,
+      categories: 1,
+      stats: 1,
+      isFeatured: 1,
+      status: 1,
+      publishedAt: 1,
+      createHistory: 1,
+      meta: 1,
+    };
 
-        sendResponse(res, {
-            message: "Blogs fetched successfully",
-            statusCode: 200,
-            success: true,
-            data: blogs,
-            meta: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-            },
-        })
-    } catch (err) {
-        console.error(err)
-        sendResponse(res, {
-        statusCode: 500,
-        success: false,
-        message: "Internal server error",
-        data: err,
-        })
-    }
-}
+    const blogs = await collection
+      .find(query)
+      .project(projection)
+      .sort({ "createHistory.date": -1 })
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+
+    const total = await collection.countDocuments(query);
+    const totalCount = await collection.countDocuments();
+
+    sendResponse(res, {
+      message: "Blogs fetched successfully",
+      statusCode: 200,
+      success: true,
+      data: blogs,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        totalCount,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    sendResponse(res, {
+      statusCode: 500,
+      success: false,
+      message: "Internal server error",
+      data: err,
+    });
+  }
+};
 
 
 
