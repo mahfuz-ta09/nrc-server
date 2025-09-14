@@ -48,7 +48,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             categories: req.body.categories || [],
             tags: req.body.tags || [],
 
-            images: req.body.images || [{ url:'' , publicID:''}],
+            images: JSON.parse(req.body.urlLists) ,
 
             author: req.body.author,
             stats: { views: 0, likes: 0, commentsCount: 0 },
@@ -70,14 +70,11 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         const imga:any = req.files
         if(imga['header_image']?.[0]){
             const headerImage:any = await fileUploadHelper.uploadToCloud(imga['header_image']?.[0])
-            blog.images.push({url:headerImage.secure_url, publicID:headerImage.public_id})
             blog.meta.ogImage = {url:headerImage.secure_url, publicID:headerImage.public_id}
         }
         
         
         const result = await collection.insertOne(blog)
-        
-        
         if(!result.insertedId){
             return sendResponse(res,{
                 statusCode: 400,
@@ -289,9 +286,35 @@ const deleteBlog = async (req: AuthenticatedRequest, res: Response) => {
         const db = getDb()
         const collection = db.collection("blogs")
         await authChecker(req,res,["super_admin","admin"])
-        
-        const result = await collection.deleteOne({ _id: new ObjectId(req.params.id) })
 
+        if(!req.params.id){
+            return sendResponse(res,{
+                message: "Blog ID is required",
+                statusCode: 400,
+                success: false,
+            }) 
+        }
+
+        const query = { _id: new ObjectId(req.params.id) }
+
+        const blog = await collection.findOne(query)
+
+        if (!blog){
+            return sendResponse(res,{
+                message: "Blog not found",
+                statusCode: 404,
+                success: false,
+            }) 
+        }
+
+        for(let image of blog?.images || []){
+            if(image?.publicID) await fileUploadHelper.deleteFromCloud(image?.publicID);
+        }
+
+        if(blog?.meta?.ogImage?.publicID){
+            await fileUploadHelper.deleteFromCloud(blog.meta.ogImage.publicID);
+        }
+        const result = await collection.deleteOne(query)
         if (result.deletedCount === 0){
             return sendResponse(res,{
                 message: "Blog not found",

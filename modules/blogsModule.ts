@@ -23,7 +23,7 @@ router.put("/:id",
     updateBlog)
     
 
-router.delete("/:id", 
+router.delete("/delete/:id", 
     verifyUser,
     deleteBlog)
 
