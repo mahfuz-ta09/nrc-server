@@ -41,12 +41,12 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             meta:{
                 keywords: req.body.tags || [],
                 ogTitle: req.body.title || "",
-                ogDescription: req.body?.description || "",
+                ogDescription: JSON.parse(req.body?.description) || "",
                 ogImage: { url:'' , publicID:''},
             },
-            content: req.body.content || { summary: "", body: "", sections: [] },
-            categories: req.body.categories || [],
-            tags: req.body.tags || [],
+            content: JSON.parse(req.body.content) || { summary: "", body: "", sections: [] },
+            categories: JSON.parse(req.body.categories) || [],
+            tags: JSON.parse(req.body.tags) || [],
 
             images: JSON.parse(req.body.urlLists) ,
 
@@ -100,71 +100,155 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         })
     }
 }
-
-
-const getBlogs = async (req: Request, res: Response) => {
+const getUniqueBlogCategories = async (req: Request, res: Response) => {
   try {
     const db = getDb();
     const collection = db.collection("blogs");
 
-    const query: any = {};
+    // Fetch only the categories field
+    const blogs = await collection.find({}, { projection: { categories: 1 } }).toArray();
 
-    if (req.query.status) query.status = req.query.status;
-    if (req.query.category) query.categories = { $in: [req.query.category] };
-    if (req.query.isFeatured) query.isFeatured = req.query.isFeatured === "true";
+    // Flatten all categories into one array
+    let allCategories: string[] = [];
+    for (const blog of blogs) {
+      if (blog.categories) {
+        try {
+        //   const parsed = JSON.parse(blog.categories); // convert string → array
+        //   if (Array.isArray(parsed)) {
+            allCategories.push(...blog.categories);
+        //   }
+        } catch (e) {
+          console.error("Invalid categories JSON:", blog.categories);
+        }
+      }
+    }
 
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const projection = {
-      slug: 1,
-      tags: 1,
-      images: 1,
-      title: 1,
-      author: 1,
-      categories: 1,
-      stats: 1,
-      isFeatured: 1,
-      status: 1,
-      publishedAt: 1,
-      createHistory: 1,
-      meta: 1,
-    };
-
-    const blogs = await collection
-      .find(query)
-      .project(projection)
-      .sort({ "createHistory.date": -1 })
-      .skip(skip)
-      .limit(limit)
-      .toArray();
-
-    const total = await collection.countDocuments(query);
-    const totalCount = await collection.countDocuments();
+    // Deduplicate
+    const uniqueCategories = [...new Set(allCategories)];
 
     sendResponse(res, {
-      message: "Blogs fetched successfully",
       statusCode: 200,
       success: true,
-      data: blogs,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-        totalCount,
-      },
+      data: uniqueCategories,
     });
   } catch (err) {
-    console.error(err);
+    console.log(err);
     sendResponse(res, {
-      statusCode: 500,
+      statusCode: 400,
       success: false,
       message: "Internal server error",
       data: err,
     });
   }
+};
+
+const getBlogByCategory = async (req: Request, res: Response) => {
+    try {
+        const db = getDb();
+        const collection = db.collection("blogs");
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const category = req.params.category;
+        let query: any = {};
+
+
+        if (category && category !== "all") {
+        // regex match since categories is stringified JSON
+            query = { categories: { $regex: `${category}`, $options: "i" } };
+        }
+
+        const blogs = await collection.find(query).skip(skip).limit(limit).toArray();
+        const total = await collection.countDocuments(query);
+        const totalCount = await collection.countDocuments();
+
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            data: blogs,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                totalCount,
+            },
+        });
+    } catch (err) {
+        console.log(err);
+        sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "Internal server error",
+            data: err,
+        });
+    }
+};
+
+
+const getBlogs = async (req: Request, res: Response) => {
+    try {
+        const db = getDb();
+        const collection = db.collection("blogs");
+
+        const query: any = {};
+
+        if (req.query.status) query.status = req.query.status;
+        if (req.query.category) query.categories = { $in: [req.query.category] };
+        if (req.query.isFeatured) query.isFeatured = req.query.isFeatured === "true";
+
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const projection = {
+            slug: 1,
+            tags: 1,
+            title: 1,
+            author: 1,
+            categories: 1,
+            stats: 1,
+            isFeatured: 1,
+            status: 1,
+            publishedAt: 1,
+            createHistory: 1,
+            meta: 1,
+        };
+
+        const blogs = await collection
+        .find(query)
+        .project(projection)
+        .sort({ "createHistory.date": -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+
+        const total = await collection.countDocuments(query);
+        const totalCount = await collection.countDocuments();
+
+        sendResponse(res, {
+        message: "Blogs fetched successfully",
+        statusCode: 200,
+        success: true,
+        data: blogs,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            totalCount,
+        },
+        });
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, {
+        statusCode: 500,
+        success: false,
+        message: "Internal server error",
+        data: err,
+        });
+    }
 };
 
 
@@ -174,8 +258,16 @@ const getBlogBySlug = async (req: Request, res: Response) => {
         const db = getDb()
         const collection = db.collection("blogs")
 
-        const blog = await collection.findOne({ slug: req.params.slug })
-
+        const query = { slug: req.params.slug }
+        if(!req.params.slug){
+            return sendResponse(res,{
+                message: "Blog slug is required",
+                statusCode: 400,
+                success: false,
+            }) 
+        }
+        
+        const blog = await collection.findOne(query, { projection: {images:0,isFeatured:0,status:0,updatedAt:0} })
         if (!blog){
             return sendResponse(res,{
                 message: "Blog not found",
@@ -346,5 +438,7 @@ module.exports = {
     getBlogBySlug,
     updateBlog,
     deleteBlog,
+    getBlogByCategory,
+    getUniqueBlogCategories,
     getBlogs
 }

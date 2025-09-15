@@ -26,6 +26,7 @@ app.get('/', async (req: Request, res: Response) => {
 
 
 app.all('*',(req:Request,res:Response) =>{
+  console.log("object")
   res.json({ message: '404 Not Found'})
 })
 
