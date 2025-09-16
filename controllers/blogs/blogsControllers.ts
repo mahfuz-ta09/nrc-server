@@ -16,7 +16,8 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
 
         await authChecker(req,res,["super_admin","admin"])
 
-        if(!req.body.title || !req.body.slug || !req.body.content || !req.body.author){
+        if( !req.body.title || !req.body.slug || !req.body.content || !req.body.author 
+            || !req.body.categories || !req.body.meta_title || !req.body.meta_description || !req.body.meta_keywords){
             return sendResponse(res,{
                 statusCode: 400,
                 success: false,
@@ -38,24 +39,30 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         const blog = {
             title: req.body.title,
             slug: req.body.slug.toLowerCase().replace(/\s+/g, "-"),
+            description: req.body.description || "",
+            author: req.body.author,
+            
             meta:{
-                keywords: req.body.tags || [],
-                ogTitle: req.body.title || "",
-                ogDescription: JSON.parse(req.body?.description) || "",
+                keywords: req.body.meta_keywords || [],
+                ogTitle: req.body.meta_title || "",
+                ogDescription: req.body?.meta_description || "",
                 ogImage: { url:'' , publicID:''},
             },
-            content: JSON.parse(req.body.content) || { summary: "", body: "", sections: [] },
-            categories: JSON.parse(req.body.categories) || [],
-            tags: JSON.parse(req.body.tags) || [],
 
-            images: JSON.parse(req.body.urlLists) ,
+            content: req.body.content || { summary: "", body: ""},
 
-            author: req.body.author,
+            categories: req.body.categories || [],
+            tags: req.body.tags || [],
+
+            images: req.body.urlLists ,
             stats: { views: 0, likes: 0, commentsCount: 0 },
             comments: [],
+
             status: req.body.status || "draft",
             isFeatured: req.body.isFeatured || false,
+            
             publishedAt: req.body.status === "published" ? new Date() : undefined,
+            
             createHistory: {
                 date: new Date(),
                 email: req?.user?.email,
@@ -63,7 +70,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
                 role: req?.user?.role,
             },
             updatedAt: [
-                { date: new Date(), email: "", id: "", role: "", count: 0 },
+                { date: new Date(), email: "", id: "", role: "" },
             ],
         }
 
