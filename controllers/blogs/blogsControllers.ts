@@ -16,6 +16,8 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
 
         await authChecker(req,res,["super_admin","admin"])
 
+        console.log(req.body,JSON.parse(req.body.urlLists))
+
         if( !req.body.title || !req.body.slug || !req.body.content || !req.body.author 
             || !req.body.categories || !req.body.meta_title || !req.body.meta_description || !req.body.meta_keywords){
             return sendResponse(res,{
@@ -35,7 +37,15 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
              })
         }
         
-        
+        const normalizeToArray = (val: any): string[] => {
+            if (!val) return [];
+            if (Array.isArray(val)) return val;
+            return [val];
+        };
+
+        const categories = normalizeToArray(req.body.categories);
+        const tags = normalizeToArray(req.body.tags)
+        const meta_keywords = normalizeToArray(req.body.meta_keywords)
         const blog = {
             title: req.body.title,
             slug: req.body.slug.toLowerCase().replace(/\s+/g, "-"),
@@ -45,11 +55,11 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             status: req.body.status || "draft",
             isFeatured: req.body.isFeatured || false,
             
-            categories: req.body.categories || [],
-            tags: req.body.tags || [],
+            categories: categories || [],
+            tags: tags || [],
 
             meta:{
-                keywords: req.body.meta_keywords || [],
+                keywords: meta_keywords || [],
                 ogTitle: req.body.meta_title || "",
                 ogDescription: req.body?.meta_description || "",
                 ogImage: { url:'' , publicID:''},
@@ -57,7 +67,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
 
             content: req.body.content || { summary: "", body: "" , section:  []},
 
-            images: req.body.urlLists || [], 
+            images: JSON.parse(req.body.urlLists) || [], 
             featuredImage: req.body.featuredImage || { url: "", publicID: "" },
             
             stats: { views: 0, likes: 0, commentsCount: 0 },
@@ -75,6 +85,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
                 { date: new Date(), email: "", id: "", role: "" },
             ],
         }
+
 
         const imga:any = req.files
         if(imga['header_image']?.[0]){
@@ -109,30 +120,26 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         })
     }
 }
+
+
 const getUniqueBlogCategories = async (req: Request, res: Response) => {
   try {
     const db = getDb();
     const collection = db.collection("blogs");
 
-    // Fetch only the categories field
     const blogs = await collection.find({}, { projection: { categories: 1 } }).toArray();
 
-    // Flatten all categories into one array
     let allCategories: string[] = [];
     for (const blog of blogs) {
       if (blog.categories) {
         try {
-        //   const parsed = JSON.parse(blog.categories); // convert string → array
-        //   if (Array.isArray(parsed)) {
-            allCategories.push(...blog.categories);
-        //   }
+            allCategories.push(...blog.categories)
         } catch (e) {
           console.error("Invalid categories JSON:", blog.categories);
         }
       }
     }
 
-    // Deduplicate
     const uniqueCategories = [...new Set(allCategories)];
 
     sendResponse(res, {
@@ -150,7 +157,6 @@ const getUniqueBlogCategories = async (req: Request, res: Response) => {
     });
   }
 };
-
 const getBlogByCategory = async (req: Request, res: Response) => {
     try {
         const db = getDb();
@@ -160,37 +166,46 @@ const getBlogByCategory = async (req: Request, res: Response) => {
         const skip = (page - 1) * limit;
 
         const category = req.params.category;
-        let query: any = {};
-
+        let query: any = { status: "published" };
 
         if (category && category !== "all") {
-        // regex match since categories is stringified JSON
-            query = { categories: { $regex: `${category}`, $options: "i" } };
+            query.categories = { $regex: category, $options: "i" };
         }
 
-        const blogs = await collection.find(query).skip(skip).limit(limit).toArray();
+        const blogs = await collection
+        .find(query, {
+            projection: {
+            content: 0,
+            images: 0,
+            featuredImage: 0,
+            status: 0,
+            stats: 0,
+            comments: 0,
+            },
+        }).skip(skip).limit(limit).toArray();
+
         const total = await collection.countDocuments(query);
-        const totalCount = await collection.countDocuments();
+        const totalCount = await collection.countDocuments({ status: "published" });
 
         sendResponse(res, {
-            statusCode: 200,
-            success: true,
-            data: blogs,
-            meta: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-                totalCount,
-            },
+        statusCode: 200,
+        success: true,
+        data: blogs,
+        meta: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            totalCount,
+        },
         });
     } catch (err) {
         console.log(err);
         sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "Internal server error",
-            data: err,
+        statusCode: 500,
+        success: false,
+        message: "Internal server error",
+        data: err,
         });
     }
 };

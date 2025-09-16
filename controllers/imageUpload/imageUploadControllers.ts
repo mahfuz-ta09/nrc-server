@@ -1,20 +1,13 @@
 import { Request, Response } from "express"
 import sendResponse from "../../helper/sendResponse"
 import authChecker from "../../helper/authChecker"
-import { format } from "date-fns"
-import sendEmail from "../../helper/sendEmail"
 import { fileUploadHelper } from "../../helper/fileUploadHealper"
-const bcrypt = require("bcrypt")
-const { getDb } = require("../../config/connectDB")
 
 interface AuthenticatedRequest extends Request {
     user?: any
 }
 const uploadImage = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const db = getDb()
-        const collection = db.collection("files")
-
         authChecker(req,res,["super_admin","admin"])
 
         const allImage:any = req.files
