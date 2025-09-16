@@ -49,7 +49,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
                 ogImage: { url:'' , publicID:''},
             },
 
-            content: req.body.content || { summary: "", body: ""},
+            content: req.body.content || { summary: "", body: "" , section:  []},
 
             categories: req.body.categories || [],
             tags: req.body.tags || [],
