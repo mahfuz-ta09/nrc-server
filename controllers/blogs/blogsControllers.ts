@@ -40,8 +40,14 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             title: req.body.title,
             slug: req.body.slug.toLowerCase().replace(/\s+/g, "-"),
             description: req.body.description || "",
-            author: req.body.author,
             
+            author: req.body.author,
+            status: req.body.status || "draft",
+            isFeatured: req.body.isFeatured || false,
+            
+            categories: req.body.categories || [],
+            tags: req.body.tags || [],
+
             meta:{
                 keywords: req.body.meta_keywords || [],
                 ogTitle: req.body.meta_title || "",
@@ -51,15 +57,11 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
 
             content: req.body.content || { summary: "", body: "" , section:  []},
 
-            categories: req.body.categories || [],
-            tags: req.body.tags || [],
-
-            images: req.body.urlLists ,
+            images: req.body.urlLists || [], 
+            featuredImage: req.body.featuredImage || { url: "", publicID: "" },
+            
             stats: { views: 0, likes: 0, commentsCount: 0 },
             comments: [],
-
-            status: req.body.status || "draft",
-            isFeatured: req.body.isFeatured || false,
             
             publishedAt: req.body.status === "published" ? new Date() : undefined,
             
