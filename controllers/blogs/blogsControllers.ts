@@ -16,8 +16,8 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
 
         await authChecker(req,res,["super_admin","admin"])
 
-        console.log(req.body,JSON.parse(req.body.urlLists))
-
+        console.log("req.body.content: ",JSON.parse(req.body.content).body)
+        console.log(req.files)
         if( !req.body.title || !req.body.slug || !req.body.content || !req.body.author 
             || !req.body.categories || !req.body.meta_title || !req.body.meta_description || !req.body.meta_keywords){
             return sendResponse(res,{
@@ -38,12 +38,12 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         }
         
         const normalizeToArray = (val: any): string[] => {
-            if (!val) return [];
-            if (Array.isArray(val)) return val;
-            return [val];
-        };
+            if (!val) return []
+            if (Array.isArray(val)) return val
+            return [val]
+        }
 
-        const categories = normalizeToArray(req.body.categories);
+        const categories = normalizeToArray(req.body.categories)
         const tags = normalizeToArray(req.body.tags)
         const meta_keywords = normalizeToArray(req.body.meta_keywords)
         const blog = {
@@ -67,7 +67,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
 
             content: req.body.content || { summary: "", body: "" , section:  []},
 
-            images: JSON.parse(req.body.urlLists) || [], 
+            images: req?.body?.images || [], 
             featuredImage: req.body.featuredImage || { url: "", publicID: "" },
             
             stats: { views: 0, likes: 0, commentsCount: 0 },
@@ -86,14 +86,34 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             ],
         }
 
-
         const imga:any = req.files
+        
         if(imga['header_image']?.[0]){
             const headerImage:any = await fileUploadHelper.uploadToCloud(imga['header_image']?.[0])
             blog.meta.ogImage = {url:headerImage.secure_url, publicID:headerImage.public_id}
         }
         
-        
+        const content = JSON.parse(req.body.content)
+        let body = content.body
+        let uploadedUrls: { url: string, publicID: string }[] = []
+
+        if (imga['content_image']?.length > 0) {
+            for (let i = 0; i < imga['content_image'].length; i++) {
+                const uploaded: any = await fileUploadHelper.uploadToCloud(imga['content_image'][i])
+                uploadedUrls.push({ url: uploaded.secure_url, publicID: uploaded.public_id })
+                body = body.replace(`__IMAGE_${i}__`, uploaded.secure_url)
+            }
+
+            blog.images = uploadedUrls
+ 
+
+            blog.content = {
+                summary: content.summary || "",
+                body,
+                section: content.sections || []
+            }
+        }
+
         const result = await collection.insertOne(blog)
         if(!result.insertedId){
             return sendResponse(res,{
@@ -124,52 +144,52 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
 
 const getUniqueBlogCategories = async (req: Request, res: Response) => {
   try {
-    const db = getDb();
-    const collection = db.collection("blogs");
+    const db = getDb()
+    const collection = db.collection("blogs")
 
-    const blogs = await collection.find({}, { projection: { categories: 1 } }).toArray();
+    const blogs = await collection.find({}, { projection: { categories: 1 } }).toArray()
 
-    let allCategories: string[] = [];
+    let allCategories: string[] = []
     for (const blog of blogs) {
       if (blog.categories) {
         try {
             allCategories.push(...blog.categories)
         } catch (e) {
-          console.error("Invalid categories JSON:", blog.categories);
+          console.error("Invalid categories JSON:", blog.categories)
         }
       }
     }
 
-    const uniqueCategories = [...new Set(allCategories)];
+    const uniqueCategories = [...new Set(allCategories)]
 
     sendResponse(res, {
       statusCode: 200,
       success: true,
       data: uniqueCategories,
-    });
+    })
   } catch (err) {
-    console.log(err);
+    console.log(err)
     sendResponse(res, {
       statusCode: 400,
       success: false,
       message: "Internal server error",
       data: err,
-    });
+    })
   }
-};
+}
 const getBlogByCategory = async (req: Request, res: Response) => {
     try {
-        const db = getDb();
-        const collection = db.collection("blogs");
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+        const db = getDb()
+        const collection = db.collection("blogs")
+        const page = Number(req.query.page) || 1
+        const limit = Number(req.query.limit) || 10
+        const skip = (page - 1) * limit
 
-        const category = req.params.category;
-        let query: any = { status: "published" };
+        const category = req.params.category
+        let query: any = { status: "published" }
 
         if (category && category !== "all") {
-            query.categories = { $regex: category, $options: "i" };
+            query.categories = { $regex: category, $options: "i" }
         }
 
         const blogs = await collection
@@ -182,10 +202,10 @@ const getBlogByCategory = async (req: Request, res: Response) => {
             stats: 0,
             comments: 0,
             },
-        }).skip(skip).limit(limit).toArray();
+        }).skip(skip).limit(limit).toArray()
 
-        const total = await collection.countDocuments(query);
-        const totalCount = await collection.countDocuments({ status: "published" });
+        const total = await collection.countDocuments(query)
+        const totalCount = await collection.countDocuments({ status: "published" })
 
         sendResponse(res, {
         statusCode: 200,
@@ -198,33 +218,33 @@ const getBlogByCategory = async (req: Request, res: Response) => {
             totalPages: Math.ceil(total / limit),
             totalCount,
         },
-        });
+        })
     } catch (err) {
-        console.log(err);
+        console.log(err)
         sendResponse(res, {
         statusCode: 500,
         success: false,
         message: "Internal server error",
         data: err,
-        });
+        })
     }
-};
+}
 
 
 const getBlogs = async (req: Request, res: Response) => {
     try {
-        const db = getDb();
-        const collection = db.collection("blogs");
+        const db = getDb()
+        const collection = db.collection("blogs")
 
-        const query: any = {};
+        const query: any = {}
 
-        if (req.query.status) query.status = req.query.status;
-        if (req.query.category) query.categories = { $in: [req.query.category] };
-        if (req.query.isFeatured) query.isFeatured = req.query.isFeatured === "true";
+        if (req.query.status) query.status = req.query.status
+        if (req.query.category) query.categories = { $in: [req.query.category] }
+        if (req.query.isFeatured) query.isFeatured = req.query.isFeatured === "true"
 
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+        const page = Number(req.query.page) || 1
+        const limit = Number(req.query.limit) || 10
+        const skip = (page - 1) * limit
 
         const projection = {
             slug: 1,
@@ -238,7 +258,7 @@ const getBlogs = async (req: Request, res: Response) => {
             publishedAt: 1,
             createHistory: 1,
             meta: 1,
-        };
+        }
 
         const blogs = await collection
         .find(query)
@@ -246,10 +266,10 @@ const getBlogs = async (req: Request, res: Response) => {
         .sort({ "createHistory.date": -1 })
         .skip(skip)
         .limit(limit)
-        .toArray();
+        .toArray()
 
-        const total = await collection.countDocuments(query);
-        const totalCount = await collection.countDocuments();
+        const total = await collection.countDocuments(query)
+        const totalCount = await collection.countDocuments()
 
         sendResponse(res, {
         message: "Blogs fetched successfully",
@@ -263,17 +283,17 @@ const getBlogs = async (req: Request, res: Response) => {
             totalPages: Math.ceil(total / limit),
             totalCount,
         },
-        });
+        })
     } catch (err) {
-        console.error(err);
+        console.error(err)
         sendResponse(res, {
         statusCode: 500,
         success: false,
         message: "Internal server error",
         data: err,
-        });
+        })
     }
-};
+}
 
 
 
@@ -424,11 +444,11 @@ const deleteBlog = async (req: AuthenticatedRequest, res: Response) => {
         }
 
         for(let image of blog?.images || []){
-            if(image?.publicID) await fileUploadHelper.deleteFromCloud(image?.publicID);
+            if(image?.publicID) await fileUploadHelper.deleteFromCloud(image?.publicID)
         }
 
         if(blog?.meta?.ogImage?.publicID){
-            await fileUploadHelper.deleteFromCloud(blog.meta.ogImage.publicID);
+            await fileUploadHelper.deleteFromCloud(blog.meta.ogImage.publicID)
         }
         const result = await collection.deleteOne(query)
         if (result.deletedCount === 0){

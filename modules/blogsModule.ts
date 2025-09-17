@@ -12,6 +12,7 @@ router.post("/create",
     verifyUser,
     fileUploadHelper.upload.fields([
         { name: "header_image", maxCount: 1 },
+        { name: "content_image", maxCount: 10 },
     ]),
     createBlog)
 
