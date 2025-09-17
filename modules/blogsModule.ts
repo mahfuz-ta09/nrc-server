@@ -19,7 +19,7 @@ router.post("/create",
 router.get("/all",
     getBlogs)
 
-router.get("/:slug", 
+router.get("/single/:slug/:status", 
     getBlogBySlug)
 
 router.get("/read/:category/:page/:limit", 

@@ -147,7 +147,7 @@ const getUniqueBlogCategories = async (req: Request, res: Response) => {
     const db = getDb()
     const collection = db.collection("blogs")
 
-    const blogs = await collection.find({}, { projection: { categories: 1 } }).toArray()
+    const blogs = await collection.find({ status: "published" }, { projection: { categories: 1 } }).toArray()
 
     let allCategories: string[] = []
     for (const blog of blogs) {
@@ -296,22 +296,28 @@ const getBlogs = async (req: Request, res: Response) => {
 }
 
 
-
+// client request only
 const getBlogBySlug = async (req: Request, res: Response) => {
     try {
         const db = getDb()
         const collection = db.collection("blogs")
 
-        const query = { slug: req.params.slug }
-        if(!req.params.slug){
+        const query = { 
+            slug: req.params.slug ,
+            status : req.params.status
+        }
+        
+        if(!req.params.slug || !req.params.status || req.params.status != 'published'){
             return sendResponse(res,{
-                message: "Blog slug is required",
+                message: "Blog slug&status is required",
                 statusCode: 400,
                 success: false,
             }) 
         }
         
         const blog = await collection.findOne(query, { projection: {images:0,isFeatured:0,status:0,updatedAt:0} })
+        
+
         if (!blog){
             return sendResponse(res,{
                 message: "Blog not found",
