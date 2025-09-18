@@ -53,7 +53,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             
             author: req.body.author,
             status: req.body.status || "draft",
-            isFeatured: req.body.isFeatured || false,
+            isFeatured: req.body.isFeatured ==='true',
             
             categories: categories || [],
             tags: tags || [],
@@ -347,6 +347,53 @@ const getBlogBySlug = async (req: Request, res: Response) => {
         })
     }
 }
+const getSingleBlogBySlug = async (req: Request, res: Response) => {
+    try {
+        const db = getDb()
+        const collection = db.collection("blogs")
+        await authChecker(req,res,['super_admin','admin'])
+
+        const query = { slug: req.params.slug }
+        if(!req.params.slug){
+            return sendResponse(res,{
+                message: "Blog slug&status is required",
+                statusCode: 400,
+                success: false,
+            }) 
+        }
+        
+        const blog = await collection.findOne(query)
+        
+
+        if (!blog){
+            return sendResponse(res,{
+                message: "Blog not found",
+                statusCode: 404,
+                success: false,
+            }) 
+        }
+
+
+        await collection.updateOne(
+            { _id: blog._id },
+            { $inc: { "stats.views": 1 } }
+        )
+
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            data: blog
+        })
+    } catch (err) {
+        console.log(err)
+        sendResponse(res,{
+            statusCode: 400,
+            success: false,
+            message: 'Internel server error',
+            data: err
+        })
+    }
+}
 
 
 const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
@@ -489,6 +536,7 @@ module.exports = {
     updateBlog,
     deleteBlog,
     getBlogByCategory,
+    getSingleBlogBySlug,
     getUniqueBlogCategories,
     getBlogs
 }

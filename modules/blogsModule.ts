@@ -2,7 +2,8 @@ const express = require('express')
 const router = express.Router()
 import { fileUploadHelper } from "../helper/fileUploadHealper"
 const verifyUser = require('../middleware/verifyUser')
-const { createBlog , getBlogs , getBlogBySlug , updateBlog , deleteBlog , getBlogByCategory , getUniqueBlogCategories} = require('../controllers/blogs/blogsControllers')
+const { createBlog , getBlogs , getBlogBySlug , updateBlog , deleteBlog , getBlogByCategory , 
+    getUniqueBlogCategories,getSingleBlogBySlug} = require('../controllers/blogs/blogsControllers')
 
 
 router.get("/categories",
@@ -21,6 +22,10 @@ router.get("/all",
 
 router.get("/single/:slug/:status", 
     getBlogBySlug)
+
+router.get("/all-stat/:slug", 
+    verifyUser,
+    getSingleBlogBySlug)
 
 router.get("/read/:category/:page/:limit", 
     getBlogByCategory)
