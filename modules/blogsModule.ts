@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
-import { fileUploadHelper } from "../helper/fileUploadHealper"
 const verifyUser = require('../middleware/verifyUser')
+import { fileUploadHelper } from "../helper/fileUploadHealper"
 const { createBlog , getBlogs , getBlogBySlug , updateBlog , deleteBlog , getBlogByCategory , 
     getUniqueBlogCategories,getSingleBlogBySlug} = require('../controllers/blogs/blogsControllers')
 
@@ -30,8 +30,12 @@ router.get("/all-stat/:slug",
 router.get("/read/:category/:page/:limit", 
     getBlogByCategory)
 
-router.put("/:id",
+router.patch("/update/:id",
     verifyUser,
+    fileUploadHelper.upload.fields([
+        { name: "header_image", maxCount: 1 },
+        { name: "content_image", maxCount: 10 },
+    ]),
     updateBlog)
     
 

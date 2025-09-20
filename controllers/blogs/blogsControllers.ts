@@ -403,52 +403,128 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
 
         await authChecker(req, res, ["super_admin", "admin"])
 
-        const blogId = new ObjectId(req.params.id)
-        const existingBlog = await collection.findOne({ _id: blogId })
-        if (!existingBlog) {
-            return sendResponse(res, {
-                statusCode: 404,
-                success: false,
-                message: "Blog not found",
-                data: null,
-            })
+        const { id } = req.params
+        if (!ObjectId.isValid(id)) {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "Invalid blog ID",
+        })
         }
 
-        const updateData: any = {}
+        const blog = await collection.findOne({ _id: new ObjectId(id) })
+        if (!blog) {
+        return sendResponse(res, {
+            statusCode: 404,
+            success: false,
+            message: "Blog not found",
+        })
+        }
 
-        if (req.body.title) updateData.title = req.body.title
-        if (req.body.slug) updateData.slug = req.body.slug.toLowerCase().replace(/\s+/g, "-")
-        if (req.body.meta) updateData.meta = req.body.meta
-        if (req.body.content) updateData.content = req.body.content
-        if (req.body.categories) updateData.categories = req.body.categories
-        if (req.body.tags) updateData.tags = req.body.tags
-        if (req.body.featuredImage) updateData.featuredImage = req.body.featuredImage
-        if (req.body.author) updateData.author = req.body.author
-        if (req.body.status) {
-            updateData.status = req.body.status
-            if (req.body.status === "published" && !existingBlog.publishedAt) {
-                updateData.publishedAt = new Date()
+        const normalizeToArray = (val: any): string[] => {
+            if (!val) return []
+            if (Array.isArray(val)) return val
+            return [val]
+        }
+
+        const updatedBlog: any = { ...blog }
+        console.log('category',req.body.categories,blog.categories)
+        console.log('tags',req.body.tags,blog.tags)
+        console.log('meta_keywords',req.body.meta_keywords,blog.meta_keywords)
+        console.log('isFeatured',req.body.isFeatured,blog.isFeatured)
+        console.log(req.body.title)
+        updatedBlog.title = req.body.title || blog.title
+        updatedBlog.slug = req.body.slug?.toLowerCase().replace(/\s+/g, "-") || blog.slug
+        updatedBlog.description = req.body.description || blog.description
+        updatedBlog.author = req.body.author || blog.author
+        updatedBlog.status = req.body.status || blog.status
+        updatedBlog.isFeatured = req.body.isFeatured !== ''
+            ? req.body.isFeatured === "true"
+            : blog.isFeatured
+
+        updatedBlog.categories = req.body.categories !== ''
+            ? normalizeToArray(req.body.categories)
+            : blog.categories
+
+        updatedBlog.tags = req.body.tags !== ''
+            ? normalizeToArray(req.body.tags)
+            : blog.tags
+
+        updatedBlog.meta = {
+            keywords:req.body.meta_keywords !== ''
+                ? normalizeToArray(req.body.meta_keywords)
+                : blog.meta.keywords,
+            ogTitle: req.body.meta_title || blog.meta.ogTitle,
+            ogDescription: req.body.meta_description || blog.meta.ogDescription,
+            ogImage: blog.meta.ogImage,
+        }
+
+        const imga: any = req.files
+
+        if (imga?.["header_image"]?.[0]) {
+            if (blog.meta.ogImage?.publicID) {
+                await fileUploadHelper.deleteFromCloud(blog.meta.ogImage.publicID)
+            }
+            const headerImage: any = await fileUploadHelper.uploadToCloud(
+                imga["header_image"][0]
+            )
+            updatedBlog.meta.ogImage = {
+                url: headerImage.secure_url,
+                publicID: headerImage.public_id,
             }
         }
 
-        if (req.body.isFeatured !== undefined) updateData.isFeatured = req.body.isFeatured
+        if (req.body.content) {
+            const newContent = JSON.parse(req.body.content)
 
-        const updateHistory = {
-            date: new Date(),
-            email: req?.user?.email || "",
-            id: req?.user?.id || "",
-            role: req?.user?.role || "",
-            count: existingBlog.updatedAt?.length
-                ? existingBlog.updatedAt.length
-                : 0,
+            if (newContent.body && newContent.body !== blog.content.body) {
+                if (Array.isArray(blog.images) && blog.images.length > 0) {
+                    for (const img of blog.images) {
+                        if (img.publicID) {
+                            await fileUploadHelper.deleteFromCloud(img.publicID)
+                        }
+                    }
+                }
+
+                let body = newContent.body
+                const uploadedUrls: { url: string; publicID: string }[] = []
+
+                if (imga?.["content_image"]?.length > 0) {
+                    for (let i = 0; i < imga["content_image"].length; i++) {
+                            const uploaded: any = await fileUploadHelper.uploadToCloud(
+                            imga["content_image"][i]
+                        )
+                        uploadedUrls.push({
+                            url: uploaded.secure_url,
+                            publicID: uploaded.public_id,
+                        })
+                        body = body.replace(`__IMAGE_${i}__`, uploaded.secure_url)
+                    }
+                    }
+
+                    updatedBlog.images = uploadedUrls
+                    updatedBlog.content = {
+                    summary: newContent.summary || "",
+                    body,
+                    section: newContent.sections || [],
+                }
+            }
         }
 
-        const result = await collection.updateOne(
-            { _id: blogId },
+        updatedBlog.updatedAt = [
+            ...(blog.updatedAt || []),
             {
-                $set: updateData,
-                $push: { updatedAt: updateHistory },
-            }
+                date: new Date(),
+                email: req?.user?.email || "",
+                id: req?.user?.id || "",
+                role: req?.user?.role || "",
+            },
+        ]
+
+        
+        const result = await collection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updatedBlog }
         )
 
         sendResponse(res, {
@@ -459,16 +535,14 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
         })
     } catch (err) {
         console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
+        sendResponse(res, {
+            statusCode: 500,
             success: false,
-            message: 'Internel server error',
-            data: err
+            message: "Internal server error",
+            data: err,
         })
     }
 }
-
-
 
 const deleteBlog = async (req: AuthenticatedRequest, res: Response) => {
     try {

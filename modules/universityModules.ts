@@ -8,7 +8,6 @@ const verifyUser = require('../middleware/verifyUser')
 
 
 router.get('/all',
-    verifyUser,
     getAllUniversity)
 
 router.get('/single/:id', 

@@ -3,6 +3,7 @@ import sendResponse from "../../helper/sendResponse"
 import { ObjectId } from "mongodb"
 import { format } from "date-fns"
 import authChecker from "../../helper/authChecker"
+import sendEmail from "../../helper/sendEmail"
 const bcrypt = require("bcrypt")
 const { getDb } = require('../../config/connectDB')
 
@@ -19,6 +20,8 @@ const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
         const collection = db.collection('users')
         const { email , password } = req.body
         
+        await authChecker(req, res, ["super_admin"])
+
         if(!email || !password ){
             return sendResponse( res, {
                 statusCode: 400,
@@ -53,7 +56,7 @@ const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
             return sendResponse( res, {
                 statusCode: 400,
                 success: false,
-                message: 'an admin already exist!',
+                message: 'User already exist, Change his role from users page',
             })
         }
 
@@ -75,6 +78,30 @@ const createAdmin = async(req: AuthenticatedRequest, res: Response) => {
         }
 
         const result = await collection.insertOne(userObject)
+        if (result?.insertedId) {
+            const content = `
+                <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+                    <h2 style="color: #2c3e50;">🎉 Welcome to NRC Educational Consultants Ltd.</h2>
+
+                    <p>Hello <strong>${email}</strong>,</p>
+                    <p>We’re excited to let you know that your account has been created and you are now an <strong>Admin</strong> of NRC Educational Consultants Ltd.</p>
+
+                    <p>Your login credentials are as follows:</p>
+                    <div style="background: #f4f4f4; padding: 12px 20px; display: inline-block; border-radius: 6px; margin: 15px 0; font-size: 18px; font-weight: bold; letter-spacing: 1px; color: #2c3e50;">
+                        ✉️ Email: ${email}<br/>
+                        🔑 Password: ${password}
+                    </div>
+
+                    <p style="color:#e67e22;">
+                        <strong>⚠️ Important:</strong> Please log in using these credentials and change your password immediately from your profile settings for security reasons.
+                    </p>
+
+                    <p style="margin-top: 20px;">Welcome aboard!<br/>
+                    <strong>NRC Educational Consultants Ltd. Team</strong></p>
+                </div>
+            `
+            sendEmail(email, "Welcome to NRC Educational Consultants Ltd. - Admin Access", content)
+        }
 
         sendResponse(res,{
             statusCode: 200,
