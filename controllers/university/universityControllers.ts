@@ -239,7 +239,6 @@ const getAllUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection('university')
-        await authChecker(req, res, ["admin","super_admin"])
 
         
         const university = await collection.find({}).sort({"_id": -1}).toArray()
