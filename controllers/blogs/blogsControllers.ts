@@ -609,10 +609,10 @@ const getAllBlogSlug = async (req: AuthenticatedRequest, res: Response) => {
         console.log("from get all blog slug object")
 
         const slugs = await collection
-        .find({}, { projection: { slug: 1, _id: 0 } }) // exclude _id, keep only slug
+        .find({ status: 'published' }, { projection: { slug: 1, _id: 0 } })
         .toArray();
         
-        
+
         sendResponse(res, {
             statusCode: 200,
             success: true,
