@@ -3,7 +3,7 @@ const router = express.Router()
 const verifyUser = require('../middleware/verifyUser')
 import { fileUploadHelper } from "../helper/fileUploadHealper"
 const { createBlog , getBlogs , getBlogBySlug , updateBlog , deleteBlog , getBlogByCategory , 
-    getUniqueBlogCategories,getSingleBlogBySlug} = require('../controllers/blogs/blogsControllers')
+    getUniqueBlogCategories,getSingleBlogBySlug,getAllBlogSlug} = require('../controllers/blogs/blogsControllers')
 
 
 router.get("/categories",
@@ -19,6 +19,9 @@ router.post("/create",
 
 router.get("/all",
     getBlogs)
+
+router.get("/slug",
+    getAllBlogSlug)
 
 router.get("/single/:slug/:status", 
     getBlogBySlug)

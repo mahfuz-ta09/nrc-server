@@ -8,7 +8,6 @@ const urlList = [
 
 const url = process.env.NODE_ENV === 'PRODUCTION' ? 'https://www.nrcedu-uk.com':'http://localhost:3000'
 
-console.log(process.env.NODE_ENV)
 const corsOption = {    
     origin: url,
     credentials: true,
