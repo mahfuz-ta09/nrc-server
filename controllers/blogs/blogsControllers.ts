@@ -3,6 +3,7 @@ import { Request, Response } from "express"
 import authChecker from "../../helper/authChecker"
 import sendResponse from "../../helper/sendResponse"
 import { fileUploadHelper } from "../../helper/fileUploadHealper"
+import { format } from "date-fns"
 const { getDb } = require('../../config/connectDB')
 
 interface AuthenticatedRequest extends Request {
@@ -71,16 +72,16 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             stats: { views: 0, likes: 0, commentsCount: 0 },
             comments: [],
             
-            publishedAt: req.body.status === "published" ? new Date() : undefined,
+            publishedAt: req.body.status === "published" ? format(new Date(), "MM/dd/yyyy") : undefined,
             
             createHistory: {
-                date: new Date(),
+                date: format(new Date(), "MM/dd/yyyy"),
                 email: req?.user?.email,
                 id: req?.user?.id,
                 role: req?.user?.role,
             },
             updatedAt: [
-                { date: new Date(), email: "", id: "", role: "" },
+                { date: format(new Date(), "MM/dd/yyyy"), email: "", id: "", role: "" },
             ],
         }
 
@@ -269,17 +270,17 @@ const getBlogs = async (req: Request, res: Response) => {
         const totalCount = await collection.countDocuments()
 
         sendResponse(res, {
-        message: "Blogs fetched successfully",
-        statusCode: 200,
-        success: true,
-        data: blogs,
-        meta: {
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-            totalCount,
-        },
+            message: "Blogs fetched successfully",
+            statusCode: 200,
+            success: true,
+            data: blogs,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                totalCount,
+            },
         })
     } catch (err) {
         console.error(err)
@@ -503,12 +504,11 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
                 body: parsedContent?.body? parsedContent?.body : blog?.content?.body,
                 section: parsedContent?.section? parsedContent?.section : blog?.content?.section,
             },
-            
+            publishedAt: req.body.status === "published" ? format(new Date(), "MM/dd/yyyy"): undefined,
             images: blog?.images
         }
         
         const imga: any = req.files
-        
         if (imga?.["header_image"]?.[0]) {
             if (blog.meta.ogImage?.publicID) {
                 await fileUploadHelper.deleteFromCloud(blog.meta.ogImage.publicID)
@@ -562,7 +562,14 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
             { $set: updatedDoc }
         )
 
-        console.log(result)
+        if(!result?.modifiedCount){
+            sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Blog updated successfully",
+                data: result,
+            })
+        }
         sendResponse(res, {
             statusCode: 200,
             success: true,
