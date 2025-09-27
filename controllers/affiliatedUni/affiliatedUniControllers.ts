@@ -11,110 +11,134 @@ interface AuthenticatedRequest extends Request {
     user?: any
 }
 
-const createAffiliatedUni = async(req: AuthenticatedRequest, res: Response) =>{
-        try {
+export const createAffiliatedUni = async (req: AuthenticatedRequest, res: Response) => {
+    try {
         const db = getDb()
         const collection = db.collection("affiliated-uni")
-        await authChecker(req,res,['super_admin','admin'])
+        const blogsCollection = db.collection("blogs")
+        await authChecker(req, res, ["super_admin", "admin"])
 
         const {
-            name,slug,description,location,content,status,meta_title,
-            meta_description,meta_keywords
-        } = req.body
-        
-        if(!name || !slug || !location || !meta_title || !meta_description){
-            return sendResponse(res,{
-                statusCode: 400,
-                success: false,
-                message: "some field can't be empty",
-            })
-        }
-
-        const query = { $or: [{ slug: slug },{ name: name }]}
-        const result = await collection.findOne(query)
-        if(result){
-            return sendResponse(res,{
-                statusCode: 400,
-                success: false,
-                message: "university with same name or slug already exists",
-            })
-        }
-
-        const affiliatedUni = {
-            type:'affiliated',
             name,
             slug,
             description,
-            location,content,
+            location,
+            content,
             status,
-            meta_title,meta_description,meta_keywords,
-            bodyImages: [{url:'',publicID:''}],
-            logo:{url: '',publicID: ''},
-            header_image:{url: '',publicID: ''},
-            creationHistory:{
+            meta_title,
+            meta_description,
+            meta_keywords,
+            } = req.body
+
+            if (!name || !slug || !location || !meta_title || !meta_description) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Some required fields are missing.",
+            })
+        }
+
+        const query = { $or: [{ slug }, { name }] }
+        const [existingUni, existingBlog] = await Promise.all([
+            collection.findOne(query),
+            blogsCollection.findOne(query),
+        ])
+
+        if (existingUni || existingBlog) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "A document with the same name or slug already exists.",
+            })
+        }
+
+        const affiliatedUni: any = {
+            type: "affiliated",
+            name,
+            slug,
+            description,
+            location,
+            content,
+            status,
+            meta_title,
+            meta_description,
+            meta_keywords,
+            bodyImages: [],
+            logo: { url: "", publicID: "" },
+            header_image: { url: "", publicID: "" },
+            creationHistory: {
                 date: format(new Date(), "MM/dd/yyyy"),
                 email: req?.user?.email,
                 id: req?.user?.id,
                 role: req?.user?.role,
             },
-            updateHistory:  [],
-            
+            updateHistory: [],
             stats: { views: 0, likes: 0, commentsCount: 0 },
             comments: [],
         }
 
-        const files:any = req?.files
-        if(files['header_image']?.[0]){
-            const headerImage:any = await fileUploadHelper.uploadToCloud(files['header_image']?.[0])
-            affiliatedUni.header_image = {url:headerImage.secure_url, publicID:headerImage.public_id}
-        }
-         
-        if(files['logo']?.[0]){
-            const logo:any = await fileUploadHelper.uploadToCloud(files['logo']?.[0])
-            affiliatedUni.logo = {url: logo.secure_url, publicID: logo.public_id}
-        }       
+        const files: any = req.files || {}
 
+        
+        if (files["header_image"]?.[0]) {
+            const headerImage:any = await fileUploadHelper.uploadToCloud(files["header_image"][0])
+            affiliatedUni.header_image = {
+                url: headerImage.secure_url,
+                publicID: headerImage.public_id,
+            }
+        }
+
+        if (files["logo"]?.[0]) {
+            const logo:any = await fileUploadHelper.uploadToCloud(files["logo"][0])
+            affiliatedUni.logo = {
+                url: logo.secure_url,
+                publicID: logo.public_id,
+            }
+        }
+
+        
         let body = content
         try {
             body = JSON.parse(content)
         } catch {
-            body = content
+            
         }
-        
-        let uploadedUrls: { url: string, publicID: string }[] = []
-        if (files['content_image']?.length > 0) {
-            for (let i = 0 ;i < files['content_image'].length; i++) {
-                const uploaded: any = await fileUploadHelper.uploadToCloud(files['content_image'][i])
+
+        if (files["content_image"]?.length > 0) {
+            const uploadedUrls: { url: string; publicID: string }[] = []
+            for (let i = 0; i < files["content_image"].length; i++) {
+                const uploaded:any = await fileUploadHelper.uploadToCloud(files["content_image"][i])
                 uploadedUrls.push({ url: uploaded.secure_url, publicID: uploaded.public_id })
                 body = body.replace(`__IMAGE_${i}__`, uploaded.secure_url)
             }
             affiliatedUni.bodyImages = uploadedUrls
             affiliatedUni.content = body
         }
+
         
-        const final = await collection.insertOne(affiliatedUni)
-        if(!final?.insertedId){
-            return sendResponse(res,{
+        const insertResult = await collection.insertOne(affiliatedUni)
+
+        if (!insertResult?.insertedId) {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message:'failed to insert document',
-                data:  final
+                message: "Failed to insert document",
             })
         }
 
-        sendResponse(res,{
+        sendResponse(res, {
             statusCode: 200,
             success: true,
-            message:'document inserted successfully',
-            data:  final
+            message: "Document inserted successfully",
+            data: insertResult,
         })
     } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
+        console.error("createAffiliatedUni error:", err)
+        sendResponse(res, {
+            statusCode: 500,
             success: false,
-            message: 'Internel server error',
-            data: err
+            message: "Internal server error",
+            data: err,
         })
     }
 }
