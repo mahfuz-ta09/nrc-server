@@ -13,8 +13,8 @@ interface AuthenticatedResponse extends Response {
 
 const verifyUser = (req:AuthenticatedRequest, res: AuthenticatedResponse, next:NextFunction ) => {
     const token = req?.cookies?.nrc_acc
-    
     if (!token) {
+        console.log("no token exist, user not verified!")
         return sendResponse( res, {
             statusCode: 401,
             success: false,

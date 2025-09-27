@@ -9,6 +9,7 @@ import { profileModule } from "../modules/profileModule"
 import { countryBaseModule } from "../modules/countryBaseModule"
 import { bannerModule } from "../modules/bannerModule"
 import { blogsModule } from "../modules/blogsModule"
+import { affiliatedUniModule } from "../modules/affiliatedUniModule"
 import { fileUploader } from "../modules/fileUploader"
 
 
@@ -61,6 +62,10 @@ const allRoutes = [
     {
         path: '/blog',
         route: blogsModule
+    },
+    {
+        path: '/affiliated-uni',
+        route: affiliatedUniModule
     },
     {
         path: '/file',

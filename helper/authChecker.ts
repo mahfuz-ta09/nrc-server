@@ -31,6 +31,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
 
 
         if(!user) {
+            console.log("user not found response from auth checker")
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -40,6 +41,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
 
 
         if(!tEmail || !tRole || !tStatus) {
+            console.log("issue with email,role and status response from auth checker")
             clearAuthCookies(res)
             return sendResponse(res, {
                 statusCode: 400,
@@ -49,6 +51,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
         }
 
         if(!user || user.email !== tEmail || user.role !== tRole || user.status !== tStatus) {
+            console.log("issue with email,role and status response from auth checker")
             clearAuthCookies(res)
             return sendResponse(res, {
                 statusCode: 400,
@@ -59,6 +62,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
 
 
         if(!requiredRole.includes(user.role)) {
+            console.log("issue with role response from auth checker")
             clearAuthCookies(res)
             return sendResponse(res, {
                 statusCode: 403,
@@ -69,6 +73,7 @@ const authChecker = async (req: AuthenticatedRequest,res: Response,requiredRole:
 
 
         if(user.status !== 'active') {
+            console.log("issue with status response from auth checker")
             clearAuthCookies(res)
             return sendResponse(res, {
                 statusCode: 403,

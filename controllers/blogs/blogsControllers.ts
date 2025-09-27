@@ -66,7 +66,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
 
             content: JSON.parse(req.body.content) || { summary: "", body: "" , section:  []},
 
-            images: req?.body?.images || [], 
+            bodyImages: req.body.bodyImages || [], 
             featuredImage: req.body.featuredImage || { url: "", publicID: "" },
             
             stats: { views: 0, likes: 0, commentsCount: 0 },
@@ -80,9 +80,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
                 id: req?.user?.id,
                 role: req?.user?.role,
             },
-            updatedAt: [
-                { date: format(new Date(), "MM/dd/yyyy"), email: "", id: "", role: "" },
-            ],
+            updatedAt: [],
         }
 
         const imga:any = req.files
@@ -102,7 +100,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
                 body = body.replace(`__IMAGE_${i}__`, uploaded.secure_url)
             }
 
-            blog.images = uploadedUrls
+            blog.bodyImages = uploadedUrls
  
 
             blog.content = {
@@ -194,7 +192,7 @@ const getBlogByCategory = async (req: Request, res: Response) => {
         .find(query, {
             projection: {
             content: 0,
-            images: 0,
+            bodyImages: 0,
             featuredImage: 0,
             status: 0,
             stats: 0,
@@ -313,7 +311,7 @@ const getBlogBySlug = async (req: Request, res: Response) => {
             }) 
         }
         
-        const blog = await collection.findOne(query, { projection: {images:0,isFeatured:0,status:0,updatedAt:0} })
+        const blog = await collection.findOne(query, { projection: {bodyImages:0,isFeatured:0,status:0,updatedAt:0} })
         
 
         if (!blog){
@@ -412,6 +410,7 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
         try {
             parsedContent = content ? JSON.parse(content) : {}
         } catch {}
+        
         const isEmpty = (val: any): boolean => {
             if (val == null) return true;
             if (typeof val === "string") return val.trim().length === 0;
@@ -505,7 +504,7 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
                 section: parsedContent?.section? parsedContent?.section : blog?.content?.section,
             },
             publishedAt: req.body.status === "published" ? format(new Date(), "MM/dd/yyyy"): undefined,
-            images: blog?.images
+            bodyImages: blog?.bodyImages
         }
         
         const imga: any = req.files
@@ -527,8 +526,8 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
             const newContent = parsedContent
 
             if (newContent.body && newContent.body !== blog.content.body) {
-                if (Array.isArray(blog.images) && blog.images.length > 0) {
-                    for (const img of blog.images) {
+                if (Array.isArray(blog.bodyImages) && blog.bodyImages.length > 0) {
+                    for (const img of blog.bodyImages) {
                         if (img.publicID) {
                             await fileUploadHelper.deleteFromCloud(img.publicID)
                         }
@@ -551,7 +550,7 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
                     }
                 }
 
-                updatedDoc.images = uploadedUrls
+                updatedDoc.bodyImages = uploadedUrls
                 updatedDoc.content.body = body
             }
         }
@@ -613,7 +612,7 @@ const deleteBlog = async (req: AuthenticatedRequest, res: Response) => {
             }) 
         }
 
-        for(let image of blog?.images || []){
+        for(let image of blog?.bodyImages || []){
             if(image?.publicID) await fileUploadHelper.deleteFromCloud(image?.publicID)
         }
 
@@ -621,18 +620,21 @@ const deleteBlog = async (req: AuthenticatedRequest, res: Response) => {
             await fileUploadHelper.deleteFromCloud(blog.meta.ogImage.publicID)
         }
         const result = await collection.deleteOne(query)
+        
         if (result.deletedCount === 0){
             return sendResponse(res,{
                 message: "Blog not found",
                 statusCode: 404,
                 success: false,
+                data: result
             }) 
         }
         
         sendResponse(res,{
             statusCode: 200,
             success: true,
-            message: 'Blog deleted'
+            message: 'Blog deleted',
+            data: result
         })
     } catch (err) {
         console.log(err)
@@ -645,7 +647,7 @@ const deleteBlog = async (req: AuthenticatedRequest, res: Response) => {
     }
 }
 
-    const getAllBlogSlug = async (req: AuthenticatedRequest, res: Response) => {
+const getAllBlogSlug = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const db = getDb();
         const collection = db.collection("blogs");
