@@ -63,7 +63,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         const normalizedTags = normalizeToArray(tags)
         const normalizedKeywords = normalizeToArray(meta_keywords)
 
-        // ✅ Parse content safely
+        
         let contentData: any = { summary: "", body: "", sections: [] }
         try {
             contentData = JSON.parse(content)
