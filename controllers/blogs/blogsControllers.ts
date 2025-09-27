@@ -9,72 +9,89 @@ const { getDb } = require('../../config/connectDB')
 interface AuthenticatedRequest extends Request {
     user?: any
 }
-
 const createBlog = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const db = getDb()
-        const collection = db.collection("blogs")
+        const blogsCollection = db.collection("blogs")
+        const affiliatCollection = db.collection("affiliated-uni")
 
-        await authChecker(req,res,["super_admin","admin"])
+        await authChecker(req, res, ["super_admin", "admin"])
 
-        if( !req.body.title || !req.body.slug || !req.body.content || !req.body.author 
-            || !req.body.categories || !req.body.meta_title || !req.body.meta_description || !req.body.meta_keywords){
-            return sendResponse(res,{
+        const {
+            title,slug,content,author,categories,tags,
+            description,status,isFeatured,meta_title,meta_description,meta_keywords,
+        } = req.body
+
+        if (
+            !title ||
+            !slug ||
+            !content ||
+            !author ||
+            !categories ||
+            !meta_title ||
+            !meta_description ||
+            !meta_keywords) {
+        return sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: "Title, slug, content, author, categories, and meta fields are required",
+        })
+        }
+
+        const normalizedSlug = slug.toLowerCase().replace(/\s+/g, "-")
+        const query = { slug: normalizedSlug }
+
+        const [existingBlog, existingAffi] = await Promise.all([
+            blogsCollection.findOne(query),
+            affiliatCollection.findOne(query),
+        ])
+
+        if (existingBlog || existingAffi) {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'Title, slug, content and author are required',
+                message: "A document with this slug already exists.",
             })
         }
 
-        const existingBlog = await collection.findOne({ slug: req.body.slug.toLowerCase().replace(/\s+/g, "-") })
-        if (existingBlog) {
-            return sendResponse(res, { 
-                message: "Blog with this slug already exists",
-                statusCode: 400,
-                success: false,
-                data: null
-             })
-        }
-        
         const normalizeToArray = (val: any): string[] => {
             if (!val) return []
-            if (Array.isArray(val)) return val
-            return [val]
+            return Array.isArray(val) ? val : [val]
+            }
+
+        const normalizedCategories = normalizeToArray(categories)
+        const normalizedTags = normalizeToArray(tags)
+        const normalizedKeywords = normalizeToArray(meta_keywords)
+
+        // ✅ Parse content safely
+        let contentData: any = { summary: "", body: "", sections: [] }
+        try {
+            contentData = JSON.parse(content)
+        } catch {
         }
 
-        const categories = normalizeToArray(req.body.categories)
-        const tags = normalizeToArray(req.body.tags)
-        const meta_keywords = normalizeToArray(req.body.meta_keywords)
-        const blog = {
-            type:'blog',
-            title: req.body.title,
-            slug: req.body.slug.toLowerCase().replace(/\s+/g, "-"),
-            description: req.body.description || "",
-            
-            author: req.body.author,
-            status: req.body.status || "draft",
-            isFeatured: req.body.isFeatured ==='true',
-            
-            categories: categories || [],
-            tags: tags || [],
-
-            meta:{
-                keywords: meta_keywords || [],
-                ogTitle: req.body.meta_title || "",
-                ogDescription: req.body?.meta_description || "",
-                ogImage: { url:'' , publicID:''},
+        const blog: any = {
+            type: "blog",
+            title,
+            slug: normalizedSlug,
+            description: description || "",
+            author,
+            status: status || "draft",
+            isFeatured: isFeatured === "true",
+            categories: normalizedCategories,
+            tags: normalizedTags,
+            meta: {
+                keywords: normalizedKeywords,
+                ogTitle: meta_title || "",
+                ogDescription: meta_description || "",
+                ogImage: { url: "", publicID: "" },
             },
-
-            content: JSON.parse(req.body.content) || { summary: "", body: "" , section:  []},
-
-            bodyImages: req.body.bodyImages || [], 
-            featuredImage: req.body.featuredImage || { url: "", publicID: "" },
-            
+            content: contentData,
+            bodyImages: [],
+            featuredImage: { url: "", publicID: "" },
             stats: { views: 0, likes: 0, commentsCount: 0 },
             comments: [],
-            
-            publishedAt: req.body.status === "published" ? format(new Date(), "MM/dd/yyyy") : undefined,
-            
+            publishedAt: status === "published" ? format(new Date(), "MM/dd/yyyy") : undefined,
             createHistory: {
                 date: format(new Date(), "MM/dd/yyyy"),
                 email: req?.user?.email,
@@ -84,60 +101,74 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             updatedAt: [],
         }
 
-        const imga:any = req.files
-        if(imga['header_image']?.[0]){
-            const headerImage:any = await fileUploadHelper.uploadToCloud(imga['header_image']?.[0])
-            blog.meta.ogImage = {url:headerImage.secure_url, publicID:headerImage.public_id}
+        const files: any = req.files || {}
+
+
+        const uploadPromises: Promise<any>[] = []
+
+        if (files["header_image"]?.[0]) {
+            uploadPromises.push(fileUploadHelper.uploadToCloud(files["header_image"][0]))
+        } else {
+            uploadPromises.push(Promise.resolve(null))
         }
-        
-        const content = JSON.parse(req.body.content)
-        let body = content.body
-        let uploadedUrls: { url: string, publicID: string }[] = []
 
-        if (imga['content_image']?.length > 0) {
-            for (let i = 0; i < imga['content_image'].length; i++) {
-                const uploaded: any = await fileUploadHelper.uploadToCloud(imga['content_image'][i])
-                uploadedUrls.push({ url: uploaded.secure_url, publicID: uploaded.public_id })
-                body = body.replace(`__IMAGE_${i}__`, uploaded.secure_url)
+        if (files["content_image"]?.length > 0) {
+            uploadPromises.push(Promise.all(files["content_image"].map((file: any) => fileUploadHelper.uploadToCloud(file))))
+        } else {
+            uploadPromises.push(Promise.resolve([]))
+        }
+
+        const [headerImage, contentUploads] = await Promise.all(uploadPromises)
+
+        if (headerImage) {
+            blog.meta.ogImage = {
+                url: headerImage.secure_url,
+                publicID: headerImage.public_id,
             }
+        }
 
-            blog.bodyImages = uploadedUrls
- 
+        
+        if (contentUploads.length > 0) {
+            let updatedBody = contentData.body
+            contentUploads.forEach((uploaded: any, index: number) => {
+                updatedBody = updatedBody.replace(`__IMAGE_${index}__`, uploaded.secure_url)
+                blog.bodyImages.push({ url: uploaded.secure_url, publicID: uploaded.public_id })
+            })
 
             blog.content = {
-                summary: content.summary || "",
-                body,
-                section: content.sections || []
+                summary: contentData.summary || "",
+                body: updatedBody,
+                sections: contentData.sections || [],
             }
         }
- 
-        const result = await collection.insertOne(blog)
-        if(!result.insertedId){
-            return sendResponse(res,{
+
+        
+        const result = await blogsCollection.insertOne(blog)
+
+        if (!result.insertedId) {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'You have finished processing. Update or delete to process again!!',
-                data: result,
+                message: "Failed to insert blog document.",
             })
         }
 
-        sendResponse(res,{
+        sendResponse(res, {
             statusCode: 200,
             success: true,
-            message: "Proceeded successfully!!!",
+            message: "Blog created successfully.",
             data: result,
         })
     } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
+        console.error("createBlog error:", err)
+        sendResponse(res, {
+            statusCode: 500,
             success: false,
-            message: 'Internel server error',
-            data: err
+            message: "Internal server error",
+            data: err,
         })
     }
 }
-
 const getUniqueBlogCategories = async (req: Request, res: Response) => {
   try {
     const db = getDb()
