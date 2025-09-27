@@ -41,7 +41,10 @@ const createAffiliatedUni = async(req: AuthenticatedRequest, res: Response) =>{
         }
 
         const affiliatedUni = {
-            name,slug,description,
+            type:'affiliated',
+            name,
+            slug,
+            description,
             location,content,
             status,
             meta_title,meta_description,meta_keywords,
@@ -116,7 +119,7 @@ const createAffiliatedUni = async(req: AuthenticatedRequest, res: Response) =>{
     }
 }
 
-const getAllBlogsDashboard = async(req: AuthenticatedRequest, res: Response) =>{
+const getAllAffiliationDashboard = async(req: AuthenticatedRequest, res: Response) =>{
     try {
         const db = getDb()
         const collection = db.collection("affiliated-uni")
@@ -134,7 +137,7 @@ const getAllBlogsDashboard = async(req: AuthenticatedRequest, res: Response) =>{
 
         const documents = await collection
         .find(query)
-        .sort({ "creationHistory.date": -1 })
+        .sort({ "createHistory.date": -1 })
         .skip(skip)
         .limit(limit)
         .toArray()
@@ -239,6 +242,7 @@ const deleteAffiliatedUni = async(req: AuthenticatedRequest , res: Response) =>{
         })
     }
 }
+
 const updateAffiliatedUni = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const db = getDb()
@@ -401,9 +405,89 @@ const updateAffiliatedUni = async (req: AuthenticatedRequest, res: Response) => 
     }
 }
 
+const getAllAffiliatedUni = async (req: AuthenticatedRequest, res: Response) =>{
+    try{
+        const db = getDb()
+        const collection = db.collection("affiliated-uni")
+        
+        const projection = {
+            slug: 1,
+            name: 1,
+            header_image: { url: 1 },
+            location: 1,
+            description: 1,
+        }
+
+        const documents = await collection
+        .find({}, { projection })
+        .sort({ "createHistory.date": -1 })
+        .toArray()
+
+        if(!documents.length){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: 'no data founded!',
+            })
+        }
+        
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: 'successful!',
+            data: documents,
+        })
+
+    }catch(err){
+        console.log(err)
+        sendResponse(res,{
+            statusCode: 400,
+            success: false,
+            message: 'Internel server error',
+            data: err
+        })
+    }
+}
+
+const getAffiliationUniBySlug = async(req: AuthenticatedRequest, res: Response) =>{
+    try{
+        const db = getDb()
+        const collection = db.collection("affiliated-uni")
+        
+        const slug = req.params.slug
+        const query = { slug: slug }
+
+        const document = await collection.findOne(query)
+        
+        if(!document){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: 'no data founded!',
+            })
+        }
+
+        sendResponse(res,{
+            statusCode: 200,
+            success: true,
+            message: 'successful!',
+            data: document,
+        })
+    }catch(err){
+        console.log(err)
+        sendResponse(res,{
+            statusCode: 400,
+            success: false,
+            message: 'Internel server error',
+            data: err
+        })
+    }
+}
 module.exports = {
     createAffiliatedUni,
-    getAllBlogsDashboard,
+    getAllAffiliationDashboard,
     deleteAffiliatedUni,
-    updateAffiliatedUni
+    updateAffiliatedUni,
+    getAllAffiliatedUni,
+    getAffiliationUniBySlug
 }

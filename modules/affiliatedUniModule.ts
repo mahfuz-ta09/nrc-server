@@ -2,7 +2,8 @@ const express = require('express')
 const router = express.Router()
 const verifyUser = require('../middleware/verifyUser')
 import { fileUploadHelper } from "../helper/fileUploadHealper"
-const { createAffiliatedUni, getAllBlogsDashboard, deleteAffiliatedUni, updateAffiliatedUni } = require('../controllers/affiliatedUni/affiliatedUniControllers')
+const { createAffiliatedUni, getAllAffiliationDashboard, getAffiliationUniBySlug,
+    deleteAffiliatedUni, updateAffiliatedUni, getAllAffiliatedUni } = require('../controllers/affiliatedUni/affiliatedUniControllers')
 
 
 router.post('/create',
@@ -25,7 +26,14 @@ router.patch('/update/:id',
 
 router.get('/get-all',
     verifyUser,
-    getAllBlogsDashboard)
+    getAllAffiliationDashboard)
+
+router.get('/page-all',
+    getAllAffiliatedUni)
+
+
+router.get('/single/:slug',
+    getAffiliationUniBySlug)
 
 
 router.delete('/remove-one/:id',

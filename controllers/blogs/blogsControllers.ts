@@ -46,6 +46,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         const tags = normalizeToArray(req.body.tags)
         const meta_keywords = normalizeToArray(req.body.meta_keywords)
         const blog = {
+            type:'blog',
             title: req.body.title,
             slug: req.body.slug.toLowerCase().replace(/\s+/g, "-"),
             description: req.body.description || "",
@@ -137,7 +138,6 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
     }
 }
 
-
 const getUniqueBlogCategories = async (req: Request, res: Response) => {
   try {
     const db = getDb()
@@ -173,6 +173,7 @@ const getUniqueBlogCategories = async (req: Request, res: Response) => {
     })
   }
 }
+
 const getBlogByCategory = async (req: Request, res: Response) => {
     try {
         const db = getDb()
@@ -225,7 +226,6 @@ const getBlogByCategory = async (req: Request, res: Response) => {
         })
     }
 }
-
 
 const getBlogs = async (req: Request, res: Response) => {
     try {
@@ -283,16 +283,14 @@ const getBlogs = async (req: Request, res: Response) => {
     } catch (err) {
         console.error(err)
         sendResponse(res, {
-        statusCode: 500,
-        success: false,
-        message: "Internal server error",
-        data: err,
+            statusCode: 500,
+            success: false,
+            message: "Internal server error",
+            data: err,
         })
     }
 }
 
-
-// client request only
 const getBlogBySlug = async (req: Request, res: Response) => {
     try {
         const db = getDb()
@@ -343,6 +341,7 @@ const getBlogBySlug = async (req: Request, res: Response) => {
         })
     }
 }
+
 const getSingleBlogBySlug = async (req: Request, res: Response) => {
     try {
         const db = getDb()
@@ -410,7 +409,7 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
         try {
             parsedContent = content ? JSON.parse(content) : {}
         } catch {}
-        
+
         const isEmpty = (val: any): boolean => {
             if (val == null) return true;
             if (typeof val === "string") return val.trim().length === 0;
@@ -672,7 +671,7 @@ const getAllBlogSlug = async (req: AuthenticatedRequest, res: Response) => {
         data: err,
         });
     }
-};
+}
 
 module.exports = {
     createBlog,
