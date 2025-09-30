@@ -450,6 +450,7 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
             return false;
         };
 
+        const imga: any = req.files
         
         if (isEmpty(title) &&
             isEmpty(slug) &&
@@ -463,12 +464,14 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
             isEmpty(categories) &&
             isEmpty(isFeatured) &&
             isEmpty(parsedContent.summary) &&
-            isEmpty(parsedContent.sections &&
-            isEmpty(req.files))) {
+            isEmpty(parsedContent.body) &&
+            isEmpty(parsedContent.sections) &&
+            isEmpty(imga['header_image']?.[0]) &&
+            isEmpty(imga?.["content_image"]?.[0])) {
             return sendResponse(res, {
                 statusCode: 404,
                 success: false,
-                message: "Nothing to update",
+                message: "all field empty,nothing to update",
             });
         }
 
@@ -537,7 +540,6 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
             bodyImages: blog?.bodyImages
         }
         
-        const imga: any = req.files
         if (imga?.["header_image"]?.[0]) {
             if (blog.meta.ogImage?.publicID) {
                 await fileUploadHelper.deleteFromCloud(blog.meta.ogImage.publicID)
