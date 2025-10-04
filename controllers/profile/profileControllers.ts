@@ -147,7 +147,7 @@ const emailContact = async(req: Request , res: Response) =>{
         const { fullName, email, phone, country, state, message } = req.body;
 
         
-        if (!fullName || !email || !phone || !country || !state || !message) {
+        if (!fullName || !email || !country) {
             return sendResponse(res,{
                 statusCode: 400,
                 success: false,
