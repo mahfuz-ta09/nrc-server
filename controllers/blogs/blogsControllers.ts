@@ -56,13 +56,6 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         const normalizedTags = normalizeToArray(tags)
         const normalizedKeywords = normalizeToArray(meta_keywords)
 
-        
-        let contentData: any = { summary: "", body: "", sections: [] }
-        try {
-            contentData = JSON.parse(content)
-        } catch {
-        }
-
         const blog: any = {
             type: "blog",
             title,
@@ -79,7 +72,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
                 ogImage: { url: "", publicID: "" },
             },
 
-            content: contentData,
+            content: content,
             bodyImages: [],
             featuredImage: { url: "", publicID: "" },
             stats: { views: 0, likes: 0, commentsCount: 0 },
@@ -94,9 +87,9 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             updatedAt: [],
         }
 
-        const files: any = req.files || {}
 
-
+        
+        const files: any = req.files || {} 
         const uploadPromises: Promise<any>[] = []
 
         if (files["header_image"]?.[0]) {
@@ -111,8 +104,10 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             uploadPromises.push(Promise.resolve([]))
         }
 
+        console.log(content)
         const [headerImage, contentUploads] = await Promise.all(uploadPromises)
-
+        
+        
         if (headerImage) {
             blog.meta.ogImage = {
                 url: headerImage.secure_url,
@@ -120,18 +115,22 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             }
         }
 
+        let htmlDoc: any = ""
+        try {
+            htmlDoc = JSON.parse(content)
+        } catch {}
+
         
-        if (contentUploads.length > 0 && typeof contentData.body === "string") {
-            let updatedBody = contentData.body
+        if (contentUploads.length > 0) {
+            let updatedBody = htmlDoc
+
             contentUploads.forEach((uploaded: any, index: number) => {
                 updatedBody = updatedBody.replace(`__IMAGE_${index}__`, uploaded.secure_url)
                 blog.bodyImages.push({ url: uploaded.secure_url, publicID: uploaded.public_id })
             })
 
-            blog.content.body = updatedBody
+            blog.content = updatedBody
         }
-
-
         
         const result = await blogsCollection.insertOne(blog)
 
