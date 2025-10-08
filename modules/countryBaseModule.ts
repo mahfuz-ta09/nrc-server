@@ -18,16 +18,18 @@ router.post('/base/create',
     verifyUser,
     fileUploadHelper.upload.fields([
         { name: "countryFlag", maxCount: 1 },
-        { name: "famousFile", maxCount: 1 }
+        { name: "famousFile", maxCount: 1 },
+        { name: "content_image", maxCount: 10 },
     ]),
     createCountryBase)
-  
+
 
 router.patch('/base/edit/:id',  
     verifyUser,
     fileUploadHelper.upload.fields([
         { name: "countryFlag", maxCount: 1 },
-        { name: "famousFile", maxCount: 1 }
+        { name: "famousFile", maxCount: 1 },
+        { name: "content_image", maxCount: 10 },
     ]),
     editCountryBase)
   

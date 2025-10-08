@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb"
 import sendResponse from "../../helper/sendResponse"
 import { fileUploadHelper } from "../../helper/fileUploadHealper"
 import authChecker from "../../helper/authChecker"
+import { format } from "date-fns"
 const { getDb } = require('../../config/connectDB')
 
 
@@ -92,20 +93,34 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
         await authChecker(req,res,["admin","super_admin"])
 
         const id = req.params.id
-        const { country, serial, countryFull , currency } = req.body
+        const { country, serial, slug , currency , content } = req.body
         const files: any = req.files
 
 
-        if (!country &&!serial &&!countryFull &&!files["countryFlag"]?.[0] &&!files["famousFile"]?.[0] &&!currency) {
+        if (!country && !serial && !slug && !files["countryFlag"]?.[0] && !files["famousFile"]?.[0] && !currency && !content) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'All fields missing!!!',
+                message: 'nothing to update',
             });
         }
 
+        const exist = await collection.findOne({
+            $or: [
+                { country: country?.toLowerCase() },
+                { slug : slug }
+            ]
+        })
         
+        if(exist ){
+            return sendResponse( res, {
+                statusCode: 400,
+                success: false,
+                message: 'a document already exist with this name',
+            })
+        }
 
+    
         const query = { _id: new ObjectId(id) };
         const countryObj = await collection.findOne(query)
 
@@ -120,7 +135,6 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
         let uploadedFlag: any = null
         let uploadedFamous: any = null
 
-        
         if (files["countryFlag"]?.[0]) {
             uploadedFlag = await fileUploadHelper.uploadToCloud(files["countryFlag"]?.[0]);
             await fileUploadHelper.deleteFromCloud(countryObj.countryFlg?.publicId);
@@ -134,24 +148,57 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
 
 
         const insertedObject = {
-            country: country ? country.toUpperCase() : countryObj.country,
-            countryFull: countryFull ? countryFull.toLowerCase() : countryObj.countryFull,
+            country: country ? country.toLowerCase() : countryObj.country,
+            slug: slug ? slug.toLowerCase() : countryObj.slug,
             currency: currency ? currency : countryObj.currency,
             serial: serial ? Number(serial) : Number(countryObj.serial),
+            
+            content: content? content : countryObj.content,
+            bodyImages: countryObj?.bodyImages,
 
             countryFlg:{
-                url : uploadedFlag?.secure_url ?? countryObj.countryFlg.url,
-                publicId : uploadedFlag?.public_id ?? countryObj.countryFlg.publicId,
+                url : uploadedFlag?.secure_url ? uploadedFlag?.secure_url : countryObj?.countryFlg?.url,
+                publicId : uploadedFlag?.public_id ? uploadedFlag?.public_id : countryObj.countryFlg?.publicId,
             },
 
             famousFile:{
-                url : uploadedFamous?.secure_url ?? countryObj.countryFlg.url,
-                publicId : uploadedFamous?.public_id ?? countryObj.countryFlg.publicId,
+                url : uploadedFamous?.secure_url ? uploadedFamous?.secure_url : countryObj.famousFile.url,
+                publicId : uploadedFamous?.public_id ? uploadedFamous?.public_id : countryObj.famousFile.publicId,
             },
             createdAt: countryObj.createdAt,
-            updatedAt: new Date(),
+            updatedAt: format(new Date(), "MM/dd/yyyy"),
+
             universityList: countryObj.universityList
         };
+        
+        if (content) {
+            let body
+            try {
+                body = JSON.parse(content)
+            } catch {
+                body = content
+            }
+
+
+            insertedObject.content = body
+            const uploadedUrls: { url: string; publicID: string }[] = []
+
+            if (files?.["content_image"]?.length > 0) {
+                for (const item of insertedObject.bodyImages) {
+                    if (item?.publicID) {
+                    await fileUploadHelper.deleteFromCloud(item.publicID)
+                    }
+                }
+                for (let i = 0; i < files["content_image"].length; i++) {
+                    const uploaded: any = await fileUploadHelper.uploadToCloud(files["content_image"][i])
+                    uploadedUrls.push({ url: uploaded.secure_url, publicID: uploaded.public_id })
+                    body = body.replace(`__IMAGE_${i}__`, uploaded.secure_url)
+                }
+                insertedObject.bodyImages = uploadedUrls
+                insertedObject.content = body
+            }
+        }
+        
 
         const updateDoc = { $set: insertedObject };
         const result = await collection.updateOne(query, updateDoc);
@@ -172,10 +219,11 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(400).json({
+        sendResponse(res, {
+            statusCode: 400,
             success: false,
-            message: 'Internal Server Error',
-            error,
+            message: 'Successfully updated!!!',
+            data:error,
         });
     }
 }
@@ -186,10 +234,10 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
         const collection = db.collection('country-uni')
         await authChecker(req,res,["admin","super_admin"])
         
-        const { country , serial , countryFull , currency } = req.body
+        const { country , serial , slug , currency , content } = req.body
         const files:any = req.files
 
-        if(!country || !serial || !countryFull || !files["countryFlag"]?.[0] || !files["famousFile"]?.[0] || !currency){
+        if(!country || !serial || !slug || !files["countryFlag"]?.[0] || !files["famousFile"]?.[0] || !currency || !content){
             return sendResponse( res, {
                 statusCode: 400,
                 success: false,
@@ -199,8 +247,8 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
 
         const exist = await collection.findOne({
             $or: [
-                { country: country?.toUpperCase() },
-                { countryFull: countryFull?.toLowerCase() }
+                { country: country?.toLowerCase() },
+                { slug : slug }
             ]
         })
         
@@ -208,7 +256,7 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
             return sendResponse( res, {
                 statusCode: 400,
                 success: false,
-                message: 'Already exist!!!',
+                message: 'a document already exist with this name',
             })
         }
 
@@ -217,12 +265,15 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
         const local_flag:any   = await fileUploadHelper.uploadToCloud(files["famousFile"]?.[0])
 
 
-        const insertedObject = {
-            country : country.toUpperCase(),
-            countryFull : countryFull.toLowerCase(),
+        const insertedObject:any = {
+            country : country.toLowerCase(),
+            slug : slug,
             currency:currency,
             serial : Number(serial),
             
+            content:content,
+            bodyImages: [],
+
             countryFlg:{
                 url : local_country?.secure_url,
                 publicId : local_country?.public_id,
@@ -232,14 +283,33 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
                 url : local_flag?.secure_url,
                 publicId : local_flag?.public_id,
             },
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            createdAt: format(new Date(), "MM/dd/yyyy"),
+            updatedAt: format(new Date(), "MM/dd/yyyy"),
             
             universityList: []
         }
 
-        const result = await collection.insertOne(insertedObject)
+        
+        let body = content
+        try {
+            body = JSON.parse(content)
+        } catch {
+            
+        }
 
+        if (files["content_image"]?.length > 0) {
+            const uploadedUrls: { url: string; publicID: string }[] = []
+            for (let i = 0; i < files["content_image"].length; i++) {
+                const uploaded:any = await fileUploadHelper.uploadToCloud(files["content_image"][i])
+                uploadedUrls.push({ url: uploaded.secure_url, publicID: uploaded.public_id })
+                body = body.replace(`__IMAGE_${i}__`, uploaded.secure_url)
+            }
+            insertedObject.bodyImages = uploadedUrls
+            insertedObject.content = body
+        }
+
+        
+        const result = await collection.insertOne(insertedObject)
         if(!result.acknowledged){
             return sendResponse(res,{
                 statusCode: 400,
@@ -293,7 +363,7 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
             });
         }
         
-        if (countryObj?.universityList.length){
+        if (Array.isArray(countryObj?.universityList) && countryObj.universityList.length > 0) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -302,10 +372,16 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
         }
 
 
+
         if(countryObj?.countryFlg?.publicId) await fileUploadHelper.deleteFromCloud(countryObj?.countryFlg?.publicId)
         if(countryObj?.famousFile?.publicId) await fileUploadHelper.deleteFromCloud(countryObj?.famousFile?.publicId)
         
         
+        if(countryObj?.bodyImages){
+            for(let image of countryObj?.bodyImages || []){
+                await fileUploadHelper.deleteFromCloud(image?.publicID)
+            }
+        }
         const result = await collection.deleteOne(query)
         if(!result.acknowledged){
             return sendResponse(res,{
@@ -325,9 +401,9 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
     }catch(error){
         console.error(error);
         sendResponse(res,{
-            statusCode: 200,
-            success: true,
-            message: "Successfully deleted!!!",
+            statusCode: 400,
+            success: false,
+            message: "something went wrong",
             data: error,
         })
     }

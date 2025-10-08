@@ -21,7 +21,6 @@ export const createAffiliatedUni = async (req: AuthenticatedRequest, res: Respon
         const {
             name,
             slug,
-            description,
             location,
             content,
             status,
@@ -56,7 +55,6 @@ export const createAffiliatedUni = async (req: AuthenticatedRequest, res: Respon
             type: "affiliated",
             name,
             slug,
-            description,
             location,
             content,
             status,
@@ -142,6 +140,7 @@ export const createAffiliatedUni = async (req: AuthenticatedRequest, res: Respon
         })
     }
 }
+
 
 const getAllAffiliationDashboard = async(req: AuthenticatedRequest, res: Response) =>{
     try {
@@ -300,7 +299,7 @@ const updateAffiliatedUni = async (req: AuthenticatedRequest, res: Response) => 
         }
 
         const {
-            name, slug, description, location, content,
+            name, slug,location, content,
             status, meta_title, meta_description, meta_keywords
         } = req.body
 
@@ -315,7 +314,7 @@ const updateAffiliatedUni = async (req: AuthenticatedRequest, res: Response) => 
 
         if (isEmpty(name) && isEmpty(slug) && isEmpty(location) &&
             isEmpty(meta_title) && isEmpty(meta_description) &&
-            isEmpty(description) && isEmpty(content) &&
+            isEmpty(content) &&
             isEmpty(status) && isEmpty(meta_keywords) &&
             isEmpty(req.files)) {
             return sendResponse(res, {
@@ -328,7 +327,6 @@ const updateAffiliatedUni = async (req: AuthenticatedRequest, res: Response) => 
         const updatedDocument: any = {
             name: name || document?.name,
             slug: slug || document?.slug,
-            description: description || document?.description,
             location: location || document?.location,
             content: document.content,
             status: status || document?.status,

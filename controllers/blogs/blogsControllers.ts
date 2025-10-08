@@ -9,6 +9,7 @@ const { getDb } = require('../../config/connectDB')
 interface AuthenticatedRequest extends Request {
     user?: any
 }
+
 const createBlog = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const db = getDb()
@@ -18,28 +19,20 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         await authChecker(req, res, ["super_admin", "admin"])
 
         const {
-            title,slug,content,author,categories,tags,
-            description,status,isFeatured,meta_title,meta_description,meta_keywords,
+            title,slug,content, categories,tags,
+            status,meta_title,meta_description,meta_keywords,
         } = req.body
 
-        if (
-            !title ||
-            !slug ||
-            !content ||
-            !author ||
-            !categories ||
-            !meta_title ||
-            !meta_description ||
-            !meta_keywords) {
-        return sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "Title, slug, content, author, categories, and meta fields are required",
-        })
+        if (!title || !slug || !content || !categories || 
+            !meta_title ||!meta_description || !meta_keywords) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "some empty field is not allowed",
+            })
         }
 
-        const normalizedSlug = slug.toLowerCase().replace(/\s+/g, "-")
-        const query = { slug: normalizedSlug }
+        const query = { slug: slug }
 
         const [existingBlog, existingAffi] = await Promise.all([
             blogsCollection.findOne(query),
@@ -73,19 +66,19 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         const blog: any = {
             type: "blog",
             title,
-            slug: normalizedSlug,
-            description: description || "",
-            author,
+            slug: slug,
             status: status || "draft",
-            isFeatured: isFeatured === "true",
+
             categories: normalizedCategories,
             tags: normalizedTags,
+            
             meta: {
                 keywords: normalizedKeywords,
                 ogTitle: meta_title || "",
                 ogDescription: meta_description || "",
                 ogImage: { url: "", publicID: "" },
             },
+
             content: contentData,
             bodyImages: [],
             featuredImage: { url: "", publicID: "" },
@@ -128,19 +121,16 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         }
 
         
-        if (contentUploads.length > 0) {
+        if (contentUploads.length > 0 && typeof contentData.body === "string") {
             let updatedBody = contentData.body
             contentUploads.forEach((uploaded: any, index: number) => {
                 updatedBody = updatedBody.replace(`__IMAGE_${index}__`, uploaded.secure_url)
                 blog.bodyImages.push({ url: uploaded.secure_url, publicID: uploaded.public_id })
             })
 
-            blog.content = {
-                summary: contentData.summary || "",
-                body: updatedBody,
-                sections: contentData.sections || [],
-            }
+            blog.content.body = updatedBody
         }
+
 
         
         const result = await blogsCollection.insertOne(blog)
@@ -169,6 +159,7 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
         })
     }
 }
+
 const getUniqueBlogCategories = async (req: Request, res: Response) => {
   try {
     const db = getDb()
@@ -227,7 +218,6 @@ const getBlogByCategory = async (req: Request, res: Response) => {
             bodyImages: 0,
             featuredImage: 0,
             status: 0,
-            stats: 0,
             comments: 0,
             },
         }).skip(skip).limit(limit).toArray()
@@ -240,20 +230,20 @@ const getBlogByCategory = async (req: Request, res: Response) => {
         success: true,
         data: blogs,
         meta: {
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-            totalCount,
-        },
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+                totalCount,
+            },
         })
     } catch (err) {
         console.log(err)
         sendResponse(res, {
-        statusCode: 500,
-        success: false,
-        message: "Internal server error",
-        data: err,
+            statusCode: 500,
+            success: false,
+            message: "Internal server error",
+            data: err,
         })
     }
 }
@@ -272,7 +262,7 @@ const getBlogs = async (req: Request, res: Response) => {
         const page = Number(req.query.page) || 1
         const limit = Number(req.query.limit) || 10
         const skip = (page - 1) * limit
-
+        
         const projection = {
             slug: 1,
             tags: 1,
@@ -285,6 +275,7 @@ const getBlogs = async (req: Request, res: Response) => {
             publishedAt: 1,
             createHistory: 1,
             meta: 1,
+            stat:1,
         }
 
         const blogs = await collection
@@ -423,22 +414,17 @@ const getSingleBlogBySlug = async (req: Request, res: Response) => {
 
 const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const db = getDb()
-        const collection = db.collection("blogs")
+        const db = getDb();
+        const collection = db.collection("blogs");
+        const affiliatCollection = db.collection("affiliated-uni");
 
-        await authChecker(req, res, ["super_admin", "admin"])
+        await authChecker(req, res, ["super_admin", "admin"]);
 
-        const { 
-            title , slug ,description , author , status , meta_title , 
-            meta_keywords , meta_description , isFeatured , tags , categories,
-            content ,
-        } = req.body
+        const {title,slug,status,meta_title,meta_keywords,meta_description,tags,categories,content} = req.body;
 
-        
-
-        let parsedContent: any = {}
+        let parsedContent: any = {};
         try {
-            parsedContent = content ? JSON.parse(content) : {}
+            parsedContent = content ? JSON.parse(content) : {};
         } catch {}
 
         const isEmpty = (val: any): boolean => {
@@ -450,173 +436,159 @@ const updateBlog = async (req: AuthenticatedRequest, res: Response) => {
             return false;
         };
 
-        const imga: any = req.files
-        
-        if (isEmpty(title) &&
-            isEmpty(slug) &&
-            isEmpty(description) &&
-            isEmpty(author) &&
-            isEmpty(status) &&
-            isEmpty(meta_title) &&
-            isEmpty(meta_keywords) &&
-            isEmpty(meta_description) &&
-            isEmpty(tags) &&
-            isEmpty(categories) &&
-            isEmpty(isFeatured) &&
-            isEmpty(parsedContent.summary) &&
-            isEmpty(parsedContent.body) &&
-            isEmpty(parsedContent.sections) &&
-            isEmpty(imga['header_image']?.[0]) &&
-            isEmpty(imga?.["content_image"]?.[0])) {
+        const imga: any = req.files;
+
+        if (isEmpty(title) &&isEmpty(slug) &&isEmpty(status) &&isEmpty(meta_title) &&isEmpty(meta_keywords) &&
+            isEmpty(meta_description) &&isEmpty(tags) &&isEmpty(categories) &&isEmpty(parsedContent) &&isEmpty(imga?.["header_image"]?.[0]) &&isEmpty(imga?.["content_image"]?.[0])) {
             return sendResponse(res, {
                 statusCode: 404,
                 success: false,
-                message: "all field empty,nothing to update",
-            });
+                message: "All fields are empty, nothing to update",
+            }); 
         }
 
-        const { id } = req.params
+        const { id } = req.params;
         if (!ObjectId.isValid(id)) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
                 message: "Invalid blog ID",
-            })
+            });
         }
 
-        const blog = await collection.findOne({ _id: new ObjectId(id) })
+        const blog = await collection.findOne({ _id: new ObjectId(id) });
         if (!blog) {
             return sendResponse(res, {
                 statusCode: 404,
                 success: false,
                 message: "Blog not found",
-            })
+            });
+        }
+
+        if (slug) {
+            const query = { slug };
+            const [existingBlog, existingAffi] = await Promise.all([
+                collection.findOne(query),
+                affiliatCollection.findOne(query),
+            ]);
+
+            if ((existingBlog && existingBlog._id.toString() !== id) ||
+                existingAffi) {
+                return sendResponse(res, {
+                    statusCode: 400,
+                    success: false,
+                    message: "A document with this slug already exists.",
+                });
+            }
         }
 
         const normalizeToArray = (val: any): string[] => {
-            if (!val) return []
-            if (Array.isArray(val)) return val
-            return [val]
-        }
-        
-        const updatedDoc = {
-            title: title ? title : blog.title,
-            slug: slug ? slug : blog.slug,
-            description: description ? description : blog.description,
-            
-            author: author ? author : blog.author,
+            if (!val) return [];
+            if (Array.isArray(val)) return val;
+            return [val];
+        };
 
-            status: status ? status : blog?.status,
-            isFeatured: isFeatured ? isFeatured === 'true' : blog?.isFeatured,
-
+        const updatedDoc: any = {
+            title: title || blog.title,
+            slug: slug || blog.slug,
+            status: status || blog.status,
             meta: {
                 keywords: meta_keywords ? normalizeToArray(meta_keywords) : blog?.meta?.keywords,
-                ogTitle: meta_title ? meta_title : blog?.meta?.ogTitle,
-                ogDescription: meta_description ? meta_description : blog?.meta?.ogDescription,
-                ogImage: blog?.meta?.ogImage
+                ogTitle: meta_title || blog?.meta?.ogTitle,
+                ogDescription: meta_description || blog?.meta?.ogDescription,
+                ogImage: blog?.meta?.ogImage,
             },
-
-            categories: categories ? categories : blog.categories,
-            tags: tags ? tags : blog.tags,
-
+            categories: categories || blog.categories,
+            tags: tags || blog.tags,
             stats: blog?.stats,
             createHistory: blog?.createHistory,
             comments: blog.comments,
             updatedAt: [
-                ...blog?.updatedAt,
+                ...(blog?.updatedAt || []),
                 {
-                    date: new Date(),
-                    email: req?.user?.email || "",
-                    id: req?.user?.id || "",
-                    role: req?.user?.role || "",
-                }
+                date: new Date(),
+                email: req?.user?.email || "",
+                id: req?.user?.id || "",
+                role: req?.user?.role || "",
+                },
             ],
-            content:{
-                summary: parsedContent?.summary ? parsedContent?.summary : blog?.content?.summary,
-                body: parsedContent?.body? parsedContent?.body : blog?.content?.body,
-                section: parsedContent?.section? parsedContent?.section : blog?.content?.section,
-            },
-            publishedAt: req.body.status === "published" ? format(new Date(), "MM/dd/yyyy"): undefined,
-            bodyImages: blog?.bodyImages
-        }
+            content: parsedContent || blog?.content,
+            publishedAt: status === "published" ? format(new Date(), "MM/dd/yyyy") : blog?.publishedAt,
+            bodyImages: blog?.bodyImages,
+        };
+
         
         if (imga?.["header_image"]?.[0]) {
-            if (blog.meta.ogImage?.publicID) {
-                await fileUploadHelper.deleteFromCloud(blog.meta.ogImage.publicID)
+            if (blog.meta?.ogImage?.publicID) {
+                await fileUploadHelper.deleteFromCloud(blog.meta.ogImage.publicID);
             }
             const headerImage: any = await fileUploadHelper.uploadToCloud(
                 imga["header_image"][0]
-            )
-            
+            );
             updatedDoc.meta.ogImage = {
                 url: headerImage.secure_url,
                 publicID: headerImage.public_id,
-            }
+            };
         }
 
-        if (parsedContent?.body) {
-            const newContent = parsedContent
+        if (content) {
+            let body = parsedContent;
+            const uploadedUrls: { url: string; publicID: string }[] = [];
 
-            if (newContent.body && newContent.body !== blog.content.body) {
-                if (Array.isArray(blog.bodyImages) && blog.bodyImages.length > 0) {
-                    for (const img of blog.bodyImages) {
-                        if (img.publicID) {
-                            await fileUploadHelper.deleteFromCloud(img.publicID)
-                        }
-                    }
+            if (Array.isArray(blog.bodyImages) && blog.bodyImages.length > 0) {
+                for (const img of blog.bodyImages) {
+                    if (img.publicID) await fileUploadHelper.deleteFromCloud(img.publicID);
                 }
-
-                let body = newContent.body
-                const uploadedUrls: { url: string; publicID: string }[] = []
-
-                if (imga?.["content_image"]?.length > 0) {
-                    for (let i = 0; i < imga["content_image"].length; i++) {
-                        const uploaded: any = await fileUploadHelper.uploadToCloud(
-                            imga["content_image"][i]
-                        )
-                        uploadedUrls.push({
-                            url: uploaded.secure_url,
-                            publicID: uploaded.public_id,
-                        })
-                        body = body.replace(`__IMAGE_${i}__`, uploaded.secure_url)
-                    }
-                }
-
-                updatedDoc.bodyImages = uploadedUrls
-                updatedDoc.content.body = body
             }
+
+            if (imga?.["content_image"]?.length > 0) {
+                for (let i = 0; i < imga["content_image"].length; i++) {
+                    const uploaded: any = await fileUploadHelper.uploadToCloud(
+                        imga["content_image"][i]
+                    );
+                    uploadedUrls.push({
+                        url: uploaded.secure_url,
+                        publicID: uploaded.public_id,
+                    });
+                    body = body.replace(`__IMAGE_${i}__`, uploaded.secure_url);
+                }
+            }
+
+            updatedDoc.bodyImages = uploadedUrls;
+            updatedDoc.content = body;
         }
-        
 
         const result = await collection.updateOne(
             { _id: new ObjectId(id) },
             { $set: updatedDoc }
-        )
+        );
 
-        if(!result?.modifiedCount){
-            sendResponse(res, {
+        if (!result?.modifiedCount) {
+            return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: "Blog updated successfully",
+                message: "No changes were made to the blog.",
                 data: result,
-            })
+            });
         }
+
         sendResponse(res, {
             statusCode: 200,
             success: true,
             message: "Blog updated successfully",
             data: result,
-        })
+        });
     } catch (err) {
-        console.log(err)
+        console.error(err);
         sendResponse(res, {
             statusCode: 500,
             success: false,
             message: "Internal server error",
             data: err,
-        })
+        });
     }
-}
+};
+
 
 const deleteBlog = async (req: AuthenticatedRequest, res: Response) => {
     try {
