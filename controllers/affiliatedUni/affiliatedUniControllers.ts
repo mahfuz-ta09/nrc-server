@@ -29,7 +29,7 @@ export const createAffiliatedUni = async (req: AuthenticatedRequest, res: Respon
             meta_keywords,
             } = req.body
 
-            if (!name || !slug || !location || !meta_title || !meta_description) {
+            if (!name || !slug || !location || !meta_title) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
