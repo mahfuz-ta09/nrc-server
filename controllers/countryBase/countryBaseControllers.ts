@@ -93,11 +93,11 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
         await authChecker(req,res,["admin","super_admin"])
 
         const id = req.params.id
-        const { country, serial, slug , currency , content } = req.body
+        const { country, serial, slug , currency , content, meta_title , meta_description } = req.body
         const files: any = req.files
 
 
-        if (!country && !serial && !slug && !files["countryFlag"]?.[0] && !files["famousFile"]?.[0] && !currency && !content) {
+        if (!country && !serial && !slug && !files["countryFlag"]?.[0] && !files["famousFile"]?.[0] && !currency && !content && !meta_title && !meta_description) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -150,6 +150,8 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
         const insertedObject = {
             country: country ? country.toLowerCase() : countryObj.country,
             slug: slug ? slug.toLowerCase() : countryObj.slug,
+            meta_title: meta_title ? meta_title : countryObj?.meta_title,
+            meta_description:meta_description ? meta_description : countryObj?.meta_description,
             currency: currency ? currency : countryObj.currency,
             serial: serial ? Number(serial) : Number(countryObj.serial),
             
@@ -234,10 +236,10 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
         const collection = db.collection('country-uni')
         await authChecker(req,res,["admin","super_admin"])
         
-        const { country , serial , slug , currency , content } = req.body
+        const { country , serial , slug , currency , content, meta_description , meta_title } = req.body
         const files:any = req.files
 
-        if(!country || !serial || !slug || !files["countryFlag"]?.[0] || !files["famousFile"]?.[0] || !currency || !content){
+        if(!country || !serial || !slug || !files["countryFlag"]?.[0] || !files["famousFile"]?.[0] || !currency || !content || !meta_title){
             return sendResponse( res, {
                 statusCode: 400,
                 success: false,
@@ -266,9 +268,12 @@ const createCountryBase = async( req:AuthenticatedRequest, res:Response) => {
 
 
         const insertedObject:any = {
+            type:"study-option",
             country : country.toLowerCase(),
             slug : slug,
-            currency:currency,
+            meta_title: meta_title,
+            meta_description:meta_description,
+            currency: currency,
             serial : Number(serial),
             
             content:content,
@@ -348,7 +353,7 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'Id missing!!!',
+                message: 'Id missing.',
             });
         }
 
@@ -359,7 +364,7 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'No matching data found with the id!!!',
+                message: 'No matching data found with the id.',
             });
         }
         
@@ -367,7 +372,7 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
-                message: 'First delete all university!!!',
+                message: 'First delete all universities',
             });
         }
 
@@ -409,6 +414,46 @@ const deleteCountryBase = async(req:AuthenticatedRequest , res: Response) =>{
     }
 }
 
+const getCountryBySlug = async(req:AuthenticatedRequest , res: Response) =>{
+    try{
+        const db = getDb()
+        const collection = db.collection('country-uni') 
+        
+        const slug = req.params.slug 
+        if(!slug){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: 'slug is missing',
+            })
+        }
+
+        const query = { slug: slug }
+        const country = await collection.findOne(query)
+
+        if(!country){
+            return sendResponse(res,{
+                statusCode: 400,
+                success: false,
+                message: 'no data found with this slug',
+            })
+        }
+        
+            return sendResponse(res,{
+                statusCode: 200,
+                success: true,
+                message: 'data found',
+                data: country
+            })
+    }catch(err){
+        console.log(err)
+        sendResponse(res,{
+            statusCode:500,
+            success:false,
+            message: "something went wrong."
+        })
+    }
+}
 
 
 
@@ -417,5 +462,6 @@ module.exports = {
     getAllCountryBase,
     editCountryBase,
     deleteCountryBase,
-    getAllCountryBaseName
+    getAllCountryBaseName,
+    getCountryBySlug
 }

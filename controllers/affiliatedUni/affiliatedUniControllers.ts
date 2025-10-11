@@ -18,16 +18,7 @@ export const createAffiliatedUni = async (req: AuthenticatedRequest, res: Respon
         const blogsCollection = db.collection("blogs")
         await authChecker(req, res, ["super_admin", "admin"])
 
-        const {
-            name,
-            slug,
-            location,
-            content,
-            status,
-            meta_title,
-            meta_description,
-            meta_keywords,
-            } = req.body
+        const { name ,slug , location , content, status , meta_title , meta_description , meta_keywords } = req.body
 
             if (!name || !slug || !location || !meta_title) {
             return sendResponse(res, {
