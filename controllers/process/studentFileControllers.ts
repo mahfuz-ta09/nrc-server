@@ -12,6 +12,7 @@ interface AuthenticatedRequest extends Request {
     user?: any
 }
 
+
 const emaiReg =
   /^(([^<>()[\]\\.,:\s@"]+(\.[^<>()[\]\\.,:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 
@@ -124,13 +125,13 @@ export const postStudentFile = async (req: Request, res: Response) => {
             },
           ],
           applicationState: {
-            file: { requiredSubmitted: false, requiredVerified: false },
-            personalData: { requiredSubmitted: false, requiredVerified: false },
-            englishProfData: { requiredSubmitted: false, requiredVerified: false },
-            englishTest: { requiredSubmitted: false, requiredVerified: false },
+            file: { requiredSubmitted: true, requiredVerified: true },
+            personalData: { requiredSubmitted: true, requiredVerified: true },
+            englishProfData: { requiredSubmitted: true, requiredVerified: true },
+            englishTest: { requiredSubmitted: true, requiredVerified: true },
             universityAssigned: {
-              requiredSubmitted: false,
-              requiredVerified: false,
+              requiredSubmitted: true,
+              requiredVerified: true,
             },
             applicationFinished: { finished: false, archived: false },
           },
@@ -209,13 +210,39 @@ export const getStudentFileState = async(req: AuthenticatedRequest,res: Response
       const db = getDb()
       const filesCollection = db.collection('application')
       await authChecker(req,res,["super_admin","admin","agent","sub_agent"])
+      
+      const values = await filesCollection.find({}).toArray();
 
-      const requestedBy = req?.user
+      const summary:any = {
+          file: { requiredSubmitted: 0, requiredVerified: 0 },
+          personalData: { requiredSubmitted: 0, requiredVerified: 0 },
+          englishProfData: { requiredSubmitted: 0, requiredVerified: 0 },
+          englishTest: { requiredSubmitted: 0, requiredVerified: 0 },
+          universityAssigned: { requiredSubmitted: 0, requiredVerified: 0 },
+      };
+      
+      values.forEach((doc:any) => {
+        const app = doc.applicationState || {};
+        
+        if(!app?.applicationFinished?.archived && !app?.applicationFinished?.finished){
+          for (const key of Object.keys(summary)) {
+            const section = app[key];
 
-      const queryForUser = {
-        // email
-      }
-      console.log(requestedBy)
+            if (section) {
+              if (section.requiredSubmitted) summary[key].requiredSubmitted++;
+              if (section.requiredVerified) summary[key].requiredVerified++;
+            }
+          }
+        }
+      });
+
+      
+      sendResponse(res, {
+          message: "Student file states retrieved successfully",
+          success: true,
+          statusCode: 200,
+          data: summary,
+      });
     }catch(err){
       console.error(err)
       sendResponse(res, {

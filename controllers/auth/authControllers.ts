@@ -13,6 +13,7 @@ const emaiReg =
 
 
 
+
 const setCookie = (res: Response,name: string,value: string,maxAge?: number) => {
     
     if(name==='nrc_ref') res.cookie(name, value, {
@@ -344,6 +345,7 @@ const getAccessToken = async (req: Request, res: Response) => {
         const token = req.cookies?.nrc_ref
         
         if (!token) {
+            clearAuthCookies(res)
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -355,15 +357,15 @@ const getAccessToken = async (req: Request, res: Response) => {
         try {
             decoded = await jwt.verify(token, process.env.REFRESHTOKEN)
         } catch (jwtError: any) {
-        if (jwtError.name === "TokenExpiredError") {
-            clearAuthCookies(res)
-            return sendResponse(res, {
-                statusCode: 400,
-                success: false,
-                message: "Refresh token expired. Please login again.",
-            })
-        }
-        throw jwtError
+            if (jwtError.name === "TokenExpiredError") {
+                clearAuthCookies(res)
+                return sendResponse(res, {
+                    statusCode: 400,
+                    success: false,
+                    message: "Refresh token expired. Please login again.",
+                })
+            }
+            throw jwtError
         }
 
         const db = await getDb()
