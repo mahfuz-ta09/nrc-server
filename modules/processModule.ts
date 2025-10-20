@@ -1,9 +1,10 @@
 const express = require('express')
 const router = express.Router()
-import { getStudentFileState, postStudentFile } from "../controllers/process/studentFileControllers"
 import { fileUploadHelper } from "../helper/fileUploadHealper"
 const verifyUser = require('../middleware/verifyUser')
-const { getAllData , createProceed , editProcessData , deleteProcessData , getSingleData } = require('../controllers/process/processControllers')
+const { getAllData , createProceed , editProcessData , 
+    deleteProcessData , getSingleData } = require('../controllers/process/processControllers')
+import { getStudentFileState, postStudentFile, getCondisionedFiles } from "../controllers/process/studentFileControllers"
 
 // course editorials 
 router.get('/all',
@@ -40,18 +41,17 @@ router.delete('/delete/:id',
 
 // these routes below will be handled by super admin/admin/agent/sub/agents
 
-
-    
 router.post('/file',  
     verifyUser,
     postStudentFile)
 
-
-    
 router.get('/stat',  
     verifyUser,
     getStudentFileState)
 
+router.get('/get-all',  
+    verifyUser,
+    getCondisionedFiles)
 
 
 export const precessModule = router

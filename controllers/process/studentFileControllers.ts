@@ -83,21 +83,8 @@ export const postStudentFile = async (req: Request, res: Response) => {
             examTakenTime,
             allowEditPermission: false,
           },
-          prefferedUniversities:[
+          prefferedUniSub:[
               {}
-          ],
-          assignedUniversities: [
-            {
-              schoolership ,
-              intake ,
-              program ,
-              destinationCountry ,
-              feePaid: false,
-              uniName ,
-              courseStartDate ,
-              preferedSubjects: [] ,
-              allowEditPermission: false,
-            },
           ],
           studentsFile: {
             permission,
@@ -125,14 +112,10 @@ export const postStudentFile = async (req: Request, res: Response) => {
             },
           ],
           applicationState: {
-            file: { requiredSubmitted: true, requiredVerified: true },
-            personalData: { requiredSubmitted: true, requiredVerified: true },
-            englishProfData: { requiredSubmitted: true, requiredVerified: true },
-            englishTest: { requiredSubmitted: true, requiredVerified: true },
-            universityAssigned: {
-              requiredSubmitted: true,
-              requiredVerified: true,
-            },
+            personalInfo: { requiredSubmission: true, requiredVerification: true },
+            englishProficiency: { requiredSubmission: true, requiredVerification: true },
+            prefferedUniSub: { requiredSubmission: true, requiredVerification: true },
+            studentsFile: { requiredSubmission: true, requiredVerification: true },
             applicationFinished: { finished: false, archived: false },
           },
           createdAt: format(new Date(), "MM/dd/yyyy"),
@@ -213,12 +196,12 @@ export const getStudentFileState = async(req: AuthenticatedRequest,res: Response
       
       const values = await filesCollection.find({}).toArray();
 
+      
       const summary:any = {
-          file: { requiredSubmitted: 0, requiredVerified: 0 },
-          personalData: { requiredSubmitted: 0, requiredVerified: 0 },
-          englishProfData: { requiredSubmitted: 0, requiredVerified: 0 },
-          englishTest: { requiredSubmitted: 0, requiredVerified: 0 },
-          universityAssigned: { requiredSubmitted: 0, requiredVerified: 0 },
+          personalInfo: { requiredSubmission: 0, requiredVerification: 0 },
+          englishProficiency: { requiredSubmission: 0, requiredVerification: 0 },
+          prefferedUniSub: { requiredSubmission: 0, requiredVerification: 0 },
+          studentsFile: { requiredSubmission: 0, requiredVerification: 0 },
       };
       
       values.forEach((doc:any) => {
@@ -229,8 +212,8 @@ export const getStudentFileState = async(req: AuthenticatedRequest,res: Response
             const section = app[key];
 
             if (section) {
-              if (section.requiredSubmitted) summary[key].requiredSubmitted++;
-              if (section.requiredVerified) summary[key].requiredVerified++;
+              if (section.requiredSubmission) summary[key].requiredSubmission++;
+              if (section.requiredVerification) summary[key].requiredVerification++;
             }
           }
         }
@@ -251,6 +234,38 @@ export const getStudentFileState = async(req: AuthenticatedRequest,res: Response
         statusCode: 500,
       })
     }
+}
+
+export const getCondisionedFiles = async(req: AuthenticatedRequest,res: Response) =>{
+    try{
+      const db = getDb()
+      const filesCollection = db.collection('application')
+      await authChecker(req,res,["super_admin","admin","agent","sub_agent"])
+      const {condition,section} = req.params
+
+      console.log("I am trying to access the data",req.query)
+
+      const query:any = {}
+      query[`applicationState.${section}.${condition}`] = true
+      const files = await filesCollection.find(query).toArray()
+
+      console.log(files)
+      sendResponse(res, {
+
+          message: "Conditioned student files retrieved successfully",
+          success: true,
+          statusCode: 200,
+          data: files,
+      });
+    }catch(err){
+      console.error(err)
+      sendResponse(res, {
+        message: "Something went wrong!",
+        success: false,
+
+        statusCode: 500,
+      })
+    } 
 }
 
 export const getAllStudentFiles = async (req: Request, res: Response) => {
