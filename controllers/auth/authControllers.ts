@@ -354,6 +354,7 @@ const getAccessToken = async (req: Request, res: Response) => {
         }
 
         let decoded
+        
         try {
             decoded = await jwt.verify(token, process.env.REFRESHTOKEN)
         } catch (jwtError: any) {
