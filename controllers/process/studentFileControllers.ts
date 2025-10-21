@@ -60,6 +60,7 @@ export const postStudentFile = async (req: Request, res: Response) => {
         }
 
         const fileToInsert = {
+          permission:{studentsFile: false, englishProficiency: false, personalInfo: false, prefferedUniSub: false},
           personalInfo: {
             name,
             email,
@@ -87,18 +88,16 @@ export const postStudentFile = async (req: Request, res: Response) => {
               {}
           ],
           studentsFile: {
-            permission,
-            ssc: { url: "", publicId: "" },
-            hsc: { url: "", publicId: "" },
-            bachelor: { url: "", publicId: "" },
-            master: { url: "", publicId: "" },
-            other: { url: "", publicId: "" },
-            sourceOfFund: { url: "", publicId: "" },
-            sponsorAffidavit: { url: "", publicId: "" },
-            ministryAttestation: { url: "", publicId: "" },
-            accommodationConfirmation: { url: "", publicId: "" },
-            proficiencyCirtificate: { url: "", publicId: "" },
-            editHistoryByStudent:[]
+            ssc: { fileFor:"",url: "", publicId: "" },
+            hsc: { fileFor:"",url: "", publicId: "" },
+            bachelor: { fileFor:"",url: "", publicId: "" },
+            master: { fileFor:"",url: "", publicId: "" },
+            other: { fileFor:"",url: "", publicId: "" },
+            sourceOfFund: { fileFor:"",url: "", publicId: "" },
+            sponsorAffidavit: { fileFor:"",url: "", publicId: "" },
+            ministryAttestation: { fileFor:"",url: "", publicId: "" },
+            accommodationConfirmation: { fileFor:"",url: "", publicId: "" },
+            proficiencyCirtificate: { fileFor:"",url: "", publicId: "" },
           },
           fileEditActivity: [
             {
@@ -111,6 +110,8 @@ export const postStudentFile = async (req: Request, res: Response) => {
               createdAt: format(new Date(), "MM/dd/yyyy"),
             },
           ],
+          applicationStatus:[],
+          editHistoryByStudent:[],
           applicationState: {
             personalInfo: { requiredSubmission: true, requiredVerification: true },
             englishProficiency: { requiredSubmission: true, requiredVerification: true },
@@ -241,17 +242,20 @@ export const getCondisionedFiles = async(req: AuthenticatedRequest,res: Response
       const db = getDb()
       const filesCollection = db.collection('application')
       await authChecker(req,res,["super_admin","admin","agent","sub_agent"])
-      const {condition,section} = req.params
-
-      console.log("I am trying to access the data",req.query)
-
+    
       const query:any = {}
-      query[`applicationState.${section}.${condition}`] = true
+      
+      Object.entries(req.query).forEach(([key,val]) => {
+        Object.entries(val as object).forEach(([subKey,subVal]) => {
+          query[`applicationState.${key}.${subKey}`] = Boolean(subVal) 
+        })
+      })
+      
+      
       const files = await filesCollection.find(query).toArray()
 
-      console.log(files)
+      
       sendResponse(res, {
-
           message: "Conditioned student files retrieved successfully",
           success: true,
           statusCode: 200,
@@ -262,7 +266,6 @@ export const getCondisionedFiles = async(req: AuthenticatedRequest,res: Response
       sendResponse(res, {
         message: "Something went wrong!",
         success: false,
-
         statusCode: 500,
       })
     } 
