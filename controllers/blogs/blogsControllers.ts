@@ -104,7 +104,6 @@ const createBlog = async (req: AuthenticatedRequest, res: Response) => {
             uploadPromises.push(Promise.resolve([]))
         }
 
-        console.log(content)
         const [headerImage, contentUploads] = await Promise.all(uploadPromises)
         
         

@@ -55,46 +55,46 @@ const logIn = async (req: Request, res: Response) => {
         const { email, password } = req.body
 
         if (!email || !password) {
-        return sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "No empty field allowed!!!",
-        })
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "No empty field allowed!!!",
+            })
         }
 
         if (emaiReg.test(email) === false) {
-        return sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "Invalid email format!!!",
-        })
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Invalid email format!!!",
+            })
         }
 
         if (password.length < 6) {
-        return sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "Password is too short!!!",
-        })
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Password is too short!!!",
+            })
         }
 
         const user = await collection.findOne({ email })
 
         if (!user || user.status !== "active") {
-        return sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "No user exists with this email!!!",
-        })
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "No user exists with this email!!!",
+            })
         }
 
         const pass = await bcrypt.compare(password, user.password)
         if (!pass) {
-        return sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "Invalid password!!!",
-        })
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Invalid password!!!",
+            })
         }
 
         const userData = {
@@ -148,19 +148,19 @@ const signUp = async (req: Request, res: Response) => {
         }
 
         if (!emaiReg.test(email)) {
-        return sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "Invalid email format",
-        })
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Invalid email format",
+            })
         }
 
         if (password.length < 6) {
-        return sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: "Password must be at least 6 characters long",
-        })
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Password must be at least 6 characters long",
+            })
         }
 
         const existingUser = await collection.findOne({ email })

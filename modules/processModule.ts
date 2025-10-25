@@ -43,6 +43,9 @@ router.delete('/delete/:id',
 
 router.post('/file',  
     verifyUser,
+    fileUploadHelper.upload.fields([
+        { name: "files", maxCount: 25 },
+    ]),
     postStudentFile)
 
 router.get('/stat',  
