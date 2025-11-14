@@ -4,7 +4,7 @@ import { fileUploadHelper } from "../helper/fileUploadHealper"
 const verifyUser = require('../middleware/verifyUser')
 const { getAllData , createProceed , editProcessData , 
     deleteProcessData , getSingleData } = require('../controllers/process/processControllers')
-import { getStudentFileState, postStudentFile, getCondisionedFiles } from "../controllers/process/studentFileControllers"
+import { getStudentFileState, postStudentFile, getCondisionedFiles, editStudentFile } from "../controllers/process/studentFileControllers"
 
 // course editorials 
 router.get('/all',
@@ -47,6 +47,13 @@ router.post('/file',
         { name: "files", maxCount: 25 },
     ]),
     postStudentFile)
+    
+router.patch('/update-file/:id',  
+    verifyUser,
+    fileUploadHelper.upload.fields([
+        { name: "files", maxCount: 25 },
+    ]),
+    editStudentFile)
 
 router.get('/stat',  
     verifyUser,

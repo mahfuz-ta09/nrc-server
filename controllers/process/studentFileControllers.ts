@@ -86,11 +86,10 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
             stage: "created",
             by:{
               id: req.user.id,
-              name: req.user.name,
+              name: req.user.email,
               role: req.user.role,
             },
             date: format(new Date(), "MM/dd/yyyy"),
-            comment: "Application initiated",
           },
         ],
 
@@ -99,12 +98,12 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
         communication: [],
 
         applicationState: {
-          personalInfo: { requiredSubmission: true, requiredVerification: true },
-          englishProficiency: { requiredSubmission: true, requiredVerification: true },
-          prefferedUniSub: { requiredSubmission: true, requiredVerification: true },
-          studentsFile: { requiredSubmission: true, requiredVerification: true },
-          educationBackground: { requiredSubmission: true, requiredVerification: true },
-          applicationFinished: { finished: false, archived: false },
+            personalInfo: { complete: true, verified: true },
+            englishProficiency: { complete: true, verified: true },
+            prefferedUniSub: { complete: true, verified: true },
+            studentsFile: { complete: true, verified: true },
+            educationBackground: { complete: true, verified: true },
+            applicationFinished: { finished: false, archived: false },
         },
 
         progress: {
@@ -118,7 +117,7 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
 
         referral: "",
         createdAt: format(new Date(), "MM/dd/yyyy"),
-        lastUpdated: format(new Date(), "MM/dd/yyyy HH:mm"),
+        lastUpdated: format(new Date(), "MM/dd/yyyy"),
       };
  
       const user = await usersCollection.findOne(query)
@@ -200,6 +199,115 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
     }
 }
 
+export const editStudentFile = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const db = getDb();
+      const filesCollection = db.collection("application");
+      await authChecker(req, res, ["super_admin", "admin", "agent", "sub_agent", "student"]);
+
+      const recievedData = req.body || {};
+      const insertedData: any = {};
+      // console.log(req.body.englishProficiency,"submitted bodyyyyyyyyyyyyyyy")
+      
+      if (recievedData.personalInfo) {
+        Object.entries(recievedData.personalInfo).forEach(([key, value]: any) => {
+          insertedData[key] = value;
+        });
+      }
+
+      if( recievedData.preferredUniversities) {
+        insertedData.preferredUniversities = recievedData.preferredUniversities;
+      }
+
+      if (recievedData.academicInfo) {
+        insertedData.academicInfo = recievedData.academicInfo;
+      }
+
+      if (recievedData.academicInfo) {
+        insertedData.academicInfo = recievedData.academicInfo;
+      }
+
+      if (recievedData.permission) {
+        insertedData.permission = {};
+        Object.entries(recievedData.permission).forEach(([key, value]: any) => {
+          if (value !== "undefined" && value !== "") insertedData.permission[key] = value === "true";
+        });
+      }
+
+      if (recievedData.applicationState) {
+        insertedData.applicationState = {};
+        Object.entries(recievedData.applicationState).forEach(([section, state]: any) => {
+          const sectionData: any = {};
+          
+          if (state.verified !== undefined && state.verified !== "")
+            sectionData.verified = state.verified === "true";
+          if (state.complete !== undefined && state.complete !== "")
+            sectionData.complete = state.complete === "true";
+          if (state.finished !== undefined && state.finished !== "")
+            sectionData.finished = state.finished === "true";
+          if (state.archived !== undefined && state.archived !== "")
+            sectionData.archived = state.archived === "true";
+
+          if (Object.keys(sectionData).length > 0)
+            insertedData.applicationState[section] = sectionData;
+        });
+      }
+
+      
+
+      const flattenForSet = (obj: any, prefix = ""): Record<string, any> => {
+        return Object.entries(obj).reduce((acc: any, [key, value]) => {
+          const path = prefix ? `${prefix}.${key}` : key;
+          if (typeof value === "object" && !Array.isArray(value) && value !== null) {
+            Object.assign(acc, flattenForSet(value, path));
+          } else {
+            acc[path] = value;
+          }
+          return acc;
+        }, {});
+      };
+
+
+      const setData = flattenForSet(insertedData);
+
+      if (recievedData.englishProficiency) {
+        setData.englishProficiency = recievedData.englishProficiency;
+      }
+
+      const response = await filesCollection.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { 
+          $set: setData ,
+          // $push: {
+          //   applicationStatus: {
+          //     stage: "updated",
+          //     by: {
+          //       id: req.user.id,
+          //       name: req.user.email,
+          //       role: req.user.role,
+          //     },
+          //     date: format(new Date(), "MM/dd/yyyy"),
+          //   }
+          // }
+        }
+      );
+
+      // console.log("Updated input data set:", setData);
+      sendResponse(res, {
+        message: "Data updated successfully",
+        success: true,
+        statusCode: 200,
+        data: response,
+      });
+    } catch (err) {
+      console.error(err);
+      sendResponse(res, {
+        message: "Something went wrong!",
+        success: false,
+        statusCode: 500,
+      });
+    }
+};
 
 export const getStudentFileState = async(req: AuthenticatedRequest,res: Response) =>{
     try{
@@ -209,12 +317,11 @@ export const getStudentFileState = async(req: AuthenticatedRequest,res: Response
       
       const values = await filesCollection.find({}).toArray();
 
-      
       const summary:any = {
-          personalInfo: { requiredSubmission: 0, requiredVerification: 0 },
-          englishProficiency: { requiredSubmission: 0, requiredVerification: 0 },
-          prefferedUniSub: { requiredSubmission: 0, requiredVerification: 0 },
-          studentsFile: { requiredSubmission: 0, requiredVerification: 0 },
+          personalInfo: { complete: 0, verified: 0 },
+          englishProficiency: { complete: 0, verified: 0 },
+          prefferedUniSub: { complete: 0, verified: 0 },
+          studentsFile: { complete: 0, verified: 0 },
       };
       
       values.forEach((doc:any) => {
@@ -225,8 +332,8 @@ export const getStudentFileState = async(req: AuthenticatedRequest,res: Response
             const section = app[key];
 
             if (section) {
-              if (section.requiredSubmission) summary[key].requiredSubmission++;
-              if (section.requiredVerification) summary[key].requiredVerification++;
+              if (section.complete) summary[key].complete++;
+              if (section.verified) summary[key].verified++;
             }
           }
         }
@@ -249,46 +356,51 @@ export const getStudentFileState = async(req: AuthenticatedRequest,res: Response
     }
 }
 
-export const getCondisionedFiles = async(req: AuthenticatedRequest,res: Response) =>{
-    try{
-      const db = getDb()
-      const filesCollection = db.collection('application')
-      await authChecker(req,res,["super_admin","admin","agent","sub_agent"])
-    
-      const query:any = {}
-      
-      Object.entries(req.query).forEach(([key,val]) => {
-        Object.entries(val as object).forEach(([subKey,subVal]) => {
-          query[`applicationState.${key}.${subKey}`] = Boolean(subVal) 
-        })
-      })
-      
-      if(Object.keys(query).length === 0){
+
+export const getCondisionedFiles = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const db = getDb();
+      const filesCollection = db.collection("application");
+      await authChecker(req, res, ["super_admin", "admin", "agent", "sub_agent"]);
+
+      const query: any = {};
+
+      Object.entries(req.query).forEach(([section, sectionVal]) => {
+        Object.entries(sectionVal as object).forEach(([key, val]) => {
+          if (val === "true" || val === "false") {
+            query[`applicationState.${section}.${key}`] = val === "true";
+          }
+        });
+      });
+
+      if (Object.keys(query).length === 0) {
         return sendResponse(res, {
-          message: "No query parameters provided",
+          message: "No valid query parameters provided",
           success: false,
           statusCode: 400,
-        })
+        });
       }
-      
-      const files = await filesCollection.find(query).toArray()
 
-      
+      // console.log("✅ Final Mongo Query:", query);
+
+      const files = await filesCollection.find(query).toArray();
+
       sendResponse(res, {
-          message: "Conditioned student files retrieved successfully",
-          success: true,
-          statusCode: 200,
-          data: files,
+        message: "Conditioned student files retrieved successfully",
+        success: true,
+        statusCode: 200,
+        data: files,
       });
-    }catch(err){
-      console.error(err)
+    } catch (err) {
+      console.error(err);
       sendResponse(res, {
         message: "Something went wrong!",
         success: false,
         statusCode: 500,
-      })
-    } 
-}
+      });
+    }
+};
+
 
 export const getAllStudentFiles = async (req: Request, res: Response) => {
     try {
