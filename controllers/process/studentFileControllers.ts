@@ -86,7 +86,7 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
             stage: "created",
             by:{
               id: req.user.id,
-              name: req.user.email,
+              email: req.user.email,
               role: req.user.role,
             },
             date: format(new Date(), "MM/dd/yyyy"),
@@ -160,7 +160,7 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
         const content = `
           <div style="font-family: Arial, sans-serif color: #333 line-height: 1.6">
               <h2 style="color: #2c3e50">🔑 NRC Educational Consultants Ltd. - New Account</h2>
-              <p>Hello <strong>${name}</strong>,</p>
+              <p>Hello <strong>${req.body.name}</strong>,</p>
               <p>An account has been created for you with email <strong>${req.body.email}</strong>.</p>
               <p>Your temporary password is:</p>
               <div style="background: #f4f4f4 padding: 12px 20px display: inline-block border-radius: 6px margin: 15px 0 font-size: 18px font-weight: bold letter-spacing: 2px color: #2c3e50">
@@ -207,7 +207,7 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
 
       const recievedData = req.body || {};
       const insertedData: any = {};
-      // console.log(req.body.englishProficiency,"submitted bodyyyyyyyyyyyyyyy")
+      const changes: string[] = [];
       
       if (recievedData.personalInfo) {
         Object.entries(recievedData.personalInfo).forEach(([key, value]: any) => {
@@ -215,45 +215,60 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
         });
       }
 
-      if( recievedData.preferredUniversities) {
+      if (recievedData.academicInfo) {
+        insertedData.academicInfo = recievedData.academicInfo;
+        changes.push("personal & academic info updated")
+      } 
+
+      if (recievedData.preferredUniversities && recievedData.preferredUniversities.length > 0) {
         insertedData.preferredUniversities = recievedData.preferredUniversities;
+
+        changes.push("assigned universities updated");
       }
 
-      if (recievedData.academicInfo) {
-        insertedData.academicInfo = recievedData.academicInfo;
-      }
 
-      if (recievedData.academicInfo) {
-        insertedData.academicInfo = recievedData.academicInfo;
-      }
 
       if (recievedData.permission) {
         insertedData.permission = {};
+
         Object.entries(recievedData.permission).forEach(([key, value]: any) => {
-          if (value !== "undefined" && value !== "") insertedData.permission[key] = value === "true";
+          if (value === "" || value === "undefined" || value === undefined) return;
+
+          insertedData.permission[key] = value === "true";
+
+          changes.push(`edit permission updated`);
         });
       }
+
+
 
       if (recievedData.applicationState) {
         insertedData.applicationState = {};
+
         Object.entries(recievedData.applicationState).forEach(([section, state]: any) => {
           const sectionData: any = {};
-          
-          if (state.verified !== undefined && state.verified !== "")
+          if (state.verified === "true" || state.verified === "false") {
             sectionData.verified = state.verified === "true";
-          if (state.complete !== undefined && state.complete !== "")
-            sectionData.complete = state.complete === "true";
-          if (state.finished !== undefined && state.finished !== "")
-            sectionData.finished = state.finished === "true";
-          if (state.archived !== undefined && state.archived !== "")
-            sectionData.archived = state.archived === "true";
+          }
 
-          if (Object.keys(sectionData).length > 0)
+          if (state.complete === "true" || state.complete === "false") {
+            sectionData.complete = state.complete === "true";
+          }
+
+          if (state.finished === "true" || state.finished === "false") {
+            sectionData.finished = state.finished === "true";
+          }
+
+          if (state.archived === "true" || state.archived === "false") {
+            sectionData.archived = state.archived === "true";
+          }
+
+          if (Object.keys(sectionData).length > 0) {
             insertedData.applicationState[section] = sectionData;
+            changes.push(`application status updated`);
+          }
         });
       }
-
-      
 
       const flattenForSet = (obj: any, prefix = ""): Record<string, any> => {
         return Object.entries(obj).reduce((acc: any, [key, value]) => {
@@ -267,32 +282,87 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
         }, {});
       };
 
+      
+      if(req.body.deletedFiles){
+        const deletedFiles = JSON.parse(req.body.deletedFiles);
+        console.log(" req.body.deletedFiles ")
+        changes.push(`files deleted`)
+        
+        for(const id of deletedFiles){
+          await fileUploadHelper.deleteFromCloud(id)
+        }
+      }
 
+      const filesArray:{fileName:string,url:string,publicID:string,uploadedAt:string}[] = []
+      
+      if(req.files && Object.keys(req.files).length > 0){
+        const addedFiles:any = Array.isArray(req.files)
+          ? req.files 
+          : (req.files as { [fieldname: string]: Express.Multer.File[] })?.files;
+          
+        for(const file of addedFiles){
+          const uploaded:any = await fileUploadHelper.uploadToCloud(file)
+          console.log(" file uploaded ")
+          changes.push(`file ${file.originalname} added`)
+          
+          filesArray.push({
+            fileName: file.originalname,
+            url: uploaded.secure_url,
+            publicID: uploaded.public_id,
+            uploadedAt: format(new Date(), "MM/dd/yyyy HH:mm"),
+          })
+        }
+      }
       const setData = flattenForSet(insertedData);
 
       if (recievedData.englishProficiency) {
         setData.englishProficiency = recievedData.englishProficiency;
       }
 
+      const deletedArray = req.body.deletedFiles ? JSON.parse(req.body.deletedFiles) : [];
+
+       
+      const comment = changes.join(", ");
       const response = await filesCollection.updateOne(
         { _id: new ObjectId(req.params.id) },
-        { 
-          $set: setData ,
-          // $push: {
-          //   applicationStatus: {
-          //     stage: "updated",
-          //     by: {
-          //       id: req.user.id,
-          //       name: req.user.email,
-          //       role: req.user.role,
-          //     },
-          //     date: format(new Date(), "MM/dd/yyyy"),
-          //   }
-          // }
-        }
+        [
+          {
+            $set: {
+              ...setData,
+              files: {
+                $concatArrays: [
+                  {
+                    $filter: {
+                      input: "$files",
+                      as: "file",
+                      cond: { $not: { $in: ["$$file.publicID", deletedArray] } }
+                    }
+                  },
+                  filesArray
+                ]
+              },
+              applicationStatus: {
+                $concatArrays: [
+                  "$applicationStatus",
+                  [
+                    {
+                      stage: "updated",
+                      by: {
+                        id: req.user.id,
+                        email: req.user.email,
+                        role: req.user.role
+                      },
+                      comment: comment.trim(),
+                      date: format(new Date(), "MM/dd/yyyy")
+                    }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
       );
-
-      // console.log("Updated input data set:", setData);
+      
       sendResponse(res, {
         message: "Data updated successfully",
         success: true,
