@@ -285,7 +285,6 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
       
       if(req.body.deletedFiles){
         const deletedFiles = JSON.parse(req.body.deletedFiles);
-        console.log(" req.body.deletedFiles ")
         changes.push(`files deleted`)
         
         for(const id of deletedFiles){
@@ -302,7 +301,6 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
           
         for(const file of addedFiles){
           const uploaded:any = await fileUploadHelper.uploadToCloud(file)
-          console.log(" file uploaded ")
           changes.push(`file ${file.originalname} added`)
           
           filesArray.push({
