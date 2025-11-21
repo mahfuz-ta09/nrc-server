@@ -208,7 +208,7 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
       const recievedData = req.body || {};
       const insertedData: any = {};
       const changes: string[] = [];
-      
+
       if (recievedData.personalInfo) {
         Object.entries(recievedData.personalInfo).forEach(([key, value]: any) => {
           insertedData[key] = value;
@@ -222,11 +222,8 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
 
       if (recievedData.preferredUniversities && recievedData.preferredUniversities.length > 0) {
         insertedData.preferredUniversities = recievedData.preferredUniversities;
-
         changes.push("assigned universities updated");
       }
-
-
 
       if (recievedData.permission) {
         insertedData.permission = {};
@@ -235,7 +232,6 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
           if (value === "" || value === "undefined" || value === undefined) return;
 
           insertedData.permission[key] = value === "true";
-
           changes.push(`edit permission updated`);
         });
       }
