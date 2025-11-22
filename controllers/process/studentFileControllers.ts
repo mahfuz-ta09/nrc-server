@@ -58,10 +58,10 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
 
       const fileToInsert = {
         permission: {
-          permission_personalInfo: Boolean(req.body.permission_personalInfo),
-          permission_englishProficiency: Boolean(req.body.permission_englishProficiency),
-          permission_prefferedUniSub: Boolean(req.body.permission_prefferedUniSub),
-          permission_studentsFile: Boolean(req.body.permission_studentsFile)
+          permission_personalInfo: false,
+          permission_englishProficiency: false,
+          permission_prefferedUniSub: false,
+          permission_studentsFile: false
         },
         
         name: req.body.name,
@@ -146,13 +146,15 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
           email: req.body.email,
           password: hashedPassword,
           role: "student",
-          roleData:{},
+          roleData:{
+            role: "student",
+            status: "active",
+          },
           requiredPassChange: true,
-          status: "active",
           image: { url: "", publicId: "" },
-          phone: null,
-          dob: "",
-          country: "",
+          phone: req.body.phone,
+          dob: req.body.dob ,
+          country: req.body.countryCitizen,
           review: "",
           createdAt: format(new Date(), "MM/dd/yyyy"),
         }
@@ -488,13 +490,16 @@ export const getAllStudentFiles = async (req: Request, res: Response) => {
 }
 
 
-export const getStudentFileById = async (req: Request, res: Response) => {
+export const getStudentFileByEmail = async (req: Request, res: Response) => {
   try {
     const db = getDb()
     const applicationsCollection = db.collection("application")
-    const { id } = req.params
+    const { email } = req.params
 
-    const file = await applicationsCollection.findOne({ _id: new ObjectId(id) })
+    await authChecker(req, res, ["student"])
+
+    const query = { email: email }
+    const file = await applicationsCollection.findOne(query)
 
     if (!file) {
       return sendResponse(res, {

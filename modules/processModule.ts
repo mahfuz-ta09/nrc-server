@@ -4,7 +4,7 @@ import { fileUploadHelper } from "../helper/fileUploadHealper"
 const verifyUser = require('../middleware/verifyUser')
 const { getAllData , createProceed , editProcessData , 
     deleteProcessData , getSingleData } = require('../controllers/process/processControllers')
-import { getStudentFileState, postStudentFile, getCondisionedFiles, editStudentFile } from "../controllers/process/studentFileControllers"
+import { getStudentFileState, postStudentFile, getCondisionedFiles, editStudentFile, getStudentFileByEmail } from "../controllers/process/studentFileControllers"
 
 // course editorials 
 router.get('/all',
@@ -62,6 +62,10 @@ router.get('/stat',
 router.get('/get-all',  
     verifyUser,
     getCondisionedFiles)
+
+router.get('/get-single-files/:email',  
+    verifyUser,
+    getStudentFileByEmail)
 
 
 export const precessModule = router
