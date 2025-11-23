@@ -102,7 +102,6 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
             englishProficiency: { complete: true, verified: true },
             prefferedUniSub: { complete: true, verified: true },
             studentsFile: { complete: true, verified: true },
-            educationBackground: { complete: true, verified: true },
             applicationFinished: { finished: false, archived: false },
         },
 
