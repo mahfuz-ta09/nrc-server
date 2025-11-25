@@ -228,7 +228,6 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
 
       if (recievedData.permission) {
         insertedData.permission = {};
-
         Object.entries(recievedData.permission).forEach(([key, value]: any) => {
           if (value === "" || value === "undefined" || value === undefined) return;
 
@@ -239,7 +238,7 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
 
 
 
-      if (recievedData.applicationState) {
+      if (recievedData.applicationState && req.user.role !== "student") {
         insertedData.applicationState = {};
 
         Object.entries(recievedData.applicationState).forEach(([section, state]: any) => {
