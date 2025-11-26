@@ -525,22 +525,20 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
       }
 
       
-      const deletedArray = req.body.deletedFiles ? JSON.parse(req.body.deletedFiles) : [];
-      if (deletedArray.length > 0) {
+      if (req.body.deletedFiles) {
           if (req.user.role === "student" && doc.permission.permission_studentsFile === false) {
             return forbidden(res, "file deletion");
           }
-
+          const deletedArray = JSON.parse(req.body.deletedFiles)
           for (const id of deletedArray) {
             await fileUploadHelper.deleteFromCloud(id);
           }
           changes.push("files deleted");
       }
 
- 
       const filesArray: any[] = [];
 
-      if (req.files) {
+      if (req.files && Object.keys(req.files).length > 0) {
           const uploadedFiles = Array.isArray(req.files)
             ? req.files
             : req.files.files;
@@ -559,9 +557,9 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
 
       const comment = changes.join(", ");
       const pipeline: any[] = [];
+      const deletedArray = req.body.deletedFiles ? JSON.parse(req.body.deletedFiles) : [];
 
       if (shouldUnsetEnglish) pipeline.push({ $unset: "englishProficiency" });
-
       pipeline.push({
         $set: {
           ...insertedData,
