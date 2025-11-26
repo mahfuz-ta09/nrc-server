@@ -83,6 +83,7 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
 
         applicationStatus: [
           {
+            comment:"Application created",
             stage: "created",
             by:{
               id: req.user.id,
@@ -94,7 +95,6 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
         ],
 
         
-        editHistoryByStudent: [],
         communication: [],
 
         applicationState: {
@@ -200,6 +200,229 @@ export const postStudentFile = async (req: AuthenticatedRequest, res: Response) 
     }
 }
 
+// export const editStudentFile = async (req: AuthenticatedRequest, res: Response) => {
+//     try {
+//       const db = getDb();
+//       const filesCollection = db.collection("application");
+//       await authChecker(req, res, ["super_admin", "admin", "agent", "sub_agent", "student"]);
+//       console.log("request body:- ", req.body)
+
+//       const recievedData = req.body || {};
+//       const query = { _id: new ObjectId(req.params.id) };
+//       const insertedData: any = {};
+//       const changes: string[] = [];
+
+//       const doc = await filesCollection.findOne(
+//         { _id: new ObjectId(req.params.id) },
+//         { projection: { permission: 1 } }
+//       );
+
+//       if(!doc){
+//         return sendResponse(res, {
+//           message: "Document not found",
+//           success: false,
+//           statusCode: 404,
+//         })
+//       }
+
+//       if (recievedData.personalInfo) {
+//         if(req.user.role === "student" && doc.permission.permission_personalInfo === false) {
+//           return sendResponse(res, {
+//             message: "You don't have permission to edit personal info",
+//             success: false,
+//             statusCode: 403,
+//           })
+//         } 
+//         Object.entries(recievedData.personalInfo).forEach(([key, value]: any) => {
+//           insertedData[key] = value;
+//         });
+//       }
+
+//       if(recievedData.englishProficiency){
+//         if(req.user.role === "student" && doc.permission.permission_englishProficiency === false) {
+//           return sendResponse(res, {
+//             message: "You don't have permission to edit english proficiency",
+//             success: false,
+//             statusCode: 403,
+//           })
+//         }
+//         insertedData.englishProficiency = recievedData.englishProficiency;
+//         changes.push("english proficiency updated")
+//       }  
+
+//       if (recievedData.academicInfo) {
+//         if(req.user.role === "student" && doc.permission.permission_personalInfo === false) {
+//           return sendResponse(res, {
+//             message: "You don't have permission to edit academic info",
+//             success: false,
+//             statusCode: 403,
+//           })
+//         } 
+//         insertedData.academicInfo = recievedData.academicInfo;
+//         changes.push("personal & academic info updated")
+//       } 
+
+//       if (recievedData.preferredUniversities && recievedData.preferredUniversities.length > 0) {
+//         if(req.user.role === "student" && doc.permission.permission_prefferedUniSub === false) {
+//           return sendResponse(res, {
+//             message: "You don't have permission to edit preferred universities",
+//             success: false,
+//             statusCode: 403,
+//           })
+//         }
+//         insertedData.preferredUniversities = recievedData.preferredUniversities;
+//         changes.push("assigned universities updated");
+//       }
+
+//       if (recievedData.permission && req.user.role !== "student") {
+//         insertedData.permission = {};
+
+//         for (const [key, value] of Object.entries(recievedData.permission)) {
+//           if (value === "true" || value === "false") {
+//             insertedData.permission[key] = value === "true";
+//             changes.push(`${key} permission updated`);
+//           }
+//         }
+ 
+//         if (Object.keys(insertedData.permission).length === 0) {
+//           delete insertedData.permission;
+//         }
+//       }
+
+
+//       if (recievedData.applicationState && req.user.role !== "student") {
+//         insertedData.applicationState = {};
+
+//         for (const [section, state]  of Object.entries(recievedData.applicationState as Record<string, any>)) {
+//           const allowedFields = ["verified", "complete", "finished", "archived"];
+//           const sectionData: any = {};
+
+//           if (state && typeof state === "object") {
+//             for (const field of allowedFields) {
+//               const val = (state as Record<string, any>)[field];
+//               if (val === "true" || val === "false") {
+//                 sectionData[field] = val === "true";
+//               }
+//             }
+//           }
+
+//           if (Object.keys(sectionData).length > 0) {
+//             insertedData.applicationState[section] = sectionData;
+//             changes.push(`${section} status updated`);
+//           }
+//         }
+//         if(Object.keys(insertedData.applicationState).length === 0){
+//           delete insertedData.applicationState
+//         }
+//       }
+      
+      
+//       if(req.body.deletedFiles){
+//         if(req.user.role === "student" && doc.permission.permission_studentsFile === false) {
+//           return sendResponse(res, {
+//             message: "You don't have permission to delete files",
+//             success: false,
+//             statusCode: 403,
+//           })
+//         }
+
+//         const deletedFiles = JSON.parse(req.body.deletedFiles);
+//         changes.push(`files deleted`)
+        
+//         for(const id of deletedFiles){
+//           await fileUploadHelper.deleteFromCloud(id)
+//         }
+//       }
+
+//       const filesArray:{fileName:string,url:string,publicID:string,uploadedAt:string}[] = []
+      
+//       if(req.files && Object.keys(req.files).length > 0){
+//         const addedFiles:any = Array.isArray(req.files)
+//           ? req.files 
+//           : (req.files as { [fieldname: string]: Express.Multer.File[] })?.files;
+          
+//         for(const file of addedFiles){
+//           const uploaded:any = await fileUploadHelper.uploadToCloud(file)
+//           changes.push(`file ${file.originalname} added`)
+          
+//           filesArray.push({
+//             fileName: file.originalname,
+//             url: uploaded.secure_url,
+//             publicID: uploaded.public_id,
+//             uploadedAt: format(new Date(), "MM/dd/yyyy HH:mm"),
+//           })
+//         }
+//       }
+
+//       const deletedArray = req.body.deletedFiles ? JSON.parse(req.body.deletedFiles) : [];
+
+//        console.log("inserted data:-  ",insertedData)
+//       const comment = changes.join(", ");
+      
+//       const response = await filesCollection.updateOne(query ,
+//         [
+//           {
+//             $set: {
+//               ...insertedData,
+//               files: {
+//                 $concatArrays: [
+//                   {
+//                     $filter: {
+//                       input: "$files",
+//                       as: "file",
+//                       cond: { $not: { $in: ["$$file.publicID", deletedArray] } }
+//                     }
+//                   },
+//                   filesArray
+//                 ]
+//               },
+//               applicationStatus: {
+//                 $concatArrays: [
+//                   "$applicationStatus",
+//                   [
+//                     {
+//                       stage: "updated",
+//                       by: {
+//                         id: req.user.id,
+//                         email: req.user.email,
+//                         role: req.user.role
+//                       },
+//                       comment: comment.trim(),
+//                       date: format(new Date(), "MM/dd/yyyy")
+//                     }
+//                   ]
+//                 ]
+//               }
+//             }
+//           }
+//         ]
+//       );
+//       console.log(response)
+//       if (response.modifiedCount === 0) {
+//         return sendResponse(res, {
+//           message: "No changes applied to the document",
+//           success: false,
+//           statusCode: 400,
+//         });
+//       }
+
+//       sendResponse(res, {
+//         message: "Data updated successfully",
+//         success: true,
+//         statusCode: 200,
+//         data: response,
+//       });
+//     } catch (err) {
+//       console.error(err);
+//       sendResponse(res, {
+//         message: "Something went wrong!",
+//         success: false,
+//         statusCode: 500,
+//       });
+//     }
+// };
+
+
 export const editStudentFile = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const db = getDb();
@@ -207,162 +430,182 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
       await authChecker(req, res, ["super_admin", "admin", "agent", "sub_agent", "student"]);
 
       const recievedData = req.body || {};
+      const query = { _id: new ObjectId(req.params.id) };
       const insertedData: any = {};
       const changes: string[] = [];
 
+      const doc = await filesCollection.findOne(query, { projection: { permission: 1 } });
+      if (!doc) {
+        return sendResponse(res, { 
+          message: "Document not found", 
+          success: false, 
+          statusCode: 404 });
+      }
+
+      
       if (recievedData.personalInfo) {
-        Object.entries(recievedData.personalInfo).forEach(([key, value]: any) => {
-          insertedData[key] = value;
-        });
-      }
-
-      if (recievedData.academicInfo) {
-        insertedData.academicInfo = recievedData.academicInfo;
-        changes.push("personal & academic info updated")
-      } 
-
-      if (recievedData.preferredUniversities && recievedData.preferredUniversities.length > 0) {
-        insertedData.preferredUniversities = recievedData.preferredUniversities;
-        changes.push("assigned universities updated");
-      }
-
-      if (recievedData.permission) {
-        insertedData.permission = {};
-        Object.entries(recievedData.permission).forEach(([key, value]: any) => {
-          if (value === "" || value === "undefined" || value === undefined) return;
-
-          insertedData.permission[key] = value === "true";
-          changes.push(`edit permission updated`);
-        });
-      }
-
-
-
-      if (recievedData.applicationState && req.user.role !== "student") {
-        insertedData.applicationState = {};
-
-        Object.entries(recievedData.applicationState).forEach(([section, state]: any) => {
-          const sectionData: any = {};
-          if (state.verified === "true" || state.verified === "false") {
-            sectionData.verified = state.verified === "true";
+          if (req.user.role === "student" && doc.permission.permission_personalInfo === false) {
+            return forbidden(res, "personal info");
           }
-
-          if (state.complete === "true" || state.complete === "false") {
-            sectionData.complete = state.complete === "true";
-          }
-
-          if (state.finished === "true" || state.finished === "false") {
-            sectionData.finished = state.finished === "true";
-          }
-
-          if (state.archived === "true" || state.archived === "false") {
-            sectionData.archived = state.archived === "true";
-          }
-
-          if (Object.keys(sectionData).length > 0) {
-            insertedData.applicationState[section] = sectionData;
-            changes.push(`application status updated`);
-          }
-        });
+          Object.assign(insertedData, recievedData.personalInfo);
       }
-
-      const flattenForSet = (obj: any, prefix = ""): Record<string, any> => {
-        return Object.entries(obj).reduce((acc: any, [key, value]) => {
-          const path = prefix ? `${prefix}.${key}` : key;
-          if (typeof value === "object" && !Array.isArray(value) && value !== null) {
-            Object.assign(acc, flattenForSet(value, path));
-          } else {
-            acc[path] = value;
-          }
-          return acc;
-        }, {});
-      };
-
-      
-      if(req.body.deletedFiles){
-        const deletedFiles = JSON.parse(req.body.deletedFiles);
-        changes.push(`files deleted`)
-        
-        for(const id of deletedFiles){
-          await fileUploadHelper.deleteFromCloud(id)
-        }
-      }
-
-      const filesArray:{fileName:string,url:string,publicID:string,uploadedAt:string}[] = []
-      
-      if(req.files && Object.keys(req.files).length > 0){
-        const addedFiles:any = Array.isArray(req.files)
-          ? req.files 
-          : (req.files as { [fieldname: string]: Express.Multer.File[] })?.files;
-          
-        for(const file of addedFiles){
-          const uploaded:any = await fileUploadHelper.uploadToCloud(file)
-          changes.push(`file ${file.originalname} added`)
-          
-          filesArray.push({
-            fileName: file.originalname,
-            url: uploaded.secure_url,
-            publicID: uploaded.public_id,
-            uploadedAt: format(new Date(), "MM/dd/yyyy HH:mm"),
-          })
-        }
-      }
-      const setData = flattenForSet(insertedData);
-
+ 
+      let shouldUnsetEnglish = false;
       if (recievedData.englishProficiency) {
-        setData.englishProficiency = recievedData.englishProficiency;
+          if (req.user.role === "student" && doc.permission.permission_englishProficiency === false) {
+            return forbidden(res, "english proficiency");
+          }
+
+          insertedData.englishProficiency = recievedData.englishProficiency;
+          shouldUnsetEnglish = true;
+          changes.push("english proficiency updated");
+      }
+ 
+      if (recievedData.academicInfo) {
+          if (req.user.role === "student" && doc.permission.permission_personalInfo === false) {
+            return forbidden(res, "academic info");
+          }
+
+          insertedData.academicInfo = recievedData.academicInfo;
+          changes.push("academic info updated");
       }
 
-      const deletedArray = req.body.deletedFiles ? JSON.parse(req.body.deletedFiles) : [];
+      
+      if (recievedData.preferredUniversities?.length > 0) {
+          if (req.user.role === "student" && doc.permission.permission_prefferedUniSub === false) {
+            return forbidden(res, "preferred universities");
+          }
 
-       
-      const comment = changes.join(", ");
-      const response = await filesCollection.updateOne(
-        { _id: new ObjectId(req.params.id) },
-        [
-          {
-            $set: {
-              ...setData,
-              files: {
-                $concatArrays: [
-                  {
-                    $filter: {
-                      input: "$files",
-                      as: "file",
-                      cond: { $not: { $in: ["$$file.publicID", deletedArray] } }
-                    }
-                  },
-                  filesArray
-                ]
-              },
-              applicationStatus: {
-                $concatArrays: [
-                  "$applicationStatus",
-                  [
-                    {
-                      stage: "updated",
-                      by: {
-                        id: req.user.id,
-                        email: req.user.email,
-                        role: req.user.role
-                      },
-                      comment: comment.trim(),
-                      date: format(new Date(), "MM/dd/yyyy")
-                    }
-                  ]
-                ]
-              }
+          insertedData.preferredUniversities = recievedData.preferredUniversities;
+          changes.push("preferred universities updated");
+      }
+
+
+      
+      if (recievedData.permission && req.user.role !== "student") {
+          const newPermissions: any = {};
+          for (const [key, value] of Object.entries(recievedData.permission)) {
+            if (value === "true" || value === "false") {
+              newPermissions[key] = value === "true";
+              changes.push(`${key} permission updated`);
             }
           }
-        ]
-      );
+
+          if (Object.keys(newPermissions).length > 0) {
+            insertedData.permission = newPermissions;
+          }
+      }
+
+      if (recievedData.applicationState && req.user.role !== "student") {
+          const newState: any = {};
+          const allowedFields = ["verified", "complete", "finished", "archived"];
+
+          for (const [section, state] of Object.entries(recievedData.applicationState as Record<string, any>)) {
+            const sectionObj: any = {};
+            const stateObj = state as Record<string, any>;
+
+            if (stateObj && typeof stateObj === "object") {
+              for (const field of allowedFields) {
+                const val = stateObj[field];
+                if (val === "true" || val === "false") {
+                  sectionObj[field] = val === "true";
+                }
+              }
+            }
+
+            if (Object.keys(sectionObj).length > 0) {
+              newState[section] = sectionObj;
+              changes.push(`${section} status updated`);
+            }
+        }
+
+        if (Object.keys(newState).length > 0) {
+          insertedData.applicationState = newState;
+        }
+      }
+
       
-      sendResponse(res, {
+      const deletedArray = req.body.deletedFiles ? JSON.parse(req.body.deletedFiles) : [];
+      if (deletedArray.length > 0) {
+          if (req.user.role === "student" && doc.permission.permission_studentsFile === false) {
+            return forbidden(res, "file deletion");
+          }
+
+          for (const id of deletedArray) {
+            await fileUploadHelper.deleteFromCloud(id);
+          }
+          changes.push("files deleted");
+      }
+
+ 
+      const filesArray: any[] = [];
+
+      if (req.files) {
+          const uploadedFiles = Array.isArray(req.files)
+            ? req.files
+            : req.files.files;
+
+          for (const file of uploadedFiles) {
+            const uploaded:any = await fileUploadHelper.uploadToCloud(file);
+            filesArray.push({
+              fileName: file.originalname,
+              url: uploaded.secure_url,
+              publicID: uploaded.public_id,
+              uploadedAt: format(new Date(), "MM/dd/yyyy HH:mm"),
+            });
+            changes.push(`file ${file.originalname} added`);
+          }
+      }
+
+      const comment = changes.join(", ");
+      const pipeline: any[] = [];
+
+      if (shouldUnsetEnglish) pipeline.push({ $unset: "englishProficiency" });
+
+      pipeline.push({
+        $set: {
+          ...insertedData,
+          files: {
+            $concatArrays: [
+              {
+                $filter: {
+                  input: "$files",
+                  as: "file",
+                  cond: { $not: { $in: ["$$file.publicID", deletedArray] } }
+                }
+              },
+              filesArray
+            ]
+          },
+          applicationStatus: {
+            $concatArrays: [
+              "$applicationStatus",
+              [
+                {
+                  stage: "updated",
+                  by: {
+                    id: req.user.id,
+                    email: req.user.email,
+                    role: req.user.role
+                  },
+                  comment,
+                  date: format(new Date(), "MM/dd/yyyy")
+                }
+              ]
+            ]
+          }
+        }
+      });
+
+      const response = await filesCollection.updateOne(query, pipeline);
+
+      return sendResponse(res, {
         message: "Data updated successfully",
         success: true,
         statusCode: 200,
         data: response,
       });
+
     } catch (err) {
       console.error(err);
       sendResponse(res, {
@@ -372,6 +615,16 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
       });
     }
 };
+
+
+// Helper
+function forbidden(res: Response, label: string) {
+  return sendResponse(res, {
+    message: `You don't have permission to edit ${label}`,
+    success: false,
+    statusCode: 403,
+  });
+}
 
 export const getStudentFileState = async(req: AuthenticatedRequest,res: Response) =>{
     try{
