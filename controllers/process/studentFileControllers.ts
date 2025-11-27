@@ -555,6 +555,15 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
           }
       }
 
+      if(insertedData.email) {
+        delete insertedData.email;
+        return sendResponse(res, {
+          message: "Email cannot be changed",
+          success: false,
+          statusCode: 400,
+        });
+      }
+        
       const comment = changes.join(", ");
       const pipeline: any[] = [];
       const deletedArray = req.body.deletedFiles ? JSON.parse(req.body.deletedFiles) : [];
