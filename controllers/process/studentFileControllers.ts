@@ -557,15 +557,17 @@ export const editStudentFile = async (req: AuthenticatedRequest, res: Response) 
 
       if(insertedData.email) {
         delete insertedData.email;
-        return sendResponse(res, {
-          message: "Email cannot be changed",
-          success: false,
-          statusCode: 400,
-        });
+        // return sendResponse(res, {
+        //   message: "Email cannot be changed",
+        //   success: false,
+        //   statusCode: 400,
+        // });
       }
+
         
-      const comment = changes.join(", ");
       const pipeline: any[] = [];
+      const comment = changes.join(", ");
+      insertedData.lastUpdated = format(new Date(), "MM/dd/yyyy");
       const deletedArray = req.body.deletedFiles ? JSON.parse(req.body.deletedFiles) : [];
 
       if (shouldUnsetEnglish) pipeline.push({ $unset: "englishProficiency" });
@@ -747,41 +749,48 @@ export const getAllStudentFiles = async (req: Request, res: Response) => {
     }
 }
 
+export const getStudentFileByIdentifier = async (req: Request, res: Response) => {
+    try {
+        const db = getDb();
+        const applicationsCollection = db.collection("application");
+        const { identifier } = req.params;
 
-export const getStudentFileByEmail = async (req: Request, res: Response) => {
-  try {
-    const db = getDb()
-    const applicationsCollection = db.collection("application")
-    const { email } = req.params
+        await authChecker(req, res, ["student","admin","super_admin","agent",""]);
 
-    await authChecker(req, res, ["student"])
+        let query: any = {};
 
-    const query = { email: email }
-    const file = await applicationsCollection.findOne(query)
+        if(ObjectId.isValid(identifier) && String(new ObjectId(identifier)) === identifier) {
+            query = { _id: new ObjectId(identifier) };
+        }else{
+            query = { email: identifier };
+        }
+        console.log(query)
+        const file = await applicationsCollection.findOne(query);
 
-    if (!file) {
-      return sendResponse(res, {
-        message: "File not found",
-        success: false,
-        statusCode: 404,
-      })
+        if (!file) {
+            return sendResponse(res, {
+              message: "File not found",
+              success: false,
+              statusCode: 404,
+            });
+        }
+
+        return sendResponse(res, {
+            message: "Student file retrieved",
+            success: true,
+            statusCode: 200,
+            data: file,
+        });
+    } catch (err) {
+        console.error(err);
+        return sendResponse(res, {
+          message: "Failed to fetch student file",
+          success: false,
+          statusCode: 500,
+        });
     }
+};
 
-    sendResponse(res, {
-      message: "Student file retrieved",
-      success: true,
-      statusCode: 200,
-      data: file,
-    })
-  } catch (err) {
-    console.error(err)
-    sendResponse(res, {
-      message: "Failed to fetch student file",
-      success: false,
-      statusCode: 500,
-    })
-  }
-}
 
 
 export const updateStudentFile = async (req: Request, res: Response) => {
