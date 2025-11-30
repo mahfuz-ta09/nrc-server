@@ -755,7 +755,7 @@ export const getStudentFileByIdentifier = async (req: Request, res: Response) =>
         const applicationsCollection = db.collection("application");
         const { identifier } = req.params;
 
-        await authChecker(req, res, ["student","admin","super_admin","agent",""]);
+        await authChecker(req, res, ["student","admin","super_admin","agent","sub_admin"]);
 
         let query: any = {};
 
@@ -764,9 +764,8 @@ export const getStudentFileByIdentifier = async (req: Request, res: Response) =>
         }else{
             query = { email: identifier };
         }
-        console.log(query)
+        
         const file = await applicationsCollection.findOne(query);
-
         if (!file) {
             return sendResponse(res, {
               message: "File not found",
