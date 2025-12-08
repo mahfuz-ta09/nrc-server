@@ -1,12 +1,13 @@
-import { fileUploadHelper } from "../helper/fileUploadHealper"
 const express = require('express')
 const router = express.Router()
-const { createUniversity , getAllUniversity , getSingleUniversity , deleteUniversity , editUniversity,getUniOriginName ,getUniversityByCountry,
-    addUniversity , deleteUniversityFromCountry , getUniversity , editUniversityField
-} = require('../controllers/university/universityControllers')
 const verifyUser = require('../middleware/verifyUser')
+import { fileUploadHelper } from "../helper/fileUploadHealper"
+const { createUniversity , getAllUniversity , getSingleUniversity , editUniversity,getUniOriginName ,getUniversityByCountry,
+        deleteUniversityFromCountry 
+    } = require('../controllers/university/universityControllers')
 
-
+const { addUniversity , editUniversityField, getUniversity, deleteUniversity } = require('../controllers/university/uniControllers')
+ 
 router.get('/all',
     verifyUser,
     getAllUniversity)
@@ -50,9 +51,16 @@ router.post('/add/:id',
         { name: "universityImage", maxCount: 1 },
     ]),
     addUniversity)
+    
+// router.post('/add/:id',
+//     verifyUser,
+//     fileUploadHelper.upload.fields([
+//         { name: "universityImage", maxCount: 1 },
+//     ]),
+//     addUniversity)
 
 
-router.patch('/edit/:id/:universityName',
+router.patch('/edit/:id/:universityId',
     verifyUser,
     fileUploadHelper.upload.fields([
         { name: "universityImage", maxCount: 1 },
@@ -60,14 +68,22 @@ router.patch('/edit/:id/:universityName',
     editUniversityField)
 
 
-router.delete('/remove/:id/:university',
+// router.delete('/remove/:id/:university',
+//     verifyUser,
+//     deleteUniversityFromCountry)
+
+
+router.delete('/remove/:id/:universityId',
     verifyUser,
-    deleteUniversityFromCountry)
+    deleteUniversity)
 
 
 router.get('/', 
+    verifyUser,
     getUniversity)
 
 
-
+// router.get('/all/uni/:countryId',
+//     verifyUser,
+//     getUniversitiesBycountry)
 export const universityModules = router

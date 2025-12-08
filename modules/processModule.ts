@@ -4,7 +4,8 @@ import { fileUploadHelper } from "../helper/fileUploadHealper"
 const verifyUser = require('../middleware/verifyUser')
 const { getAllData , createProceed , editProcessData , 
     deleteProcessData , getSingleData } = require('../controllers/process/processControllers')
-import { getStudentFileState, postStudentFile, getCondisionedFiles, editStudentFile, getStudentFileByIdentifier } from "../controllers/process/studentFileControllers"
+import { getStudentFileState, getApplicationByCondition, editStudentFile, getStudentFileByIdentifier } from "../controllers/process/studentFileControllers"
+import { postStudentFile } from "../controllers/process/optionalStudentFileControllers"
 
 // course editorials 
 router.get('/all',
@@ -41,6 +42,14 @@ router.delete('/delete/:id',
 
 // these routes below will be handled by super admin/admin/agent/sub/agents
 
+// router.post('/file',  
+//     verifyUser,
+//     fileUploadHelper.upload.fields([
+//         { name: "files", maxCount: 25 },
+//     ]),
+//     postStudentFile)
+    
+
 router.post('/file',  
     verifyUser,
     fileUploadHelper.upload.fields([
@@ -61,7 +70,7 @@ router.get('/stat',
 
 router.get('/get-all',  
     verifyUser,
-    getCondisionedFiles)
+    getApplicationByCondition)
 
 router.get('/get-single-files/:identifier',  
     verifyUser,

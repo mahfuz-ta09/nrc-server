@@ -268,7 +268,6 @@ const getAllUniversity = async( req: AuthenticatedRequest , res: Response) =>{
     }
 }
 
-
 const getSingleUniversity = async( req: Request , res: Response) =>{
     try {
         const db = getDb()
@@ -425,7 +424,7 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
         }       
         const file:any = await fileUploadHelper.uploadToCloud(files["universityImage"]?.[0])
 
-        console.log(file)
+        
         const insertedObject = {
             englishProf:englishProf,
             qualifications:qualifications,
@@ -467,191 +466,6 @@ const addUniversity = async(req: AuthenticatedRequest , res: Response) => {
             data: result,
         })
     }catch(err){
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
-            success: false,
-            message: 'Internel server error',
-            data: err
-        })
-    }
-}
-
-
-const deleteUniversityFromCountry = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const db = getDb()
-        const collection = db.collection('country-uni')
-        await authChecker(req, res, ["admin","super_admin"])
-
-        const id = req.params.id
-        const university = req.params.university
-
-        if (!id || !university) {
-            return sendResponse(res, {
-                statusCode: 400,
-                success: false,
-                message: 'Id or university name missing!!!',
-            })
-        }
-
-        
-        const countryObj = await collection.findOne({
-            _id: new ObjectId(id),
-            'universityList.universityName': university.toUpperCase()
-        })
-
-        if (!countryObj) {
-            return sendResponse(res, {
-                statusCode: 404,
-                success: false,
-                message: 'No matching university found!!!',
-            })
-        }
-
-        
-        const uniData = countryObj.universityList.find(
-            (u:any) => u.universityName === university.toUpperCase()
-        )
-
-        if (uniData?.universityImage?.publicId) {
-            await fileUploadHelper.deleteFromCloud(uniData.universityImage.publicId)
-        }
-        
-        
-        const result = await collection.updateOne(
-            { _id: new ObjectId(id) },
-            { $pull: { universityList: { universityName: university.toUpperCase() } } }
-        )
-
-        if (result.modifiedCount === 0) {
-            return sendResponse(res, {
-                statusCode: 400,
-                success: false,
-                message: 'Failed to delete university!!!',
-            })
-        }
-
-        return sendResponse(res, {
-            statusCode: 200,
-            success: true,
-            message: 'University deleted successfully!!!',
-            data: result,
-        })
-
-    } catch (error) {
-        console.error(error)
-        res.status(500).json({
-            success: false,
-            message: 'Internal Server Error',
-            error,
-        })
-    }
-}
-
-
-const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-        const db = getDb()
-        const collection = db.collection("country-uni")
-
-        const { all, country, page: pageParam, total: totalParam, uniName } = req.query
-
-        const page = pageParam ? Number(pageParam) : undefined
-        const total = totalParam ? Number(totalParam) : undefined
-
-        let matchStage: any = {}
-        if (country) {
-            matchStage.country = (country as string).toUpperCase()
-        }
-
-        
-        if (all === "all") {
-            const countries = await collection.find(
-                matchStage
-            ).toArray()
-            let allUniversities = countries.flatMap((c: any) => c.universityList || [])
-
-        
-            if (uniName) {
-                const uniNameLower = (uniName as string).toLowerCase()
-                    allUniversities = allUniversities.filter((u: any) =>
-                    u.universityName?.toLowerCase().includes(uniNameLower)
-                )
-            }
-
-            return sendResponse(res, {
-                statusCode: 200,
-                success: true,
-                meta: {
-                    page,
-                    totalCount:allUniversities.length,
-                },
-                data: allUniversities
-            })
-        }
-
-        
-        if (!page || !total) {
-            return res.status(400).json({
-                success: false,
-                message: "For paginated results, provide 'page' and 'total'."
-            })
-        }
-
-        const pipeline: any[] = [
-        { $match: matchStage },
-            { $unwind: "$universityList" },
-            {
-                $addFields: {
-                "universityList.countryId": "$_id"
-                }
-            },
-            { $replaceRoot: { newRoot: "$universityList" } },
-            { $project: { subjects: 0 } }
-        ]
-
-
-        
-        if (uniName) {
-            const regex = new RegExp(uniName as string, "i")
-            pipeline.push({ $match: { universityName: regex } })
-        }
-
-        
-        pipeline.push({ $skip: (page - 1) * total })
-        pipeline.push({ $limit: total })
-
-        const universities = await collection.aggregate(pipeline).toArray()
-
-
-        const countPipeline: any[] = [
-            { $match: matchStage },
-            { $unwind: "$universityList" },
-        ]
-
-        if (uniName) {
-            const regex = new RegExp(uniName as string, "i")
-            countPipeline.push({ $match: { "universityList.universityName": regex } })
-        }
-
-        countPipeline.push({ $count: "count" })
-
-        const countResult = await collection.aggregate(countPipeline).toArray()
-        const totalCount = countResult[0]?.count || 0
-
-        sendResponse(res, {
-            statusCode: 200,
-            success: true,
-            message: "Updated successfully!!!",
-            meta: {
-                page,
-                total,
-                totalCount
-            },
-            data: universities
-        })
-    } catch (err) {
         console.log(err)
         sendResponse(res,{
             statusCode: 400,
@@ -813,6 +627,341 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
 }
 
 
+const deleteUniversityFromCountry = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const db = getDb()
+        const collection = db.collection('country-uni')
+        await authChecker(req, res, ["admin","super_admin"])
+
+        const id = req.params.id
+        const university = req.params.university
+
+        if (!id || !university) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: 'Id or university name missing!!!',
+            })
+        }
+
+        
+        const countryObj = await collection.findOne({
+            _id: new ObjectId(id),
+            'universityList.universityName': university.toUpperCase()
+        })
+
+        if (!countryObj) {
+            return sendResponse(res, {
+                statusCode: 404,
+                success: false,
+                message: 'No matching university found!!!',
+            })
+        }
+
+        
+        const uniData = countryObj.universityList.find(
+            (u:any) => u.universityName === university.toUpperCase()
+        )
+
+        if (uniData?.universityImage?.publicId) {
+            await fileUploadHelper.deleteFromCloud(uniData.universityImage.publicId)
+        }
+        
+        
+        const result = await collection.updateOne(
+            { _id: new ObjectId(id) },
+            { $pull: { universityList: { universityName: university.toUpperCase() } } }
+        )
+
+        if (result.modifiedCount === 0) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: 'Failed to delete university!!!',
+            })
+        }
+
+        return sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: 'University deleted successfully!!!',
+            data: result,
+        })
+
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({
+            success: false,
+            message: 'Internal Server Error',
+            error,
+        })
+    }
+}
+
+
+// const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
+//     try {
+//         const db = getDb()
+//         const collection = db.collection("country-uni")
+
+//         const { all, country, page: pageParam, total: totalParam, uniName } = req.query
+
+//         const page = pageParam ? Number(pageParam) : undefined
+//         const total = totalParam ? Number(totalParam) : undefined
+
+//         let matchStage: any = {}
+//         if (country) {
+//             matchStage.country = (country as string).toUpperCase()
+//         }
+
+        
+//         if (all === "all") {
+//             const countries = await collection.find(
+//                 matchStage
+//             ).toArray()
+//             let allUniversities = countries.flatMap((c: any) => c.universityList || [])
+
+        
+//             if (uniName) {
+//                 const uniNameLower = (uniName as string).toLowerCase()
+//                     allUniversities = allUniversities.filter((u: any) =>
+//                     u.universityName?.toLowerCase().includes(uniNameLower)
+//                 )
+//             }
+
+//             return sendResponse(res, {
+//                 statusCode: 200,
+//                 success: true,
+//                 meta: {
+//                     page,
+//                     totalCount:allUniversities.length,
+//                 },
+//                 data: allUniversities
+//             })
+//         }
+
+        
+//         if (!page || !total) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "For paginated results, provide 'page' and 'total'."
+//             })
+//         }
+
+//         const pipeline: any[] = [
+//         { $match: matchStage },
+//             { $unwind: "$universityList" },
+//             {
+//                 $addFields: {
+//                 "universityList.countryId": "$_id"
+//                 }
+//             },
+//             { $replaceRoot: { newRoot: "$universityList" } },
+//             { $project: { subjects: 0 } }
+//         ]
+
+
+        
+//         if (uniName) {
+//             const regex = new RegExp(uniName as string, "i")
+//             pipeline.push({ $match: { universityName: regex } })
+//         }
+
+        
+//         pipeline.push({ $skip: (page - 1) * total })
+//         pipeline.push({ $limit: total })
+
+//         const universities = await collection.aggregate(pipeline).toArray()
+
+
+//         const countPipeline: any[] = [
+//             { $match: matchStage },
+//             { $unwind: "$universityList" },
+//         ]
+
+//         if (uniName) {
+//             const regex = new RegExp(uniName as string, "i")
+//             countPipeline.push({ $match: { "universityList.universityName": regex } })
+//         }
+
+//         countPipeline.push({ $count: "count" })
+
+//         const countResult = await collection.aggregate(countPipeline).toArray()
+//         const totalCount = countResult[0]?.count || 0
+
+//         sendResponse(res, {
+//             statusCode: 200,
+//             success: true,
+//             message: "Updated successfully!!!",
+//             meta: {
+//                 page,
+//                 total,
+//                 totalCount
+//             },
+//             data: universities
+//         })
+//     } catch (err) {
+//         console.log(err)
+//         sendResponse(res,{
+//             statusCode: 400,
+//             success: false,
+//             message: 'Internel server error',
+//             data: err
+//         })
+//     }
+// }
+
+// const editUniversityField = async (req: AuthenticatedRequest, res: Response) => {
+//     try {
+//         const db = getDb()
+//         const collection = db.collection("country-uni")
+//         await authChecker(req, res, ["admin","super_admin"])
+
+//         const id = req.params.id
+//         const UniversityName  = req.params.universityName
+
+//         const {
+//             englishProf,
+//             qualifications,
+//             universityName,
+//             lowFee,
+//             highFee,
+//             scholarship,
+//             initialDeposite,
+//             aboutUni
+//         } = req.body
+
+        
+//         const files: any = req.files
+
+//         const existingDoc = await collection.findOne(
+//             {
+//                 _id: new ObjectId(id),
+//                 "universityList.universityName": UniversityName.toUpperCase()
+//             },
+//             { 
+//                 projection: { "universityList.$": 1 } 
+//             }
+//         )
+
+//         if (!existingDoc || !existingDoc.universityList?.[0]) {
+//             return sendResponse(res, {
+//                 statusCode: 404,
+//                 success: false,
+//                 message: "University not found!!!"
+//             })
+//         }
+
+//         const currentUni = existingDoc.universityList[0]
+
+        
+//         let newImageData = currentUni.universityImage
+//         if (files?.["universityImage"]?.[0]) {
+//             if (currentUni?.universityImage?.public_id) {
+//                 await fileUploadHelper.deleteFromCloud(
+//                 currentUni.universityImage.public_id
+//                 )
+//             }
+//             const uploaded:any = await fileUploadHelper.uploadToCloud(
+//                 files["universityImage"][0]
+//             )
+//             newImageData = {
+//                 url: uploaded.url,
+//                 public_id: uploaded.public_id
+//             }
+//         }
+
+
+//         const DELETE_MARKER = '-1'
+
+//         function mergeWithDelete<T extends Record<string, any>>(
+//                 oldObj: T,
+//                 newObj: Partial<T>,
+//                 deleteMarker: any = DELETE_MARKER
+//             ): T {
+//                 const result: T = { ...oldObj }
+                
+//                 for (const key in newObj) {
+//                     const typedKey = key as keyof T
+//                     const value = newObj[typedKey]
+
+//                     if (value === deleteMarker) {
+//                         delete result[typedKey]
+//                     } else if (value !== undefined) {
+//                     result[typedKey] = value as T[keyof T]
+//                     }
+//                 }
+
+//             return result
+//         }
+
+
+//         const updatedUniversity = {
+//             englishProf: englishProf
+//                 ? mergeWithDelete(currentUni.englishProf, englishProf, "-1")
+//                 : currentUni.englishProf,
+
+//             qualifications: qualifications
+//                 ? mergeWithDelete(currentUni.qualifications, qualifications, "-1")
+//                 : currentUni.qualifications,
+
+//             universityName: universityName
+//                 ? universityName.toUpperCase()
+//                 : currentUni.universityName,
+
+//             lowFee: lowFee ?? currentUni.lowFee,
+//             highFee: highFee ?? currentUni.highFee,
+//             scholarship: scholarship ?? currentUni.scholarship,
+//             initialDeposite: initialDeposite ?? currentUni.initialDeposite,
+//             aboutUni: aboutUni ?? currentUni.aboutUni,
+
+//             subjects: currentUni.subjects ?? [],
+
+//             universityImage: newImageData ?? currentUni.universityImage,
+//         }
+
+
+
+        
+//         const result = await collection.updateOne(
+//             {
+//                 _id: new ObjectId(id),
+//                 "universityList.universityName": UniversityName.toUpperCase()
+//             },
+//             {
+//                 $set: {
+//                 "universityList.$": updatedUniversity
+//                 }
+//             }
+//         )
+
+//         if (!result.modifiedCount) {
+//             return sendResponse(res, {
+//                 statusCode: 400,
+//                 success: false,
+//                 message: "Update failed!!!",
+//                 data: result
+//             })
+//         }
+
+//         sendResponse(res, {
+//             statusCode: 200,
+//             success: true,
+//             message: "Updated successfully!!!",
+//             data: result
+//         })
+//     } catch (err) {
+//         console.log(err)
+//         sendResponse(res,{
+//             statusCode: 400,
+//             success: false,
+//             message: 'Internel server error',
+//             data: err
+//         })
+//     }
+// }
+
+
 module.exports = {
     createUniversity,
     editUniversity,
@@ -826,6 +975,5 @@ module.exports = {
 
     addUniversity,
     deleteUniversityFromCountry,
-    getUniversity,
     editUniversityField,
 }
