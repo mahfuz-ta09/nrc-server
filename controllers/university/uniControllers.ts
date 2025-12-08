@@ -24,13 +24,13 @@ const addUniversity = async (req: AuthenticatedRequest, res: Response) => {
             minimumGPA,gpaScale,requiredEducationLevel,prerequisiteSubjects,preferredBackgrounds,
             city,state,address,website,admissionEmail,phone,applicationFee,currency,feeStructure,
             submissionMethod,portalUrl,apiEndpoint,hasAPIIntegration,processingTime,
-            worldRanking,nationalRanking,accreditation,intakes,
+            worldRanking,nationalRanking,accreditation,intakes,uniType,
             acceptanceRate,internationalStudentRatio,tags,
         } = req.body;
 
         const files: any = req.files;
 
-        if (!englishProf || !qualifications || !universityName || !initialDeposite || !aboutUni || !files["universityImage"]?.[0]) {
+        if (!englishProf || !qualifications || !universityName || !initialDeposite || !aboutUni || !files["universityImage"]?.[0] || !uniType) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -179,6 +179,7 @@ const addUniversity = async (req: AuthenticatedRequest, res: Response) => {
                 partTimeWorkAllowed: partTimeWorkAllowed === 'true' || partTimeWorkAllowed === true || false,
             },
             status: 'active',
+            uniType: uniType,
             popularityScore: 0,
             lastUpdated: format(new Date(), "MM/dd/yyyy"),
             createdAt: format(new Date(), "MM/dd/yyyy"),
@@ -188,7 +189,7 @@ const addUniversity = async (req: AuthenticatedRequest, res: Response) => {
         { _id: new ObjectId(id) },
         {
             $push: {
-            universityList: insertedObject
+                universityList: insertedObject
             }
         }
         );
@@ -378,8 +379,8 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
         city,state,address,website,admissionEmail,phone,applicationFee,currency,feeStructure,
         minimumGPA,gpaScale,requiredEducationLevel,prerequisiteSubjects,preferredBackgrounds,
         submissionMethod,portalUrl,apiEndpoint,hasAPIIntegration,processingTime,
+        acceptanceRate,internationalStudentRatio,tags,status,uniType,
         worldRanking,nationalRanking,accreditation,intakes,
-        acceptanceRate,internationalStudentRatio,tags,status,
     } = req.body;
 
     const files: any = req.files;
@@ -546,11 +547,11 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
         },
       
         status: status ?? currentUni.status ?? 'active',
+        uniType: uniType ? uniType : currentUni?.uniType,
         popularityScore: currentUni.popularityScore ?? 0,
         lastUpdated: format(new Date(), "MM/dd/yyyy"),
         createdAt: currentUni.createdAt,
     };
-
     
     const result = await collection.updateOne({
         _id: new ObjectId(id),
