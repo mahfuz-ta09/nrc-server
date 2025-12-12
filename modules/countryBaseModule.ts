@@ -1,8 +1,8 @@
-import { fileUploadHelper } from "../helper/fileUploadHealper"
 const express = require('express')
 const router = express.Router()
+import { fileUploadHelper } from "../helper/fileUploadHealper"
 const { getCountryBySlug, createCountryBase,getAllCountryBase,
-    editCountryBase,deleteCountryBase,getAllCountryBaseName} = require('../controllers/countryBase/countryBaseControllers')
+    editCountryBase,deleteCountryBase} = require('../controllers/countryBase/countryBaseControllers')
 const verifyUser = require('../middleware/verifyUser')
 
 
@@ -11,9 +11,9 @@ router.get('/base/all',
     verifyUser,
     getAllCountryBase)
 
-router.get('/base/country',
-    verifyUser,
-    getAllCountryBaseName)
+// router.get('/base/country',
+//     verifyUser,
+//     getAllCountryBaseName)
 
 router.get('/unique/:slug',
     getCountryBySlug)

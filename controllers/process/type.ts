@@ -37,7 +37,7 @@ export interface ApplicationSchema {
         date: string;
     }[];
   
-    communication: any[]; // THIS NEEDS STRUCTURE - see below
+    communication: any[]; 
     
     applicationState: {
         personalInfo: { complete: boolean; verified: boolean };
