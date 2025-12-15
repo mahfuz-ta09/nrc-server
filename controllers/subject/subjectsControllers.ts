@@ -141,7 +141,7 @@ const addSubject = async (req: AuthenticatedRequest, res: Response) => {
         }
 
         const newSubject = {
-            _id: new ObjectId(),
+            id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             subjectName,
             programLevel,
             degree: degree || '',
@@ -218,7 +218,6 @@ const updateSubject = async (req: AuthenticatedRequest, res: Response) => {
             });
         }
 
-        // Build update object
         const updateFields: any = {};
         Object.keys(updateData).forEach(key => {
             if (updateData[key] !== undefined && updateData[key] !== null) {
@@ -275,7 +274,7 @@ const deleteSubject = async (req: AuthenticatedRequest, res: Response) => {
         await authChecker(req, res, ["admin", "super_admin"]);
 
         const { countryId, universityId, subjectId } = req.params;
-
+        console.log(req.params)
         if (!countryId || !universityId || !subjectId) {
             return sendResponse(res, {
                 statusCode: 400,
@@ -292,12 +291,12 @@ const deleteSubject = async (req: AuthenticatedRequest, res: Response) => {
             { 
                 $pull: { 
                     "universityList.$.subjects": { 
-                        _id: new ObjectId(subjectId) 
+                        id: subjectId 
                     } 
                 } 
             }
         );
-
+        
         if (result.modifiedCount === 0) {
             return sendResponse(res, {
                 statusCode: 400,
@@ -310,6 +309,7 @@ const deleteSubject = async (req: AuthenticatedRequest, res: Response) => {
             statusCode: 200,
             success: true,
             message: "Subject deleted successfully!",
+            data: result
         });
     } catch (error) {
         console.error("Error deleting subject:", error);
