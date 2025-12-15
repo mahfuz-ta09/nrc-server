@@ -1,10 +1,12 @@
-import { fileUploadHelper } from "../helper/fileUploadHealper"
+
 
 const express = require('express')
 const router = express.Router()
-const { getSubjectOrigin , getSubjectsByCountry , getAllSubjects , getSingleSubjects , createSubject , editSubject , deleteSubjects 
-    ,deleteSubject,updateSubject,addSubject,getSubject} = require('../controllers/subject/subjectController')
 const verifyUser = require('../middleware/verifyUser')
+import { fileUploadHelper } from "../helper/fileUploadHealper"
+const { getSubjectOrigin , getSubjectsByCountry , getAllSubjects , getSingleSubjects , createSubject , editSubject , deleteSubjects 
+    ,updateSubject } = require('../controllers/subject/subjectController')
+ const { getSubject , addSubject, deleteSubject } = require('../controllers/subject/subjectsControllers')
 
 
 router.get('/all', 
@@ -42,11 +44,11 @@ router.get('/all/:country',
 router.get('/', 
     getSubject)
 
-router.post('/add/:countryId/:universityName',
+router.post('/add/:countryId/:universityId/:universityName',
     verifyUser,
     addSubject)
 
-router.delete('/remove/:id/:countryID/:countryName', 
+router.delete('/remove/:id/:countryID/:countryName/:universityId', 
     verifyUser,
     deleteSubject)
 

@@ -94,6 +94,7 @@ const addUniversity = async (req: AuthenticatedRequest, res: Response) => {
         let parsedAccreditation = accreditation ? (typeof accreditation === 'string' ? JSON.parse(accreditation) : accreditation) : [];
         let parsedPrerequisites = prerequisiteSubjects ? (typeof prerequisiteSubjects === 'string' ? JSON.parse(prerequisiteSubjects) : prerequisiteSubjects) : [];
         let parsedBackgrounds = preferredBackgrounds ? (typeof preferredBackgrounds === 'string' ? JSON.parse(preferredBackgrounds) : preferredBackgrounds) : [];
+        
         const insertedObject = {
             universityId: generateId(),
             universityName: universityName.toUpperCase(),
@@ -227,13 +228,64 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
         const collection = db.collection("country-uni");
 
         const { all, country, page: pageParam, total: totalParam, uniName } = req.query;
-        
-        const page = pageParam ? Number(pageParam) : undefined;
-        const total = totalParam ? Number(totalParam) : undefined;
 
+        if (all === "all") {
         let matchStage: any = {};
-        
-        if (country && country !== '') {
+
+        if (country && country !== "") {
+            if (ObjectId.isValid(country as string)) {
+            matchStage._id = new ObjectId(country as string);
+            } else {
+            matchStage.country = (country as string).toLowerCase();
+            }
+        }
+
+        const countries = await collection.find(matchStage).toArray();
+
+        let universities = countries.flatMap((c: any) =>
+            (c.universityList || []).map((u: any) => ({
+                ...u,
+                countryId: c._id,
+                countryName: c.country,
+                countrySlug: c.slug,
+            }))
+        );
+
+        if (uniName && uniName !== "") {
+            const search = (uniName as string).toLowerCase();
+            universities = universities.filter((u: any) =>
+                u.universityName?.toLowerCase().includes(search)
+            );
+        }
+
+        return sendResponse(res, {
+                statusCode: 200,
+                success: true,
+                message: "All universities retrieved successfully",
+                meta: { totalCount: universities.length },
+                data: universities,
+            });
+        }
+
+        const page = pageParam !== undefined ? Number(pageParam) : undefined;
+        const total = totalParam !== undefined ? Number(totalParam) : undefined;
+
+        if (page === undefined || total === undefined || Number.isNaN(page) || Number.isNaN(total)) {
+            return sendResponse(res, {
+                statusCode: 400,
+                success: false,
+                message: "Provide valid 'page' and 'total' query parameters",
+                data: [],
+            });
+        }
+
+        const pageNum = Math.max(1, page);
+        const limitNum = Math.max(1, total);
+        const skip = (pageNum - 1) * limitNum;
+
+        const matchStage: any = {};
+
+        if (country && country !== "") {
             if (ObjectId.isValid(country as string)) {
                 matchStage._id = new ObjectId(country as string);
             } else {
@@ -241,127 +293,77 @@ const getUniversity = async (req: AuthenticatedRequest, res: Response) => {
             }
         }
 
-        
-        if (all === "all") {
-            const countries = await collection.find(matchStage).toArray();
-            
-            if (!countries || countries.length === 0) {
-                return sendResponse(res, {
-                    statusCode: 404,
-                    success: false,
-                    message: "No countries found matching the criteria",
-                    data: []
-                });
-            }
+        const pipeline: any[] = [];
 
-            let allUniversities = countries.flatMap((c: any) => {
-                const universities = c.universityList || [];
-                
-                return universities.map((uni: any) => ({
-                    ...uni,
-                    countryId: c._id,
-                    countryName: c.country,
-                    countrySlug: c.slug
-                }));
-            });
-
-            if (uniName && uniName !== '') {
-                const uniNameLower = (uniName as string).toLowerCase();
-                allUniversities = allUniversities.filter((u: any) =>
-                    u.universityName?.toLowerCase().includes(uniNameLower)
-                );
-            }
-            
-            return sendResponse(res, {
-                statusCode: 200,
-                success: true,
-                message: "All universities retrieved successfully",
-                meta: {
-                    totalCount: allUniversities.length,
-                },
-                data: allUniversities
-            });
+        if (Object.keys(matchStage).length) {
+            pipeline.push({ $match: matchStage });
         }
 
-        if (!page || !total) {
-            return sendResponse(res, {
-                statusCode: 400,
-                success: false,
-                message: "For paginated results, provide 'page' and 'total' query parameters.",
-                data: []
-            });
-        }
+        /* 2️⃣ Unwind universities */
+        pipeline.push({ $unwind: "$universityList" });
 
-        
-        const pipeline: any[] = [
-            { $match: matchStage },
-            { $unwind: "$universityList" },
-            {
-                $addFields: {
-                    "universityList.countryId": "$_id",
-                    "universityList.countryName": "$country",
-                    "universityList.countrySlug": "$slug"
-                }
+        /* 3️⃣ Filter by university name early */
+        if (uniName && uniName !== "") {
+        pipeline.push({
+            $match: {
+            "universityList.universityName": {
+                $regex: uniName,
+                $options: "i",
             },
-            { $replaceRoot: { newRoot: "$universityList" } }
-        ];
-
-        
-        if (uniName && uniName !== '') {
-            const regex = new RegExp(uniName as string, "i");
-            pipeline.push({ $match: { universityName: regex } });
-        }
-
-        pipeline.push({ $skip: (page - 1) * total });
-        pipeline.push({ $limit: total });
-
-        const universities = await collection.aggregate(pipeline).toArray();
-
-        // ========== COUNT TOTAL (for pagination metadata) ==========
-        const countPipeline: any[] = [
-            { $match: matchStage },
-            { $unwind: "$universityList" }
-        ];
-
-        if (uniName && uniName !== '') {
-            const regex = new RegExp(uniName as string, "i");
-            countPipeline.push({ $match: { "universityList.universityName": regex } });
-        }
-
-        countPipeline.push({ $count: "count" });
-
-        const countResult = await collection.aggregate(countPipeline).toArray();
-        const totalCount = countResult[0]?.count || 0;
-
-        // Calculate total pages
-        const totalPages = Math.ceil(totalCount / total);
-        return sendResponse(res, {
-            statusCode: 200,
-            success: true,
-            message: "Universities retrieved successfully",
-            meta: {
-                page,
-                limit: total,
-                totalCount,
-                totalPages,
-                // hasNextPage: page < totalPages,
-                // hasPrevPage: page > 1,
-                // filtered: !!(uniName && uniName !== ''),
-                // countryFilter: !!(country && country !== '')
             },
-            data: universities
+        });
+        }
+
+        /* 4️⃣ Attach country metadata */
+        pipeline.push({
+        $addFields: {
+            "universityList.countryId": "$_id",
+            "universityList.countryName": "$country",
+            "universityList.countrySlug": "$slug",
+        },
         });
 
+        /* 5️⃣ Pagination + count in one query */
+        pipeline.push({
+            $facet: {
+                data: [
+                    { $replaceRoot: { newRoot: "$universityList" } },
+                    { $skip: skip },
+                    { $limit: limitNum },
+                ],
+                meta: [{ $count: "totalCount" }],
+            },
+        });
+
+        const result = await collection.aggregate(pipeline).toArray();
+
+        const universities = result[0]?.data || [];
+        const totalCount = result[0]?.meta[0]?.totalCount || 0;
+        const totalPages = Math.ceil(totalCount / limitNum);
+
+        return sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Universities retrieved successfully",
+        meta: {
+            page: pageNum,
+            limit: limitNum,
+            totalCount,
+            totalPages,
+        },
+        data: universities,
+        });
     } catch (err: any) {
         console.error("Error in getUniversity:", err);
         return sendResponse(res, {
-            statusCode: 500,
-            success: false,
-            message: 'Internal server error',
-            data: err.message
+        statusCode: 500,
+        success: false,
+        message: "Internal server error",
+        data: err.message,
         });
     }
 };
+
 
 
 const editUniversityField = async (req: AuthenticatedRequest, res: Response) => {
@@ -864,6 +866,53 @@ const deleteUniversity = async (req: AuthenticatedRequest, res: Response) => {
 // };
 
 
+const getUniOriginName = async (req: Request, res: Response) => {
+    try {
+        const db = getDb()
+        const collection = db.collection('university')
+
+        const country = await collection.aggregate([
+            {
+                $group: {
+                    _id: "$country",
+                    image: { $first: "$url" },
+                    flag: { $first: "$flag" }
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    country: "$_id",
+                    image: 1,
+                    flag: 1,
+                }
+            }
+        ]).toArray()
+
+
+        const uniqueCountryCount = await collection.distinct("country")
+        const totalUniqueCountries = uniqueCountryCount.length
+
+        sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: 'Course retrieval successful!!!',
+            data: country,
+            meta: {
+                total: totalUniqueCountries
+            }
+        })
+    } catch (err) {
+        console.log(err)
+        sendResponse(res, {
+            statusCode: 400,
+            success: false,
+            message: 'Internal server error',
+            data: err
+        })
+    }
+}
+
 
 
 function convertEnglishProfToTests(englishProf: any): any[] {
@@ -946,4 +995,4 @@ function generateGPAEquivalents(gpaValue: number, currentScale: string): any[] {
 }
 
 
-export { addUniversity, editUniversityField, getUniversity , deleteUniversity };
+export { addUniversity, editUniversityField, getUniversity , deleteUniversity, getUniOriginName };

@@ -12,375 +12,375 @@ interface AuthenticatedRequest extends Request {
 
 
 
-const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
-    try {
-        const db = getDb()
-        const collection = db.collection('university')
-        await authChecker(req, res, ["admin","super_admin"])
+// const createUniversity = async( req: AuthenticatedRequest , res: Response) =>{
+//     try {
+//         const db = getDb()
+//         const collection = db.collection('university')
+//         await authChecker(req, res, ["admin","super_admin"])
 
 
-        const { name, country, tuitionFee, requardQualification, 
-            initialDepossit , englishTest , SCHOLARSHIP } = req.body        
+//         const { name, country, tuitionFee, requardQualification, 
+//             initialDepossit , englishTest , SCHOLARSHIP } = req.body        
 
-        if(!country || !name || !tuitionFee){
-            return sendResponse( res, {
-                statusCode: 400,
-                success: false,
-                message: 'Country name required!!!',
-            })
-        }
+//         if(!country || !name || !tuitionFee){
+//             return sendResponse( res, {
+//                 statusCode: 400,
+//                 success: false,
+//                 message: 'Country name required!!!',
+//             })
+//         }
 
-        let cntry:any , cntryId, flg:any , flgId
-        const uni = await collection.findOne({
-            country: country.toUpperCase(),
-            url:  { $exists: true},
-            flag: { $exists: true},
-        })
+//         let cntry:any , cntryId, flg:any , flgId
+//         const uni = await collection.findOne({
+//             country: country.toUpperCase(),
+//             url:  { $exists: true},
+//             flag: { $exists: true},
+//         })
 
 
-        if(uni){
-            cntry = uni.url
-            flg = uni.flag
-        }else{
-            const files:any = req.files
-            if(files["file"]?.[0] || files["flag"]?.[0]){
-                let local_country:any = await fileUploadHelper.uploadToCloud(files["file"]?.[0])
-                let local_flag:any   = await fileUploadHelper.uploadToCloud(files["flag"]?.[0])
+//         if(uni){
+//             cntry = uni.url
+//             flg = uni.flag
+//         }else{
+//             const files:any = req.files
+//             if(files["file"]?.[0] || files["flag"]?.[0]){
+//                 let local_country:any = await fileUploadHelper.uploadToCloud(files["file"]?.[0])
+//                 let local_flag:any   = await fileUploadHelper.uploadToCloud(files["flag"]?.[0])
 
-                cntryId = local_country.public_id
-                flgId = local_flag.public_id
+//                 cntryId = local_country.public_id
+//                 flgId = local_flag.public_id
 
-                cntry = local_country.url
-                flg = local_flag.url
-            }else{
-                return sendResponse(res,{
-                    statusCode: 400,
-                    success: false,
-                    message: "Flag and country image required for new country"
-                })
-            }
-        }
+//                 cntry = local_country.url
+//                 flg = local_flag.url
+//             }else{
+//                 return sendResponse(res,{
+//                     statusCode: 400,
+//                     success: false,
+//                     message: "Flag and country image required for new country"
+//                 })
+//             }
+//         }
 
-        const insertedObject = {
-            name:name,
-            country:country.toUpperCase(),
-            url:cntry,
-            flag:flg,
-            cntryId:cntryId,
-            flgId:flgId,
-            tuitionFee:tuitionFee,
-            SCHOLARSHIP:SCHOLARSHIP,
-            requardQualification:requardQualification,
-            initialDepossit:initialDepossit,
-            englishTest:englishTest,
-        }
+//         const insertedObject = {
+//             name:name,
+//             country:country.toUpperCase(),
+//             url:cntry,
+//             flag:flg,
+//             cntryId:cntryId,
+//             flgId:flgId,
+//             tuitionFee:tuitionFee,
+//             SCHOLARSHIP:SCHOLARSHIP,
+//             requardQualification:requardQualification,
+//             initialDepossit:initialDepossit,
+//             englishTest:englishTest,
+//         }
 
-        const result = await collection.insertOne(insertedObject)
+//         const result = await collection.insertOne(insertedObject)
 
-        if(!result.acknowledged){
-            return sendResponse(res,{
-                statusCode: 400,
-                success: false,
-                message: "Insertion failed!!!",
-                data: result,
-            })
-        }
+//         if(!result.acknowledged){
+//             return sendResponse(res,{
+//                 statusCode: 400,
+//                 success: false,
+//                 message: "Insertion failed!!!",
+//                 data: result,
+//             })
+//         }
 
-        sendResponse(res,{
-            statusCode: 200,
-            success: true,
-            message: "Inserted successfully!!!",
-            data: result,
-        })
-    } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
-            success: false,
-            message: 'Internel server error',
-            data: err
-        })
-    }
-}
+//         sendResponse(res,{
+//             statusCode: 200,
+//             success: true,
+//             message: "Inserted successfully!!!",
+//             data: result,
+//         })
+//     } catch (err) {
+//         console.log(err)
+//         sendResponse(res,{
+//             statusCode: 400,
+//             success: false,
+//             message: 'Internel server error',
+//             data: err
+//         })
+//     }
+// }
 
-const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
-    try {
-        const db = getDb()
-        const collection = db.collection('university')
-        await authChecker(req, res, ["admin","super_admin"])
+// const deleteUniversity = async( req: AuthenticatedRequest , res: Response) =>{
+//     try {
+//         const db = getDb()
+//         const collection = db.collection('university')
+//         await authChecker(req, res, ["admin","super_admin"])
 
-        const id  = req.params.id
-        const query = { _id : new ObjectId(id) }
-        const exist = await collection.findOne(query)
-        const total = await collection.countDocuments({ country : exist?.country })
+//         const id  = req.params.id
+//         const query = { _id : new ObjectId(id) }
+//         const exist = await collection.findOne(query)
+//         const total = await collection.countDocuments({ country : exist?.country })
         
-        if(!exist){
-            return sendResponse(res,{
-                statusCode: 400,
-                success: false,
-                message: 'No data exist',
-                data: exist,
-            })
-        }
+//         if(!exist){
+//             return sendResponse(res,{
+//                 statusCode: 400,
+//                 success: false,
+//                 message: 'No data exist',
+//                 data: exist,
+//             })
+//         }
 
-        if(total === 1){
-            if(exist?.flgId) await fileUploadHelper.deleteFromCloud(exist?.flgId)
-            if(exist?.cntryId) await fileUploadHelper.deleteFromCloud(exist?.cntryId)
-        }
+//         if(total === 1){
+//             if(exist?.flgId) await fileUploadHelper.deleteFromCloud(exist?.flgId)
+//             if(exist?.cntryId) await fileUploadHelper.deleteFromCloud(exist?.cntryId)
+//         }
 
-        const result = await collection.deleteOne(query)
-        if(!result.acknowledged){
-            return sendResponse(res,{
-                statusCode: 400,
-                success: false,
-                message: "Failed to delete!!!",
-                data: result,
-            })
-        }
+//         const result = await collection.deleteOne(query)
+//         if(!result.acknowledged){
+//             return sendResponse(res,{
+//                 statusCode: 400,
+//                 success: false,
+//                 message: "Failed to delete!!!",
+//                 data: result,
+//             })
+//         }
 
-        sendResponse(res,{
-            statusCode: 200,
-            success: true,
-            message: "Successfully deleted!!!",
-            data: result,
-        })
-    } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
-            success: false,
-            message: 'Internel server error',
-            data: err
-        })
-    }
-}
+//         sendResponse(res,{
+//             statusCode: 200,
+//             success: true,
+//             message: "Successfully deleted!!!",
+//             data: result,
+//         })
+//     } catch (err) {
+//         console.log(err)
+//         sendResponse(res,{
+//             statusCode: 400,
+//             success: false,
+//             message: 'Internel server error',
+//             data: err
+//         })
+//     }
+// }
 
-const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
-    try {
-        const db = getDb()
-        const collection = db.collection('university')
-        await authChecker(req, res, ["admin","super_admin"])
+// const editUniversity = async( req: AuthenticatedRequest , res: Response) =>{
+//     try {
+//         const db = getDb()
+//         const collection = db.collection('university')
+//         await authChecker(req, res, ["admin","super_admin"])
 
-        const id = req.params.id
-        const { name , country, tuitionFee, requardQualification, initialDepossit , 
-            englishTest , SCHOLARSHIP } = req.body
+//         const id = req.params.id
+//         const { name , country, tuitionFee, requardQualification, initialDepossit , 
+//             englishTest , SCHOLARSHIP } = req.body
 
-        const query = { _id : new ObjectId(id) }
+//         const query = { _id : new ObjectId(id) }
 
-        const university = await collection.findOne(query)
-        if(!university){
-            return sendResponse(res,{
-                statusCode: 400,
-                success: false,
-                message: "No university exist with the id!!!",
-            })
-        }
+//         const university = await collection.findOne(query)
+//         if(!university){
+//             return sendResponse(res,{
+//                 statusCode: 400,
+//                 success: false,
+//                 message: "No university exist with the id!!!",
+//             })
+//         }
         
-        let cntryId , flgId , flag , url
+//         let cntryId , flgId , flag , url
 
-        const files:any = req.files
-        if(files["file"]?.[0] || files["flag"]?.[0]){
-            let local_country:any = await fileUploadHelper.uploadToCloud(files["file"]?.[0])
-            let local_flag:any   = await fileUploadHelper.uploadToCloud(files["flag"]?.[0])
+//         const files:any = req.files
+//         if(files["file"]?.[0] || files["flag"]?.[0]){
+//             let local_country:any = await fileUploadHelper.uploadToCloud(files["file"]?.[0])
+//             let local_flag:any   = await fileUploadHelper.uploadToCloud(files["flag"]?.[0])
 
-            cntryId = local_country.public_id
-            flgId = local_flag.public_id
+//             cntryId = local_country.public_id
+//             flgId = local_flag.public_id
 
-            url = local_country.url
-            flag = local_flag.url
-        }
+//             url = local_country.url
+//             flag = local_flag.url
+//         }
 
 
-        const field = {
-            name:name?name:university?.name,
-            country:country?country.toUpperCase():university?.country,
-            url:url?url:university?.url,
-            flag:flag?flag:university?.flag,
-            cntryId:cntryId?cntryId:university?.cntryId,
-            flgId:flgId?flgId:university?.flgId,
-            tuitionFee:tuitionFee?tuitionFee:university?.tuitionFee,
-            requardQualification:requardQualification?requardQualification:university?.requardQualification,
-            initialDepossit:initialDepossit?initialDepossit:university?.initialDepossit,
-            englishTest:englishTest?englishTest:university?.englishTest,
-            SCHOLARSHIP:SCHOLARSHIP?SCHOLARSHIP:university?.SCHOLARSHIP,
-        }
+//         const field = {
+//             name:name?name:university?.name,
+//             country:country?country.toUpperCase():university?.country,
+//             url:url?url:university?.url,
+//             flag:flag?flag:university?.flag,
+//             cntryId:cntryId?cntryId:university?.cntryId,
+//             flgId:flgId?flgId:university?.flgId,
+//             tuitionFee:tuitionFee?tuitionFee:university?.tuitionFee,
+//             requardQualification:requardQualification?requardQualification:university?.requardQualification,
+//             initialDepossit:initialDepossit?initialDepossit:university?.initialDepossit,
+//             englishTest:englishTest?englishTest:university?.englishTest,
+//             SCHOLARSHIP:SCHOLARSHIP?SCHOLARSHIP:university?.SCHOLARSHIP,
+//         }
 
-        const updateDoc = {
-            $set: field,
-        }
+//         const updateDoc = {
+//             $set: field,
+//         }
 
-        const result = await collection.updateOne(query, updateDoc)
+//         const result = await collection.updateOne(query, updateDoc)
 
-        if(!result.acknowledged){
-            return sendResponse(res,{
-                statusCode: 400,
-                success: false,
-                message: "Failed to update!!!",
-            })
-        }
-        sendResponse(res,{
-            statusCode: 200,
-            success: true,
-            message: "Successfully updated!!!",
-            data: result,
-        })
-    } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
-            success: false,
-            message: 'Internel server error',
-            data: err
-        })
-    }
-}
+//         if(!result.acknowledged){
+//             return sendResponse(res,{
+//                 statusCode: 400,
+//                 success: false,
+//                 message: "Failed to update!!!",
+//             })
+//         }
+//         sendResponse(res,{
+//             statusCode: 200,
+//             success: true,
+//             message: "Successfully updated!!!",
+//             data: result,
+//         })
+//     } catch (err) {
+//         console.log(err)
+//         sendResponse(res,{
+//             statusCode: 400,
+//             success: false,
+//             message: 'Internel server error',
+//             data: err
+//         })
+//     }
+// }
 
-const getAllUniversity = async( req: AuthenticatedRequest , res: Response) =>{
-    try {
-        const db = getDb()
-        const collection = db.collection('university')
+// const getAllUniversity = async( req: AuthenticatedRequest , res: Response) =>{
+//     try {
+//         const db = getDb()
+//         const collection = db.collection('university')
 
         
-        const university = await collection.find({}).sort({"_id": -1}).toArray()
-        const countCourse     = await collection.countDocuments()
+//         const university = await collection.find({}).sort({"_id": -1}).toArray()
+//         const countCourse     = await collection.countDocuments()
 
-        const metaData = {
-            page: 0,
-            limit: 0,
-            total: countCourse,
-        }
+//         const metaData = {
+//             page: 0,
+//             limit: 0,
+//             total: countCourse,
+//         }
 
-        sendResponse(res,{
-            statusCode: 200,
-            success: true,
-            message: 'Course retrieval successful!!!',
-            meta: metaData,
-            data: university,
-        })
-    } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
-            success: false,
-            message: 'Internel server error',
-            data: err
-        })
-    }
-}
+//         sendResponse(res,{
+//             statusCode: 200,
+//             success: true,
+//             message: 'Course retrieval successful!!!',
+//             meta: metaData,
+//             data: university,
+//         })
+//     } catch (err) {
+//         console.log(err)
+//         sendResponse(res,{
+//             statusCode: 400,
+//             success: false,
+//             message: 'Internel server error',
+//             data: err
+//         })
+//     }
+// }
 
-const getSingleUniversity = async( req: Request , res: Response) =>{
-    try {
-        const db = getDb()
-        const collection = db.collection('university')
+// const getSingleUniversity = async( req: Request , res: Response) =>{
+//     try {
+//         const db = getDb()
+//         const collection = db.collection('university')
 
-        const id = req.params.id 
-        const query = { _id : new ObjectId(id)}
-        const university = await collection.findOne(query,{projection: { courseContent: 0, studentData: 0 }})
+//         const id = req.params.id 
+//         const query = { _id : new ObjectId(id)}
+//         const university = await collection.findOne(query,{projection: { courseContent: 0, studentData: 0 }})
 
-        if(!university){
-            return sendResponse(res,{
-                statusCode: 400,
-                success: false,
-                message: "No data exist!!!",
-              }
-          )
-        }
+//         if(!university){
+//             return sendResponse(res,{
+//                 statusCode: 400,
+//                 success: false,
+//                 message: "No data exist!!!",
+//               }
+//           )
+//         }
 
-        sendResponse(res,{
-            statusCode: 200,
-            success: false,
-            message: "Showing university details",
-            data: university,
-        })
-    } catch (err) {
-        console.log(err)
-        sendResponse(res,{
-            statusCode: 400,
-            success: false,
-            message: 'Internel server error',
-            data: err
-        })
-    }
-}
+//         sendResponse(res,{
+//             statusCode: 200,
+//             success: false,
+//             message: "Showing university details",
+//             data: university,
+//         })
+//     } catch (err) {
+//         console.log(err)
+//         sendResponse(res,{
+//             statusCode: 400,
+//             success: false,
+//             message: 'Internel server error',
+//             data: err
+//         })
+//     }
+// }
 
-const getUniOriginName = async (req: Request, res: Response) => {
-    try {
-        const db = getDb()
-        const collection = db.collection('university')
+// const getUniOriginName = async (req: Request, res: Response) => {
+//     try {
+//         const db = getDb()
+//         const collection = db.collection('university')
 
-        const country = await collection.aggregate([
-            {
-                $group: {
-                    _id: "$country",
-                    image: { $first: "$url" },
-                    flag: { $first: "$flag" }
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    country: "$_id",
-                    image: 1,
-                    flag: 1,
-                }
-            }
-        ]).toArray()
-
-
-        const uniqueCountryCount = await collection.distinct("country")
-        const totalUniqueCountries = uniqueCountryCount.length
-
-        sendResponse(res, {
-            statusCode: 200,
-            success: true,
-            message: 'Course retrieval successful!!!',
-            data: country,
-            meta: {
-                total: totalUniqueCountries
-            }
-        })
-    } catch (err) {
-        console.log(err)
-        sendResponse(res, {
-            statusCode: 400,
-            success: false,
-            message: 'Internal server error',
-            data: err
-        })
-    }
-}
+//         const country = await collection.aggregate([
+//             {
+//                 $group: {
+//                     _id: "$country",
+//                     image: { $first: "$url" },
+//                     flag: { $first: "$flag" }
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     _id: 1,
+//                     country: "$_id",
+//                     image: 1,
+//                     flag: 1,
+//                 }
+//             }
+//         ]).toArray()
 
 
-const getUniversityByCountry = async( req: Request , res: Response) =>{
-    try {
-        const db = getDb()
-        const collection = db.collection("university")
+//         const uniqueCountryCount = await collection.distinct("country")
+//         const totalUniqueCountries = uniqueCountryCount.length
 
-        const country = req.params.country
+//         sendResponse(res, {
+//             statusCode: 200,
+//             success: true,
+//             message: 'Course retrieval successful!!!',
+//             data: country,
+//             meta: {
+//                 total: totalUniqueCountries
+//             }
+//         })
+//     } catch (err) {
+//         console.log(err)
+//         sendResponse(res, {
+//             statusCode: 400,
+//             success: false,
+//             message: 'Internal server error',
+//             data: err
+//         })
+//     }
+// }
+
+
+// const getUniversityByCountry = async( req: Request , res: Response) =>{
+//     try {
+//         const db = getDb()
+//         const collection = db.collection("university")
+
+//         const country = req.params.country
         
-        const universities = await collection.find({ country: country }).toArray()
+//         const universities = await collection.find({ country: country }).toArray()
         
-        if (universities.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "No universities found for this country",
-            })
-        }
+//         if (universities.length === 0) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "No universities found for this country",
+//             })
+//         }
 
-        res.status(200).json({
-            success: true,
-            message: "Universities retrieved successfully",
-            data: universities,
-        })
-    } catch (error) {
-        console.error("Error fetching universities:", error)
-        res.status(400).json({
-            success: false,
-            message: "Internal Server Error",
-            error,
-        })
-    }
-}
+//         res.status(200).json({
+//             success: true,
+//             message: "Universities retrieved successfully",
+//             data: universities,
+//         })
+//     } catch (error) {
+//         console.error("Error fetching universities:", error)
+//         res.status(400).json({
+//             success: false,
+//             message: "Internal Server Error",
+//             error,
+//         })
+//     }
+// }
 
 
 
@@ -963,17 +963,17 @@ const deleteUniversityFromCountry = async (req: AuthenticatedRequest, res: Respo
 
 
 module.exports = {
-    createUniversity,
-    editUniversity,
-    deleteUniversity,
-    getAllUniversity,
-    getSingleUniversity,
-    getUniOriginName,
-    getUniversityByCountry,
+    // createUniversity,
+    // editUniversity,
+    // deleteUniversity,
+    // getAllUniversity,
+    // getSingleUniversity,
+    // getUniOriginName,
+    // getUniversityByCountry,
 
 
 
-    addUniversity,
-    deleteUniversityFromCountry,
-    editUniversityField,
+    // addUniversity,
+    // deleteUniversityFromCountry,
+    // editUniversityField,
 }

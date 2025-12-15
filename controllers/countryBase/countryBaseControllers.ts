@@ -280,25 +280,23 @@ const editCountryBase = async (req: AuthenticatedRequest, res: Response) => {
             universityList: countryObj.universityList || []
         };
 
-        
         if (content && content !== '<p><br></p>') {
             let body = content;
             try {
                 body = JSON.parse(content);
             } catch {}
 
+            if (insertedObject.bodyImages) {
+                for (const item of insertedObject.bodyImages) {
+                    if (item?.publicID) {
+                        await fileUploadHelper.deleteFromCloud(item.publicID);
+                    }
+                }
+                insertedObject.bodyImages = [];
+            }
 
             const uploadedUrls: { url: string; publicID: string; alt: string }[] = [];
             if (files?.["content_image"]?.length > 0) {
-                if (insertedObject.bodyImages) {
-                    for (const item of insertedObject.bodyImages) {
-                        if (item?.publicID) {
-                            await fileUploadHelper.deleteFromCloud(item.publicID);
-                        }
-                    }
-                }
-                
-                
                 for (let i = 0; i < files["content_image"].length; i++) {
                     const uploaded: any = await fileUploadHelper.uploadToCloud(files["content_image"][i]);
                     uploadedUrls.push({ 
@@ -443,7 +441,7 @@ const getAllCountryBase = async (req: AuthenticatedRequest, res: Response) => {
     }
 };
 
-// ========== DELETE COUNTRY (Your existing code is good) ==========
+
 const deleteCountryBase = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const db = getDb();
@@ -522,10 +520,40 @@ const deleteCountryBase = async (req: AuthenticatedRequest, res: Response) => {
     }
 };
 
+const countryBaseCollectionName = async (req: AuthenticatedRequest , res: Response) => {
+    try{
+        const db = getDb();
+        const collection = db.collection('country-uni');
+        const countries = await collection
+            .find({})
+            .project({country: 1, slug:1, _id: 1, "countryFlg.url":1})
+            .toArray();
+            
+        const totalDoc = await collection.countDocuments();
+        return sendResponse(res, {
+            statusCode: 200,
+            success: true,
+            message: "Countries retrieved successfully",
+            data: countries,
+            meta:{
+                total: totalDoc
+            }
+        });
+    }catch(error){
+        console.error('Error in countryBaseCollectionName:', error);
+        return sendResponse(res, {
+            statusCode: 500,
+            success: false,
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+}
+
 export {
     createCountryBase,
     editCountryBase,
     getCountryBySlug,
     getAllCountryBase,
-    deleteCountryBase
+    deleteCountryBase,
+    countryBaseCollectionName
 };

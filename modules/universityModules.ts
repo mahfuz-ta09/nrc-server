@@ -2,40 +2,40 @@ const express = require('express')
 const router = express.Router()
 const verifyUser = require('../middleware/verifyUser')
 import { fileUploadHelper } from "../helper/fileUploadHealper"
-const { createUniversity , getAllUniversity , getSingleUniversity , editUniversity,getUniOriginName ,getUniversityByCountry,
-        deleteUniversityFromCountry 
-    } = require('../controllers/university/universityControllers')
+// const { createUniversity , getAllUniversity , getSingleUniversity , editUniversity,getUniOriginName ,getUniversityByCountry,
+//         deleteUniversityFromCountry 
+//     } = require('../controllers/university/universityControllers')
 
 const { addUniversity , editUniversityField, getUniversity, deleteUniversity } = require('../controllers/university/uniControllers')
  
-router.get('/all',
-    verifyUser,
-    getAllUniversity)
+// router.get('/all',
+//     verifyUser,
+//     getAllUniversity)
 
-router.get('/single/:id', 
-    getSingleUniversity)
+// router.get('/single/:id', 
+//     getSingleUniversity)
 
-router.post('/create',  
-    verifyUser,
-    fileUploadHelper.upload.fields([
-        { name: "file", maxCount: 1 },
-        { name: "flag", maxCount: 1 }
-    ]),
-    createUniversity)
+// router.post('/create',  
+//     verifyUser,
+//     fileUploadHelper.upload.fields([
+//         { name: "file", maxCount: 1 },
+//         { name: "flag", maxCount: 1 }
+//     ]),
+//     createUniversity)
 
-router.patch('/update/:id',
-    verifyUser,
-    editUniversity)
+// router.patch('/update/:id',
+//     verifyUser,
+//     editUniversity)
 
-router.delete('/delete/:id',
-    verifyUser, 
-    deleteUniversity)
+// router.delete('/delete/:id',
+//     verifyUser, 
+//     deleteUniversity)
 
-router.get('/uni-area', 
-    getUniOriginName)
+// router.get('/uni-area', 
+//     getUniOriginName)
 
-router.get('/all/:country', 
-    getUniversityByCountry)
+// router.get('/all/:country', 
+//     getUniversityByCountry)
 
 
 
@@ -79,11 +79,10 @@ router.delete('/remove/:id/:universityId',
 
 
 router.get('/', 
-    verifyUser,
     getUniversity)
 
 
 // router.get('/all/uni/:countryId',
 //     verifyUser,
-//     getUniversitiesBycountry)
+//     getUniversity)
 export const universityModules = router
