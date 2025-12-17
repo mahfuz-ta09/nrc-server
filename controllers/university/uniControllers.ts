@@ -25,9 +25,9 @@ const addUniversity = async (req: AuthenticatedRequest, res: Response) => {
             city,state,address,website,admissionEmail,phone,applicationFee,currency,feeStructure,
             submissionMethod,portalUrl,apiEndpoint,hasAPIIntegration,processingTime,
             worldRanking,nationalRanking,accreditation,intakes,uniType,
-            acceptanceRate,internationalStudentRatio,tags,
+            acceptanceRate,internationalStudentRatio,tags,requiredFiles
         } = req.body;
-
+        
         const files: any = req.files;
 
         if (!englishProf || !qualifications || !universityName || !initialDeposite || !aboutUni || !files["universityImage"]?.[0] || !uniType) {
@@ -67,11 +67,11 @@ const addUniversity = async (req: AuthenticatedRequest, res: Response) => {
 
         let parsedQualifications = qualifications;
         if (typeof qualifications === 'string') {
-        try {
-            parsedQualifications = JSON.parse(qualifications);
-        } catch (e) {
-            parsedQualifications = [qualifications];
-        }
+            try {
+                parsedQualifications = JSON.parse(qualifications);
+            } catch (e) {
+                parsedQualifications = [qualifications];
+            }
         }
 
         
@@ -136,6 +136,7 @@ const addUniversity = async (req: AuthenticatedRequest, res: Response) => {
             },
         
             initialDeposite: Number(initialDeposite) || 0,
+            requiredFiles:requiredFiles,
             rankings: {
                 worldRanking: worldRanking ? Number(worldRanking) : undefined,
                 nationalRanking: nationalRanking ? Number(nationalRanking) : undefined,
@@ -381,8 +382,8 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
         city,state,address,website,admissionEmail,phone,applicationFee,currency,feeStructure,
         minimumGPA,gpaScale,requiredEducationLevel,prerequisiteSubjects,preferredBackgrounds,
         submissionMethod,portalUrl,apiEndpoint,hasAPIIntegration,processingTime,
+        worldRanking,nationalRanking,accreditation,intakes,requiredFiles,
         acceptanceRate,internationalStudentRatio,tags,status,uniType,
-        worldRanking,nationalRanking,accreditation,intakes,
     } = req.body;
 
     const files: any = req.files;
@@ -471,7 +472,7 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
         },
       
         initialDeposite: initialDeposite !== undefined ? Number(initialDeposite) : currentUni.initialDeposite,
-      
+        requiredFiles:requiredFiles ? requiredFiles : currentUni?.requiredFiles,
         rankings: {
             worldRanking: worldRanking !== undefined ? Number(worldRanking) : currentUni.rankings?.worldRanking,
             nationalRanking: nationalRanking !== undefined ? Number(nationalRanking) : currentUni.rankings?.nationalRanking,

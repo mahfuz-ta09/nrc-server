@@ -11,6 +11,7 @@ import { bannerModule } from "../modules/bannerModule"
 import { blogsModule } from "../modules/blogsModule"
 import { affiliatedUniModule } from "../modules/affiliatedUniModule"
 import { fileUploader } from "../modules/fileUploader"
+import { subjectChoiceModels } from "../modules/subjectChoiceModels"
 
 
 
@@ -70,6 +71,10 @@ const allRoutes = [
     {
         path: '/file',
         route: fileUploader
+    },
+    {
+        path: '/application',
+        route: subjectChoiceModels
     },
 ]
 

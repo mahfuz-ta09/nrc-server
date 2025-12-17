@@ -18,7 +18,7 @@ const createCountryBase = async (req: AuthenticatedRequest, res: Response) => {
         await authChecker(req, res, ["admin", "super_admin"]);
         
         const { country, serial, slug, currency, content, meta_description, meta_title } = req.body;
-        console.log(req.body)
+        
         const files: any = req.files;
 
         if (!country || !serial || !slug || !files["countryFlag"]?.[0] || 
