@@ -5,7 +5,7 @@ const verifyUser = require('../middleware/verifyUser')
 const { getAllData , createProceed , editProcessData , 
     deleteProcessData , getSingleData } = require('../controllers/process/processControllers')
 import { getStudentFileState, getApplicationByCondition, editStudentFile, getStudentFileByIdentifier } from "../controllers/process/studentFileControllers"
-import { postStudentFile } from "../controllers/process/optionalStudentFileControllers"
+import { postStudentFile, searchUniversity } from "../controllers/process/optionalStudentFileControllers"
 
 // course editorials 
 router.get('/all',
@@ -76,5 +76,9 @@ router.get('/get-single-files/:identifier',
     verifyUser,
     getStudentFileByIdentifier)
 
+router.post('/assign-university',
+    verifyUser,
+    searchUniversity
+)
 
 export const precessModule = router

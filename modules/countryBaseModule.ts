@@ -17,7 +17,7 @@ router.get('/base/country',
 
 router.get('/unique/:slug',
     getCountryBySlug)
-
+ 
 // router.get('/unique/:slug',
 //     countryBaseCollectionName)
 

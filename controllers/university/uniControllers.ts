@@ -21,7 +21,7 @@ const addUniversity = async (req: AuthenticatedRequest, res: Response) => {
         const {
             campusHousing,internshipOpportunities,workPermitAvailable,postStudyWorkVisa,partTimeWorkAllowed,
             englishProf,qualifications,universityName,lowFee,highFee,scholarship,initialDeposite,aboutUni,
-            minimumGPA,gpaScale,requiredEducationLevel,prerequisiteSubjects,preferredBackgrounds,
+            minimumGPA,gpaScale,requiredEducationLevel,programFields,programOffered,
             city,state,address,website,admissionEmail,phone,applicationFee,currency,feeStructure,
             submissionMethod,portalUrl,apiEndpoint,hasAPIIntegration,processingTime,
             worldRanking,nationalRanking,accreditation,intakes,uniType,
@@ -89,12 +89,11 @@ const addUniversity = async (req: AuthenticatedRequest, res: Response) => {
                 isOpen: true
             }
         ];
-
+        
         let parsedTags = tags ? (typeof tags === 'string' ? JSON.parse(tags) : tags) : [];
         let parsedAccreditation = accreditation ? (typeof accreditation === 'string' ? JSON.parse(accreditation) : accreditation) : [];
-        let parsedPrerequisites = prerequisiteSubjects ? (typeof prerequisiteSubjects === 'string' ? JSON.parse(prerequisiteSubjects) : prerequisiteSubjects) : [];
-        let parsedBackgrounds = preferredBackgrounds ? (typeof preferredBackgrounds === 'string' ? JSON.parse(preferredBackgrounds) : preferredBackgrounds) : [];
-        
+        let parsedProgramFields = programFields ? JSON.parse(programFields) : [];
+        let parsedProgramOffered = programOffered ? JSON.parse(programOffered) : [];
         const insertedObject = {
             universityId: generateId(),
             universityName: universityName.toUpperCase(),
@@ -151,8 +150,8 @@ const addUniversity = async (req: AuthenticatedRequest, res: Response) => {
                 },
                 gpaEquivalents: generateGPAEquivalents(Number(minimumGPA) || 2.5, gpaScale || '4.0'),
                 requiredEducationLevel: requiredEducationLevel || 'bachelors',
-                prerequisiteSubjects: parsedPrerequisites,
-                preferredBackgrounds: parsedBackgrounds,
+                programFields: parsedProgramFields,
+                programOffered: parsedProgramOffered,
             },
         
             englishProf: parsedEnglishProf,
@@ -376,11 +375,14 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
     const id = req.params.id;
     const universityId = req.params.universityId ;
 
+    console.log(id, universityId)
+    console.log(req.body)
+    console.log(typeof(req.body.programOffered),typeof(req.body.programFields))
     const {
         campusHousing,internshipOpportunities,workPermitAvailable,postStudyWorkVisa,partTimeWorkAllowed,
         englishProf,qualifications,universityName,lowFee,highFee,scholarship,initialDeposite,aboutUni,
         city,state,address,website,admissionEmail,phone,applicationFee,currency,feeStructure,
-        minimumGPA,gpaScale,requiredEducationLevel,prerequisiteSubjects,preferredBackgrounds,
+        minimumGPA,gpaScale,requiredEducationLevel,programFields,programOffered,
         submissionMethod,portalUrl,apiEndpoint,hasAPIIntegration,processingTime,
         worldRanking,nationalRanking,accreditation,intakes,requiredFiles,
         acceptanceRate,internationalStudentRatio,tags,status,uniType,
@@ -421,9 +423,9 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
         if (value === undefined) return fallback;
         if (typeof value === 'string') {
             try {
-            return JSON.parse(value);
+                return JSON.parse(value);
             } catch (e) {
-            return value;
+                return value;
             }
         }
         return value;
@@ -487,16 +489,12 @@ const editUniversityField = async (req: AuthenticatedRequest, res: Response) => 
                 ? Number(minimumGPA) 
                 : (currentUni.admissionRequirements?.minimumGPA?.value ?? 2.5),
             },
+            programOffered: programOffered? safeParse(programOffered, []):(currentUni.admissionRequirements?.programOffered || []),
+            programFields: programFields? safeParse(programFields, []):(currentUni.admissionRequirements?.programFields || []),
             gpaEquivalents: minimumGPA !== undefined
             ? generateGPAEquivalents(Number(minimumGPA), gpaScale || '4.0')
             : (currentUni.admissionRequirements?.gpaEquivalents || []),
             requiredEducationLevel: requiredEducationLevel ?? currentUni.admissionRequirements?.requiredEducationLevel ?? 'bachelors',
-            prerequisiteSubjects: prerequisiteSubjects !== undefined 
-            ? safeParse(prerequisiteSubjects, []) 
-            : (currentUni.admissionRequirements?.prerequisiteSubjects || []),
-            preferredBackgrounds: preferredBackgrounds !== undefined 
-            ? safeParse(preferredBackgrounds, []) 
-            : (currentUni.admissionRequirements?.preferredBackgrounds || []),
         },
         
         englishProf: englishProf ? safeParse(englishProf) : currentUni.englishProf,

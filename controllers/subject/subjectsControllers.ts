@@ -113,26 +113,19 @@ const addSubject = async (req: AuthenticatedRequest, res: Response) => {
         const {
             qualifications,
             subjectName,
-            programLevel,
-            degree,
             duration,
             programType,
-            faculty,
             credits,
             modeOfStudy,
             language,
-            intakes,
             cost,
-            applicationDeadline,
-            description,
-            careerOpportunities,
-            accreditation,
+            description_careerOpportunities,
             placement
         } = req.body;
-        
-        if (!subjectName || !programLevel || !programType || !faculty || !credits || 
-            !modeOfStudy || !language || !intakes || !placement || !cost || 
-            !duration || !applicationDeadline) {
+        console.log(req.body)
+        if (!subjectName || !programType || !modeOfStudy || 
+            !language|| !placement || !cost || 
+            !duration) {
             return sendResponse(res, {
                 statusCode: 400,
                 success: false,
@@ -143,24 +136,17 @@ const addSubject = async (req: AuthenticatedRequest, res: Response) => {
         const newSubject = {
             id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             subjectName,
-            programLevel,
-            degree: degree || '',
             duration: {
                 value: Number(duration?.value || duration),
                 unit: duration?.unit || 'months'
             },
             qualifications: qualifications || {},
             programType,
-            faculty,
             credits: Number(credits),
             modeOfStudy,
             language,
-            intakes,
             cost: Number(cost),
-            applicationDeadline,
-            description: description || '',
-            careerOpportunities: careerOpportunities || '',
-            accreditation: accreditation || '',
+            description_careerOpportunities: description_careerOpportunities,
             placement,
             createdAt: format(new Date(), "MM/dd/yyyy"),
             updatedAt: format(new Date(), "MM/dd/yyyy")
